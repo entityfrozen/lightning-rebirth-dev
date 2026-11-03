@@ -362,7 +362,7 @@ h2, h3 { letter-spacing: -.035em; }
   .home-columns {gap:17px;}
 }
 @media (max-width: 900px) {
-  .sidebar {position:fixed;width:225px;flex-basis:225px;}
+  .sidebar {position:relative;width:205px;flex-basis:205px;}
   .page,.page.inner-page,.community-page {padding:24px 19px 35px;}
   .topbar {padding-inline:17px;}
   .desk-hero {min-height:385px;}
@@ -374,6 +374,9 @@ h2, h3 { letter-spacing: -.035em; }
   .home-columns {grid-template-columns:1fr;}
   .mode-chan:not(:has(.home-page)) .mascot {display:none;}
   .mode-chan:not(:has(.home-page)) .page-title-row {max-width:none;}
+}
+@media (max-width: 800px) {
+  .sidebar {position:fixed;width:225px;flex-basis:225px;}
 }
 @media (max-width: 600px) {
   .brand-caption {margin-bottom:32px;}
