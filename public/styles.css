@@ -31,3 +31,18 @@
 .mode-chan:not(:has(.home-page)) .dialogue{left:auto;right:23px;bottom:16px;width:min(440px,calc(100vw - 50px));height:100px;border-radius:17px}
 .mode-chan:not(:has(.home-page)) .dialogue-text{font-size:14px;padding:23px}
 @media(max-width:800px){.mode-chan:not(:has(.home-page)) .mascot{right:-77px;bottom:75px;opacity:.57}.mode-chan:not(:has(.home-page)) .dialogue{right:12px;bottom:12px;width:min(440px,calc(100vw - 24px))}}
+
+
+/* Quieter application styling: content comes before decorative effects. */
+.brand-caption{letter-spacing:.1em;font-weight:650;font-size:10px;margin-top:2px}
+.nav-new,.feature-spark,.welcome-bloom,.floating-palette,.feature-lightning,.browser-bolts,.status-indicator{display:none!important}
+.nav-link.selected{box-shadow:none;border-color:color-mix(in srgb,var(--accent) 38%,transparent);background:color-mix(in srgb,var(--accent) 15%,var(--surface))}
+.nav-link.selected .glyph{filter:none}
+.sidebar-feature:after{display:none}
+.sidebar-feature{background:color-mix(in srgb,var(--surface) 80%,transparent);border-color:var(--thin)}
+.welcome-card,.theme-feature,.browser-intro{box-shadow:none}
+.welcome-art,.theme-feature-art{opacity:.36}
+.eyebrow{letter-spacing:.08em;font-weight:650}
+.home-footer{letter-spacing:0;text-transform:none;font-weight:500}
+.sky-scene:before,.sky-scene:after{opacity:.08}
+.stars,.cityscape{opacity:.08}
