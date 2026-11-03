@@ -123,10 +123,16 @@ function updateShell(){
 }
 function render(){
   updateShell();
+  const shell=$('.app-shell');
+  // Park the persistent character nodes before replacing the page markup.
+  // Otherwise switching away from Home would destroy the dialogue and sprite.
+  for (const id of ['mascot','dialogue']) {
+    const element=$('#'+id);
+    if(element && element.parentElement!==shell) shell.append(element);
+  }
   const pages={home:homePage,browse:browsePage,library:libraryPage,ai:aiPage,community:communityPage,studio:studioPage,toolkit:toolkitPage,settings:settingsPage};
   $('#view').innerHTML=pages[state.view]();
   const showChan=state.companion&&!['community','ai','toolkit'].includes(state.view);
-  const shell=$('.app-shell');
   shell.classList.toggle('mode-chan',showChan);
   const dock=$('.desk-hero')||shell;
   dock.append($('#mascot'));
