@@ -111,7 +111,7 @@ function render(){
   $('#view').innerHTML=pages[state.view]();
   $('.app-shell').classList.toggle('mode-chan',state.companion);
   $('#mascot').setAttribute('aria-hidden',String(!state.companion));
-  $('#dialogue').hidden=!state.companion;
+  $('#dialogue').hidden=!state.companion || $('#dialogue').hidden;
   if(state.view==='community'&&state.communityTab==='chat')scrollChat();
 }
 function pageEyebrow(text){return `<div class="eyebrow">${text}</div>`;}
@@ -170,8 +170,95 @@ function inspectDrop(id){const drop=state.drops.find(d=>d.id===id);if(!drop)retu
 function packageTheme(name=state.themeName,theme=state.theme){return {format:'lightning.theme',version:1,name:name.trim()||'My Lightning theme',author:state.user?.username||'Local designer',theme:validateTheme(theme)};}
 function downloadJson(filename,data){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});downloadBlob(filename,blob);}
 function downloadBlob(filename,blob){const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function say(line){if(!state.companion)return;const sentences=[line,'You can click this box to continue.'];state.log.push({at:new Date().toLocaleTimeString(),text:line});state.dialogueIndex=0;clearInterval(dialogueTimer);clearTimeout(autoTimer);$('#dialogue').hidden=false;typeLine(sentences[0]);}
-function typeLine(line){clearInterval(dialogueTimer);const display=$('#dialogueLine');if(!display)return;display.textContent='';let current=0;$('#mascotSprite').src='/assets/lightning-chan-talk.png';dialogueTimer=setInterval(()=>{display.textContent=line.slice(0,++current);if(current%3===0)$('#mascotSprite').src=current%6===0?'/assets/lightning-chan-idle.png':'/assets/lightning-chan-talk.png';if(current>=line.length){clearInterval(dialogueTimer);$('#mascotSprite').src='/assets/lightning-chan-idle.png';if(state.autoDialogue)autoTimer=setTimeout(()=>{$('#dialogue').hidden=true;},2800);}},32);}
+// Sixteen complete character drawings live in one 4 x 4 sprite sheet.
+// Rows are expressions; columns are closed, small, open and wide mouth.
+const chanExpressions = ['neutral', 'happy', 'surprised', 'thinking'];
+const chan = { expression:'neutral', mouth:0, typing:false, finished:true, line:'' };
+let chanIdleTimer = null;
+let chanTalkTick = 0;
+const chanReducedMotion = () => !state.motion || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function setChanFrame(expression = chan.expression, mouth = 0) {
+  const sprite = $('#mascotSprite');
+  if (!sprite) return;
+  chan.expression = chanExpressions.includes(expression) ? expression : 'neutral';
+  chan.mouth = Math.min(3, Math.max(0, Math.trunc(mouth)));
+  const row = chanExpressions.indexOf(chan.expression);
+  sprite.style.setProperty('--sprite-x', (chan.mouth * 100 / 3) + '%');
+  sprite.style.setProperty('--sprite-y', (row * 100 / 3) + '%');
+  sprite.dataset.expression = chan.expression;
+  sprite.dataset.mouth = String(chan.mouth);
+}
+function chanExpressionFor(text) {
+  if (/\b(hmm|think|maybe|wonder|perhaps|idea|consider|how)\b/i.test(text)) return 'thinking';
+  if (/\b(wow|what|wait|whoa|really)\b|[!?]{2,}/i.test(text)) return 'surprised';
+  if (/\b(hey|welcome|love|nice|great|cute|yay|good|awesome|thanks|happy)\b|[!✦]/i.test(text)) return 'happy';
+  return 'neutral';
+}
+function stopChanLine() {
+  clearTimeout(dialogueTimer);
+  clearTimeout(autoTimer);
+  dialogueTimer = null;
+  autoTimer = null;
+  chan.typing = false;
+  setChanFrame(chan.expression, 0);
+}
+function closeChanDialogue() {
+  stopChanLine();
+  chan.finished = true;
+  $('#dialogue').hidden = true;
+}
+function finishChanLine() {
+  clearTimeout(dialogueTimer);
+  dialogueTimer = null;
+  chan.typing = false;
+  chan.finished = true;
+  $('#dialogueLine').textContent = chan.line;
+  setChanFrame(chan.expression, 0);
+  if (state.autoDialogue) autoTimer = setTimeout(closeChanDialogue, 2350);
+}
+function typeLine(line) {
+  stopChanLine();
+  chan.line = String(line);
+  chan.finished = false;
+  chan.typing = true;
+  const display = $('#dialogueLine');
+  if (!display) return;
+  display.textContent = '';
+  if (chanReducedMotion() || !chan.line.length) { finishChanLine(); return; }
+  let index = 0;
+  const step = () => {
+    if (!state.companion || !chan.typing) return;
+    const char = chan.line[index++];
+    display.textContent = chan.line.slice(0,index);
+    if (/\s/.test(char)) setChanFrame(chan.expression, 0);
+    else {
+      // Full image swaps, not an independently animated mouth layer.
+      const cadence = [1,2,1,3,2,1,0,2,1,2];
+      setChanFrame(chan.expression, cadence[(chanTalkTick++ + Math.floor(index / 5)) % cadence.length]);
+    }
+    if (index >= chan.line.length) { finishChanLine(); return; }
+    const pause = /[.!?]/.test(char) ? 230 : /[,;:]/.test(char) ? 120 : /\s/.test(char) ? 40 : 32 + Math.floor(Math.random() * 21);
+    dialogueTimer = setTimeout(step, pause);
+  };
+  dialogueTimer = setTimeout(step, 75);
+}
+function say(line) {
+  if (!state.companion) return;
+  stopChanLine();
+  chan.expression = chanExpressionFor(line);
+  state.log.push({at:new Date().toLocaleTimeString(),text:line});
+  state.log = state.log.slice(-50);
+  $('#dialogue').hidden = false;
+  typeLine(line);
+}
+function startChanIdle() {
+  if (chanIdleTimer) return;
+  chanIdleTimer = setInterval(() => {
+    if (!state.companion || chan.typing || !$('#dialogue').hidden || chanReducedMotion()) return;
+    const expressions = ['neutral','neutral','neutral','happy','thinking'];
+    setChanFrame(expressions[Math.floor(Math.random() * expressions.length)],0);
+  }, 5200);
+}
 async function refreshRemote(kind='all'){
   try{
     if(kind==='all'){const [who,drops]=await Promise.all([api('/api/me'),api('/api/drops')]);state.user=who.user;state.stats=who.stats;state.drops=drops.drops;}
@@ -204,10 +291,10 @@ async function handleAction(action,button){const id=button.dataset.id;switch(act
   case 'delete-saved-theme':state.myThemes.splice(Number(button.dataset.index),1);persistPersonal();render();toast('Saved theme deleted');break;
   case 'reset-theme':state.theme={...defaultTheme};state.themeName='My lightning theme';applyTheme();persistPersonal();render();toast('Rebirth theme restored');break;
   case 'logout':await send('/api/logout',{});state.user=null;state.guestSeen=false;store('guestSeen',false);render();renderLogin('login',true);toast('Signed out');break;
-  case 'auto-dialogue':state.autoDialogue=!state.autoDialogue;$('#autoDialogue')?.classList.toggle('active',state.autoDialogue);break;
-  case 'skip-dialogue':clearInterval(dialogueTimer);$('#dialogue').hidden=true;$('#mascotSprite').src='/assets/lightning-chan-idle.png';break;
-  case 'close-dialogue':clearInterval(dialogueTimer);$('#dialogue').hidden=true;break;
-  case 'next-dialogue':clearInterval(dialogueTimer);$('#mascotSprite').src='/assets/lightning-chan-idle.png';$('#dialogue').hidden=true;break;
+  case 'auto-dialogue':state.autoDialogue=!state.autoDialogue;$('#autoDialogue')?.classList.toggle('active',state.autoDialogue);if(state.autoDialogue&&chan.finished&&!$('#dialogue').hidden){clearTimeout(autoTimer);autoTimer=setTimeout(closeChanDialogue,2350);}else if(!state.autoDialogue)clearTimeout(autoTimer);break;
+  case 'skip-dialogue':closeChanDialogue();break;
+  case 'close-dialogue':closeChanDialogue();break;
+  case 'next-dialogue':if(!chan.finished)finishChanLine();else closeChanDialogue();break;
   case 'dialogue-log':showModal(`<div class="modal-head"><span class="mini-overline">LIGHTNING-CHAN / DIALOGUE LOG</span><button class="modal-x" data-action="close-modal">×</button></div><div class="log-modal"><h2>Our little conversations</h2>${state.log.slice(-25).map(m=>`<p><small>${escapeHTML(m.at)}</small> ${escapeHTML(m.text)}</p>`).join('')}</div>`);break;
 }}
 
@@ -244,7 +331,7 @@ document.addEventListener('input',event=>{
 });
 document.addEventListener('change',async event=>{
   if(event.target.id==='dropSort'){state.sort=event.target.value;render();}
-  if(event.target.id==='companionToggle'){state.companion=event.target.checked;store('companion',state.companion);applyTheme();render();if(state.companion)say('Lightning-chan Mode activated! I missed you! ✦');}
+  if(event.target.id==='companionToggle'){state.companion=event.target.checked;store('companion',state.companion);if(!state.companion)closeChanDialogue();applyTheme();render();if(state.companion)say('Hey! Good to see you!');}
   if(event.target.id==='motionToggle'){state.motion=event.target.checked;store('motion',state.motion);applyTheme();render();}
   if(event.target.id==='themeFileInput'){
     const file=event.target.files?.[0];if(!file)return;
@@ -257,7 +344,7 @@ window.addEventListener('hashchange',()=>{const hash=location.hash.replace('#','
 
 async function boot(){
   applyTheme();const hash=location.hash.replace('#','').split('/');state.view=navLinks.some(x=>x[0]===hash[0])?hash[0]:'home';if(hash[0]==='community'&&hash[1]==='drops')state.communityTab='drops';
-  await refreshRemote('all');state.loaded=true;render();
+  await refreshRemote('all');state.loaded=true;render();setChanFrame('neutral',0);startChanIdle();
   if(!state.user && !state.guestSeen)renderLogin('login',true);
   eventSource=new EventSource('/api/events');eventSource.addEventListener('refresh',async event=>{try{const {kind}=JSON.parse(event.data);await refreshRemote(kind);}catch{}});
   if(state.companion)say('Lightning is looking good today, don’t you think?');
