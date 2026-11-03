@@ -1,6 +1,6 @@
-# Lightning — Rebirth v5.1
+# Lightning — Rebirth v6
 
-A fresh, purple-neon Lightning web app with a real Node.js backend, a local-first theme designer, a community Drop exchange, and optional 2D Lightning-chan PNG sprites.
+A purple-themed creative workspace with a working Node.js backend, community themes and chat, a theme editor, and a 16-frame Lightning-chan companion.
 
 ## Run it
 
@@ -22,12 +22,14 @@ For a quick dev loop use `npm run dev`. `npm test` exercises the server's real s
 
 ## What's inside
 
+The v6 refresh replaces the old card-heavy home screen with a quieter editorial landing page, simplifies the navigation, and reduces decorative effects across Community, Library, and Theme Studio. The AI Assistant is still unconfigured: this update does not invent an AI backend.
+
 - **New brand mark.** A clean vector lightning logo (`public/assets/lightning-mark.svg`) instead of the earlier Unicode glyph logo.
 - **New login.** Two-panel sign-in/registration with a transparent Lightning-chan illustration, hashed passwords, HTTP-only session cookies, username checks, rate limits, and a guest preview.
 - **Clean Community chat.** Three channels (`#general`, `#help-desk`, `#showcase`) with server-persisted messages and server-sent-event updates to connected browsers.
 - **Community Drops.** Starter themes and member-published themes, including preview, apply, save, like, download as JSON, filtering, and deleting your own Drops.
 - **Theme Studio.** Six live color pickers, ambient glow, corner softness, blossoms, built-in presets, local save, import/export, and publish to Community Drops.
-- **Optional Lightning-chan Mode.** Defaults to **off**. Enables actual transparent 2D PNG sprites (wave, idle, talk and surprised), simple sprite-based lip motion, expressive pose changes, and visual-novel dialogue. No SVG stick figure.
+- **Lightning-chan Mode.** On by default for new visitors, configurable in Settings. Her complete 2D poses and expressions are selected from a 4×4 sprite sheet (not a separately moving mouth layer). The companion appears on Home, Browse, Library, Theme Studio and Settings, but stays out of focused chat/tool pages. Reduced-motion preferences are respected.
 - **Home, Browse, Library, AI Assistant, Community, Theme Studio, Toolkit, Settings.** HUD Editor has been removed and AI Chat has been renamed AI Assistant.
 - **Library and notes.** Saved design drafts, saved Drops and scratchpad are local to the browser. Published Drops and chat are stored on the server.
 
@@ -75,14 +77,15 @@ This is a **working single-server MVP**, not an audited public social network. B
 
 The AI Assistant is intentionally labeled **not connected**. There's no hard-coded API key or fake chatbot backend. A provider should be added server-side with secrets in environment variables, not in client JavaScript.
 
-No GitHub repository was modified. The accessible GitHub repos at the time of the rebuild did not identify an existing Lightning web project, so this implementation is independent rather than pretending to restore old project code.
+The v6 interface was developed directly in this repository. The earlier backend and its stored user data format have not changed.
 
 ## Source tree
 
 ```
 server.js                    Node HTTP server and API
 public/index.html            App shell
-public/styles.css            Responsive UI / two companion layouts
+public/styles.css            Original layout styles
+public/refresh.css             v6 interface design and responsive polish
 public/app.js                Frontend state, views, theme maker, chat client
 public/assets/               Logo and generated transparent 2D PNG sprites
 tests/api.test.js             End-to-end API test
