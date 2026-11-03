@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#110b1e">
-  <meta name="description" content="Lightning — your space to create, customize and connect.">
-  <title>Lightning — Rebirth</title>
+  <meta name="description" content="Lightning — themes, community, and tools.">
+  <title>Lightning</title>
   <link rel="icon" href="/assets/lightning-mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
 </head>
@@ -14,17 +14,17 @@
   <div id="app" class="app-shell">
     <aside id="sidebar" class="sidebar">
       <button class="brand" data-nav="home" aria-label="Go to Home"><img src="/assets/lightning-mark.svg" alt=""><span class="brand-name">Lightning<span class="brand-ver">v5.1</span></span></button>
-      <div class="brand-caption">REBIRTH <span>·</span> MAKE IT YOURS</div>
-      <div class="side-label">WORKSPACE</div>
+      <div class="brand-caption">COMMUNITY & TOOLS</div>
+      <div class="side-label">MENU</div>
       <nav id="mainNav" class="nav"></nav>
       <div class="side-spacer"></div>
-      <div class="sidebar-feature"><span class="feature-spark">✦</span><strong>Made to be yours.</strong><span>Build a theme that feels like you.</span><button data-nav="studio">Open Theme Studio <span>↗</span></button></div>
+      <div class="sidebar-feature"><strong>Theme Studio</strong><span>Create and save custom themes.</span><button data-nav="studio">Open Studio</button></div>
       <button class="profile-card" id="profileCard" data-action="profile"><span class="profile-icon" id="profileInitial">G</span><span class="profile-details"><strong id="profileName">Guest</strong><small id="profileSub">Explore Lightning</small></span><span class="profile-gear">⚙</span></button>
     </aside>
     <div class="workspace">
       <header class="topbar">
         <button class="mobile-toggle icon-btn" data-action="menu" aria-label="Open navigation">☰</button>
-        <div class="top-location"><span class="location-accent">⌁</span><span id="topLocation">Home</span><span class="location-separator">/</span><span>Lightning</span></div>
+        <div class="top-location"><span id="topLocation">Home</span></div>
         <div class="top-tools"><label class="global-search"><span class="search-icon">⌕</span><input id="searchInput" placeholder="Search Lightning..." autocomplete="off" aria-label="Search Lightning"><kbd>Ctrl K</kbd></label><span class="top-divider"></span><button class="icon-btn" data-action="open-drops" aria-label="Community Drops" title="Community Drops">⬡</button><button class="icon-btn" data-nav="settings" aria-label="Settings" title="Settings">⚙</button><span class="top-avatar" id="topAvatar">G</span></div>
       </header>
       <main id="view" class="view" tabindex="-1"></main>
