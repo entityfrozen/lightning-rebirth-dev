@@ -46,3 +46,47 @@
 .home-footer{letter-spacing:0;text-transform:none;font-weight:500}
 .sky-scene:before,.sky-scene:after{opacity:.08}
 .stars,.cityscape{opacity:.08}
+
+
+/* Lightning-chan: each frame is a full pre-drawn illustration in a 4x4 sheet. */
+.mascot .mascot-frame{
+  position:absolute;
+  left:-12px;
+  bottom:0;
+  width:430px;
+  height:430px;
+  background-image:url('/assets/lightning-chan-16.png');
+  background-repeat:no-repeat;
+  background-size:400% 400%;
+  background-position:var(--sprite-x,0%) var(--sprite-y,0%);
+  filter:drop-shadow(0 14px 15px #09031588);
+  animation:chan-idle-bob 5s ease-in-out infinite;
+  will-change:transform;
+}
+.mode-chan:has(.home-page) .mascot .mascot-frame{
+  width:650px;
+  height:650px;
+  left:-25px;
+  bottom:-20px;
+}
+.mode-chan:not(:has(.home-page)) .mascot .mascot-frame{
+  width:345px;
+  height:345px;
+  left:-62px;
+  bottom:0;
+}
+@keyframes chan-idle-bob{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-5px)}
+}
+.reduce-motion .mascot-frame{animation:none!important}
+@media(prefers-reduced-motion:reduce){.mascot-frame{animation:none!important}}
+@media(max-width:800px){
+  .mode-chan .mascot .mascot-frame,
+  .mode-chan:has(.home-page) .mascot .mascot-frame{
+    width:400px;height:400px;left:-135px;bottom:0;
+  }
+  .mode-chan:not(:has(.home-page)) .mascot .mascot-frame{
+    width:310px;height:310px;left:-95px;bottom:0;
+  }
+}
