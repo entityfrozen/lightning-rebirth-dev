@@ -1,0 +1,13 @@
+{
+  "name": "lightning-rebirth",
+  "version": "5.1.0",
+  "private": true,
+  "description": "Lightning Rebirth — community, theme studio and optional 2D companion",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {"node": ">=20"}
+}
