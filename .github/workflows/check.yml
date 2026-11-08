@@ -1,8 +1,8 @@
-name: Lightning checks
+name: Celestial checks
 
 on:
   push:
-    branches: [main, feature/glass-day-night-overhaul]
+    branches: [main, 'feature/**']
   pull_request:
 
 jobs:
