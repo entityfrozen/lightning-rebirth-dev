@@ -248,6 +248,7 @@ export function createGlassToggle(button, { initial = 'dark', onChange = () => {
 
   function draw() {
     button.style.setProperty('--glass-position', position.toFixed(4));
+    button.style.setProperty('--glass-left', (11 + 74 * position).toFixed(2) + 'px');
     if (!gl || !program || gl.isContextLost()) return;
 
     const rect = canvas.getBoundingClientRect();
