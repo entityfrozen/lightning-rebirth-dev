@@ -1,4 +1,4 @@
-// Lightning's glass day/night switch: one WebGL fragment pass, no dependencies.
+// Celestial's glass day/night switch: one WebGL fragment pass, no dependencies.
 
 const VERTEX_SOURCE = `
 attribute vec2 aPosition;
@@ -420,7 +420,7 @@ export function createGlassToggle(button, { initial = 'dark', onChange = () => {
       button.classList.remove('glass-ready');
       gl = null;
       program = null;
-      console.warn('Lightning glass toggle fallback:', error.message);
+      console.warn('Celestial glass toggle fallback:', error.message);
     }
   }
 
