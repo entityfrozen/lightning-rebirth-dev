@@ -10,7 +10,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const palette={accent:'#b67cff',background:'#0f0b1b',surface:'#20152f',text:'#f9f2ff',muted:'#b8a9cb',line:'#513966',glow:55,radius:16,petals:true};
 
 test('end-to-end account, chat, and community drop API', {timeout:18000}, async ()=>{
-  const tmp=await mkdtemp(path.join(tmpdir(),'lightning-test-'));
+  const tmp=await mkdtemp(path.join(tmpdir(),'celestial-test-'));
   const port=31000+Math.floor(Math.random()*10000);
   const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
   let cookie='';
@@ -26,16 +26,20 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(ready,true,'server started');
     let result=await call('/api/me');assert.equal(result.response.status,200);assert.equal(result.data.user,null);
     result=await call('/api/messages','POST',{channel:'general',text:'Guest post'});assert.equal(result.response.status,401);
-    result=await call('/api/register','POST',{username:'TestLightning',password:'correct horse battery staple'});assert.equal(result.response.status,201);assert.equal(result.data.user.username,'TestLightning');
+    result=await call('/api/register','POST',{username:'TestCelestial',password:'correct horse battery staple'});assert.equal(result.response.status,201);assert.equal(result.data.user.username,'TestCelestial');
     result=await call('/api/messages','POST',{channel:'general',text:'Hello from API test'});assert.equal(result.response.status,201);
     result=await call('/api/messages?channel=general');assert.equal(result.data.messages.at(-1).text,'Hello from API test');
     result=await call('/api/drops','POST',{title:'New Theme',description:'My favorite purple palette',theme:palette});assert.equal(result.response.status,201);
     const dropId=result.data.drop.id;
     result=await call('/api/drops');assert.ok(result.data.drops.some(d=>d.id===dropId));
+    assert.ok(result.data.drops.some(d=>d.ownerId==='system'&&d.author==='Celestial Studio'));
+    const download=await fetch(url+`/api/drops/${dropId}/download`);
+    assert.equal(download.status,200);
+    assert.equal((await download.json()).format,'celestial.theme');
     result=await call(`/api/drops/${dropId}/star`,'POST',{});assert.equal(result.data.drop.likes,1);
     result=await call('/api/drops','POST',{title:'bad',description:'description',theme:{...palette,accent:'javascript:alert(1)'}});assert.equal(result.response.status,400);
     result=await call('/api/logout','POST',{});assert.equal(result.response.status,200);
-    result=await call('/api/login','POST',{username:'TestLightning',password:'correct horse battery staple'});assert.equal(result.response.status,200);
+    result=await call('/api/login','POST',{username:'TestCelestial',password:'correct horse battery staple'});assert.equal(result.response.status,200);
     result=await call(`/api/drops/${dropId}`,'DELETE');assert.equal(result.response.status,200);
     result=await call('/api/drops');assert.ok(!result.data.drops.some(d=>d.id===dropId));
   }finally{server.kill();await rm(tmp,{recursive:true,force:true});}
