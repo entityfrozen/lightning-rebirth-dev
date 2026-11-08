@@ -20,7 +20,7 @@ uniform vec3 uDarkBackground;
 uniform vec3 uLightBackground;
 uniform vec3 uDarkSurface;
 uniform vec3 uLightSurface;
-uniform vec4 uPairs[56];
+uniform vec4 uPairs[49];
 
 float roundedBox(vec2 point, vec2 halfSize, float radius) {
   vec2 q = abs(point) - halfSize + radius;
@@ -114,8 +114,8 @@ void main() {
   vec2 glyphPoint = local / 2.75;
   vec3 pixels = vec3(0.0);
   float coverage = 0.0;
-  for (int i = 0; i < 56; i++) {
-    float rank = float(i) / 55.0;
+  for (int i = 0; i < 49; i++) {
+    float rank = float(i) / 48.0;
     float stagger = 0.12 * (0.5 + 0.5 * sin(rank * 39.6));
     float t = clamp((transition - stagger) / (1.0 - 2.0 * stagger), 0.0, 1.0);
     float ease = t * t * (3.0 - 2.0 * t);
@@ -149,7 +149,7 @@ void main() {
 }
 `;
 
-const PAIR_COUNT = 56;
+const PAIR_COUNT = 49;
 const clamp = value => Math.max(0, Math.min(1, value));
 
 function hexRgb(hex) {
@@ -157,7 +157,7 @@ function hexRgb(hex) {
   return [1, 3, 5].map(i => parseInt(clean.slice(i, i + 2), 16) / 255);
 }
 
-function makePairs() {
+export function makePairs() {
   const moon = [];
   const sun = [];
   for (let y = -6; y <= 6; y++) {
