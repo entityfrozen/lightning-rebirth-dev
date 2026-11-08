@@ -20,6 +20,27 @@ PORT=4000 npm start
 
 For a quick dev loop use `npm run dev`. `npm test` exercises the server's real signup/login, chat, and theme-sharing API.
 
+## Prism day/night interface
+
+The workspace header now has a draggable glass theme switch. Dark and light palettes
+are saved separately in local storage, so your Theme Studio changes survive switching
+modes. The original dark palette is preserved for existing users.
+
+The switch uses one WebGL 1 fragment pass to draw the track, refractive bevel,
+chromatic edge, orbiting light and pixel-swarm morph. The sun and crescent grids
+are paired by polar angle, with motion driven by the current knob position;
+stopping a drag halfway stops the pixels too. A CSS backdrop filter blurs the
+actual page underneath, while the shader refracts its matching ambient field.
+This is an intentional lightweight approximation, not a screenshot of the DOM.
+
+Pointer dragging, click/tap, arrow keys and keyboard activation all work.
+Reduced-motion settings disable the spring animation. When WebGL is disabled,
+the switch falls back to a normal accessible CSS control.
+
+`public/glass-ui.css` handles the shared glass surface language for Home,
+navigation, Studio, Community, Library and Settings, plus light-mode contrast.
+The existing server, accounts, community data and theme-package format are unchanged.
+
 ## What's inside
 
 The v6 refresh replaces the old card-heavy home screen with a quieter editorial landing page, simplifies the navigation, and reduces decorative effects across Community, Library, and Theme Studio. The AI Assistant is still unconfigured: this update does not invent an AI backend.
@@ -85,7 +106,9 @@ The v6 interface was developed directly in this repository. The earlier backend 
 server.js                    Node HTTP server and API
 public/index.html            App shell
 public/styles.css            Original layout styles
-public/refresh.css             v6 interface design and responsive polish
+public/refresh.css            v6 interface design and responsive polish
+public/glass-ui.css           Prism visual system and light-mode styles
+public/glass-toggle.js        Single-pass WebGL glass control and drag interaction
 public/app.js                Frontend state, views, theme maker, chat client
 public/assets/               Logo and generated transparent 2D PNG sprites
 tests/api.test.js             End-to-end API test
