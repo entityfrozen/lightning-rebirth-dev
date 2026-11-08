@@ -129,7 +129,7 @@ body {
   content: "";
   position: absolute;
   top: 13.5px;
-  left: calc(11px + 74px * var(--glass-position));
+  left: var(--glass-left, 11px);
   width: 51px;
   height: 51px;
   border-radius: 13px;
@@ -183,7 +183,7 @@ body {
   content: "";
   position: absolute;
   top: 15px;
-  left: calc(11px + 74px * var(--glass-position));
+  left: var(--glass-left, 11px);
   width: 47px;
   height: 47px;
   border-radius: 14px;
