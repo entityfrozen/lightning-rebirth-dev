@@ -9,6 +9,7 @@
   <link rel="icon" href="/assets/lightning-mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/refresh.css">
+  <link rel="stylesheet" href="/glass-ui.css">
 </head>
 <body>
   <div class="sky-scene" aria-hidden="true"><div class="stars"></div><div class="cityscape"></div><div class="sakura sakura-left">✿</div><div class="sakura sakura-right">✿</div></div>
@@ -26,7 +27,7 @@
       <header class="topbar">
         <button class="mobile-toggle icon-btn" data-action="menu" aria-label="Open navigation">☰</button>
         <div class="top-location"><span id="topLocation">Home</span></div>
-        <div class="top-tools"><label class="global-search"><span class="search-icon">⌕</span><input id="searchInput" placeholder="Search Lightning..." autocomplete="off" aria-label="Search Lightning"><kbd>Ctrl K</kbd></label><span class="top-divider"></span><button class="icon-btn" data-action="open-drops" aria-label="Community Drops" title="Community Drops">⬡</button><button class="icon-btn" data-nav="settings" aria-label="Settings" title="Settings">⚙</button><span class="top-avatar" id="topAvatar">G</span></div>
+        <div class="top-tools"><label class="global-search"><span class="search-icon">⌕</span><input id="searchInput" placeholder="Search Lightning..." autocomplete="off" aria-label="Search Lightning"><kbd>Ctrl K</kbd></label><span class="top-divider"></span><div class="mode-pocket"><button id="appearanceToggle" class="glass-toggle" type="button" role="switch" aria-label="Light mode" aria-checked="false" title="Switch to light mode"><span class="glass-fallback" aria-hidden="true"><span>☾</span><span>☀</span></span><canvas aria-hidden="true"></canvas></button><span class="mode-word" aria-hidden="true"></span></div><button class="icon-btn" data-action="open-drops" aria-label="Community Drops" title="Community Drops">⬡</button><button class="icon-btn" data-nav="settings" aria-label="Settings" title="Settings">⚙</button><span class="top-avatar" id="topAvatar">G</span></div>
       </header>
       <main id="view" class="view" tabindex="-1"></main>
     </div>
