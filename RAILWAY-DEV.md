@@ -1,6 +1,6 @@
-# Lightning v5.1 – Railway dev deployment
+# Celestial v7 – Railway dev deployment
 
-Railway project: lightning-rebirth-dev
+Railway project: lightning-rebirth-dev (existing infrastructure name)
 Project URL: https://railway.com/project/a5c11ea1-f7ca-4c35-866c-ef5bb034330e
 Environment: development
 
@@ -8,9 +8,9 @@ This folder is ready to push as the root of a GitHub repository and connect as a
 
 ## Connect
 
-1. Create a dedicated GitHub repository for Lightning and commit this folder (without `.env` or `data/`).
+1. Create a dedicated GitHub repository for Celestial and commit this folder (without `.env` or `data/`).
 2. In Railway's `lightning-rebirth-dev` project, add a service from the GitHub repository, branch `main`.
-3. Create a persistent volume mounted at `/data` and set `LIGHTNING_DATA_FILE=/data/store.json` on the Lightning service. Do not run more than one replica with the current JSON database.
+3. Create a persistent volume mounted at `/data` and set `LIGHTNING_DATA_FILE=/data/store.json` on the Celestial service. Do not run more than one replica with the current JSON database.
 4. Generate a Railway public service domain. The service uses Railway's `PORT` environment variable automatically.
 5. Visit `/api/me` for an HTTP 200 healthcheck and open `/` for the app.
 
