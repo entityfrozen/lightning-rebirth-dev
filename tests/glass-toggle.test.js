@@ -24,6 +24,7 @@ test('pixel morph preserves the complete sun and covers every moon dot', () => {
 test('dragging pauses the morph halfway and commits only on release', () => {
   const frames = [];
   let frameNumber = 0;
+  let timestamp = 0;
   globalThis.window = {
     matchMedia: () => ({ matches: false, addEventListener() {} })
   };
@@ -34,7 +35,10 @@ test('dragging pauses the morph halfway and commits only on release', () => {
   };
   const flush = () => {
     let n = 0;
-    while (frames.length && n++ < 200) frames.shift()(n * 16.667);
+    while (frames.length && n++ < 200) {
+      timestamp += 16.667;
+      frames.shift()(timestamp);
+    }
     assert.ok(n < 200, 'animation should settle');
   };
   const listeners = new Map();
