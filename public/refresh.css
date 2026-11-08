@@ -1,4 +1,4 @@
-/* Lightning v6 — quieter, tactile, a little visual-novel inspired.
+/* Celestial — quieter, tactile, a restrained foundation beneath the Celestial glass system.
    The existing theme variables still drive the interface. */
 
 :root {
@@ -287,62 +287,6 @@ h2, h3 { letter-spacing: -.035em; }
 .home-note span {font-size:11px;color:var(--muted);}
 .home-rework .home-footer { margin: 0; }
 
-/* The character belongs to the scene on Home, and keeps out of the way elsewhere. */
-.mascot-halo, .mascot-shade { display:none !important; }
-.mode-chan .desk-hero > .mascot {
-  display:block;
-  position:absolute;
-  left:auto; top:auto; right:0; bottom:-8px;
-  width:43%; height:100%;
-  z-index:3; opacity:1;
-  pointer-events:none;
-}
-.mode-chan .desk-hero > .mascot .mascot-frame {
-  width: min(38vw, 535px);
-  height: min(38vw, 535px);
-  left:auto; right:-44px; bottom:-80px;
-  filter: drop-shadow(0 12px 14px #09041044);
-}
-.mode-chan .desk-hero > .dialogue {
-  display:block;
-  position:absolute;
-  left:auto; right:16px; bottom:18px;
-  width:min(355px,39%); min-height:103px; height:auto;
-  border:1px solid color-mix(in srgb,var(--accent) 43%,var(--line));
-  border-radius:12px;
-  background:color-mix(in srgb,var(--background) 95%,#000 5%);
-  box-shadow:0 11px 30px #05030d88;
-  z-index:5;
-}
-.mode-chan .desk-hero > .dialogue[hidden] { display:none; }
-.mode-chan .desk-hero > .dialogue .dialogue-text {min-height:103px;padding:23px 18px 13px;font-size:13px;line-height:1.55;}
-.mode-chan .desk-hero > .dialogue .dialogue-name {
-  top:-12px;left:14px;
-  font-size:11px;
-  border:1px solid var(--thin);
-  border-radius:6px;
-  padding:3px 9px;
-  background:var(--surface);
-}
-.mode-chan .desk-hero > .dialogue .dialogue-next {font-size:17px;bottom:5px;right:12px;}
-.mode-chan .desk-hero > .dialogue .dialogue-buttons {top:-13px;right:10px;}
-.mode-chan .desk-hero > .dialogue .dialogue-buttons button {font-size:10px;}
-.mode-chan:not(:has(.home-page)) .mascot {right:-15px;bottom:90px;opacity:.9;z-index:2;}
-.mode-chan:not(:has(.home-page)) .mascot .mascot-frame {width:300px;height:300px;left:auto;right:-55px;bottom:0;}
-.mode-chan:not(:has(.home-page)) .dialogue {
-  right:24px;left:auto;bottom:20px;width:min(400px,calc(100vw - 40px));height:110px;
-  border-radius:12px;
-  border:1px solid var(--thin);
-  background:color-mix(in srgb,var(--background) 94%,var(--surface));
-  box-shadow:0 14px 32px #05030c80;
-}
-.mode-chan:not(:has(.home-page)) .dialogue-text {font-size:13px;line-height:1.5;padding:22px;}
-.mode-chan .inner-page:not(.settings-page) .page-title-row,
-.mode-chan .community-header { margin-left:0; }
-.mode-chan .inner-page,.mode-chan .community-page {padding-bottom:48px;}
-.mode-chan:not(:has(.home-page)) .page-title-row {max-width:calc(100% - 140px);}
-.mode-chan .home-page > .home-intro,.mode-chan .home-page > .home-columns {margin-left:0;}
-.mode-chan .home-footer {margin-left:0;}
 .connection-badge {letter-spacing:0;font-weight:600;}
 
 /* A calmer sign-in screen with the same real account flow. */
@@ -352,13 +296,12 @@ h2, h3 { letter-spacing: -.035em; }
 .auth-art-caption h2 {font-size:37px;letter-spacing:-.055em;}
 .auth-form-side {background:#171020;}
 
-/* Small screens: content stays usable and Lightning-chan doesn't cover controls. */
+/* Small screens: content stays usable and Celestial controls stay accessible. */
 @media (max-width: 1250px) {
   .sidebar {width:205px;flex-basis:205px;}
   .page,.page.inner-page,.community-page {padding-inline:27px;}
   .desk-copy {padding:55px 38px;max-width:66%;}
   .desk-hero h1 {font-size:clamp(41px,4.7vw,58px);}
-  .mode-chan .desk-hero > .mascot .mascot-frame {right:-76px;}
   .home-columns {gap:17px;}
 }
 @media (max-width: 900px) {
@@ -368,12 +311,7 @@ h2, h3 { letter-spacing: -.035em; }
   .desk-hero {min-height:385px;}
   .desk-copy {max-width:72%;padding:49px 30px;}
   .desk-hero h1 {font-size:clamp(36px,6vw,51px);}
-  .mode-chan .desk-hero > .mascot {opacity:.65;right:-30px;}
-  .mode-chan .desk-hero > .mascot .mascot-frame {width:360px;height:360px;right:-80px;bottom:-60px;}
-  .mode-chan .desk-hero > .dialogue {width:300px;right:10px;}
   .home-columns {grid-template-columns:1fr;}
-  .mode-chan:not(:has(.home-page)) .mascot {display:none;}
-  .mode-chan:not(:has(.home-page)) .page-title-row {max-width:none;}
 }
 @media (max-width: 800px) {
   .sidebar {position:fixed;width:225px;flex-basis:225px;}
@@ -389,10 +327,6 @@ h2, h3 { letter-spacing: -.035em; }
   .desk-hero-actions {gap:8px;}
   .desk-hero-actions .btn {font-size:11px;min-height:40px;padding:9px 12px;}
   .desk-hero-side {display:none;}
-  .mode-chan .desk-hero > .mascot {opacity:.16;right:-110px;}
-  .mode-chan .desk-hero > .mascot .mascot-frame {width:350px;height:350px;right:-76px;bottom:-35px;}
-  .mode-chan .desk-hero > .dialogue {width:calc(100% - 24px);right:12px;bottom:10px;min-height:72px;}
-  .mode-chan .desk-hero > .dialogue .dialogue-text {min-height:72px;font-size:12px;padding:17px 15px 10px;}
   .home-actions {grid-template-columns:1fr 1fr;gap:8px;}
   .home-action {padding:14px;min-height:117px;}
   .home-action strong {font-size:12px;}
@@ -403,7 +337,6 @@ h2, h3 { letter-spacing: -.035em; }
 @media (prefers-reduced-motion: reduce) {
   .home-action,.nav-link {transition:none;}
   .home-action:hover {transform:none;}
-  .mascot-frame,.dialogue-next {animation:none!important;}
 }
 .reduce-motion .home-action, .reduce-motion .nav-link {transition:none;}
 .reduce-motion .home-action:hover {transform:none;}
@@ -501,9 +434,6 @@ h2, h3 { letter-spacing: -.035em; }
 .assistant-orb {box-shadow:none;filter:none;}
 .auth-art-caption h2 {text-shadow:none;}
 .auth-light {opacity:.45;}
-.dialogue-text {cursor:pointer;}
-.dialogue-buttons button {border-radius:6px;}
-.dialogue-name img {width:15px;height:15px;}
 @media(max-width:900px){
   .chat-layout {grid-template-columns:160px minmax(0,1fr);}
   .community-header {flex-wrap:wrap;}
