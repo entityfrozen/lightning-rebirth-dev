@@ -1,18 +1,19 @@
 import { createGlassToggle } from './glass-toggle.js';
+import { createCelestialSky } from './celestial-sky.js';
 
-/** Lightning UI: uncomplicated, dependency-free modules and intentionally visible state. */
+/** Celestial UI: uncomplicated, dependency-free modules and intentionally visible state. */
 const defaultTheme = {
-  accent:'#bb80ff', background:'#100a1b', surface:'#241631',
-  text:'#fff5ff', muted:'#bfaace', line:'#654677',
-  glow:58, radius:17, petals:true
+  accent:'#9e84ff', background:'#080b16', surface:'#171a33',
+  text:'#f7f4ff', muted:'#ada9ce', line:'#49436d',
+  glow:76, radius:20, petals:true
 };
 const defaultLightTheme = {
-  accent:'#7859da', background:'#f5f4fb', surface:'#ffffff',
-  text:'#26223a', muted:'#77718a', line:'#d3cfe4',
-  glow:58, radius:17, petals:false
+  accent:'#795fdf', background:'#f4f5ff', surface:'#ffffff',
+  text:'#25213d', muted:'#706b87', line:'#d5d2ea',
+  glow:62, radius:20, petals:true
 };
 const presets = {
-  Rebirth:{...defaultTheme},
+  Celestial:{...defaultTheme},
   Eclipse:{...defaultTheme, accent:'#9866f1', background:'#0c0a16',surface:'#1b162b',line:'#45405e',glow:36,petals:false},
   Sakura:{...defaultTheme, accent:'#f5a5da', background:'#21121f',surface:'#3b243c',muted:'#edbdde',line:'#955a8c',glow:70},
   Frost:{...defaultTheme, accent:'#8cdbff', background:'#091520',surface:'#142d3a',muted:'#a9c4d6',line:'#416c85',glow:46,petals:false},
@@ -51,20 +52,20 @@ const iconPaths = {
   alert:'<circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 17v.5"/>'
 };
 const navLinks = [
-  ['home','Home','home'],['browse','Browse','compass'],['library','Library','library'],
-  ['ai','AI Assistant','chat'],['community','Community','users'],['studio','Theme Studio','palette'],
-  ['toolkit','Toolkit','tool'],['settings','Settings','settings']
+  ['home','Observatory','spark'],['browse','Discover','compass'],['library','Archive','library'],
+  ['ai','Oracle','chat'],['community','Constellation','users'],['studio','Forge','palette'],
+  ['toolkit','Workshop','tool'],['settings','Control','settings']
 ];
-const channels={general:{title:'general',description:'Anything Lightning. Introduce yourself, talk ideas, share what you are making.'},help:{title:'help-desk',description:'Ask questions and help people get unstuck.'},showcase:{title:'showcase',description:'Show off the themes and projects you are working on.'}};
+const channels={general:{title:'general',description:'Anything Celestial. Introduce yourself, talk ideas, share what you are making.'},help:{title:'help-desk',description:'Ask questions and help people get unstuck.'},showcase:{title:'showcase',description:'Show off the themes and projects you are working on.'}};
 const colorFields=[['accent','Accent'],['background','Background'],['surface','Cards & panels'],['text','Primary text'],['muted','Secondary text'],['line','Borders']];
 const $=(selector)=>document.querySelector(selector);
-const store=(key,value)=>{try{localStorage.setItem('lightning.'+key,JSON.stringify(value));}catch{}};
-const restore=(key,fallback)=>{try{return JSON.parse(localStorage.getItem('lightning.'+key))??fallback;}catch{return fallback;}};
+const store=(key,value)=>{try{localStorage.setItem('celestial.'+key,JSON.stringify(value));}catch{}};
+const restore=(key,fallback)=>{try{return JSON.parse(localStorage.getItem('celestial.'+key)??localStorage.getItem('lightning.'+key))??fallback;}catch{return fallback;}};
 const escapeHTML=(value='')=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const glyph=(name,size=20)=>`<svg class="glyph" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${iconPaths[name]||iconPaths.spark}</svg>`;
 const infoTime=(date)=>{const sec=Math.max(0,(Date.now()-Date.parse(date))/1000);if(sec<60)return 'just now';if(sec<3600)return Math.floor(sec/60)+'m ago';if(sec<86400)return Math.floor(sec/3600)+'h ago';if(sec<604800)return Math.floor(sec/86400)+'d ago';return new Date(date).toLocaleDateString();};
 const validateTheme=(theme)=>{
-  if(!theme||typeof theme!=='object')throw Error('This file does not contain a Lightning theme');
+  if(!theme||typeof theme!=='object')throw Error('This file does not contain a Celestial theme');
   const cleaned={};
   for(const [key] of colorFields){if(typeof theme[key]!=='string'||!/^#[\da-f]{6}$/i.test(theme[key]))throw Error(`Invalid ${key} color`);cleaned[key]=theme[key];}
   cleaned.glow=Math.max(0,Math.min(100,Number(theme.glow)||0));
@@ -72,8 +73,9 @@ const validateTheme=(theme)=>{
   cleaned.petals=Boolean(theme.petals);return cleaned;
 };
 const initialMode = restore('appearance','dark') === 'light' ? 'light' : 'dark';
-const state={view:'home',communityTab:'chat',channel:'general',filter:'all',sort:'new',search:'',user:null,stats:{members:0,drops:0,messages:0},drops:[],messages:[],loaded:false,companion:restore('companion',true),motion:restore('motion',true),mode:initialMode,theme:{...(initialMode==='light'?defaultLightTheme:defaultTheme),...restore(initialMode==='light'?'themeLight':'theme',initialMode==='light'?defaultLightTheme:defaultTheme)},themeName:restore('themeName','My lightning theme'),myThemes:restore('myThemes',[]),savedDrops:restore('savedDrops',[]),notes:restore('notes',''),guestSeen:restore('guestSeen',false),autoDialogue:false,log:[],dialogueIndex:0};
-let eventSource=null,dialogueTimer=null,autoTimer=null;
+const state={view:'home',communityTab:'chat',channel:'general',filter:'all',sort:'new',search:'',user:null,stats:{members:0,drops:0,messages:0},drops:[],messages:[],loaded:false,motion:restore('motion',true),mode:initialMode,theme:{...(initialMode==='light'?defaultLightTheme:defaultTheme),...restore(initialMode==='light'?'themeLight':'theme',initialMode==='light'?defaultLightTheme:defaultTheme)},themeName:restore('themeName','My Celestial theme'),myThemes:restore('myThemes',[]),savedDrops:restore('savedDrops',[]),notes:restore('notes',''),guestSeen:restore('guestSeen',false)};
+let eventSource=null;
+let sky=null;
 let appearanceControl=null;
 
 async function api(route,options={}) {
@@ -94,13 +96,15 @@ function applyTheme(){
   root.style.setProperty('--glow-power',(state.theme.glow/100).toFixed(2));
   root.classList.toggle('without-petals',!state.theme.petals);
   root.classList.toggle('reduce-motion',!state.motion);
-  root.classList.toggle('chan-active',state.companion);
   store(state.mode==='light'?'themeLight':'theme',state.theme);
   appearanceControl?.setThemes({
     dark:state.mode==='dark'?state.theme:restore('theme',defaultTheme),
     light:state.mode==='light'?state.theme:restore('themeLight',defaultLightTheme)
   });
   appearanceControl?.setReducedMotion(!state.motion);
+  sky?.setMode(state.mode);
+  sky?.setMotion(state.motion);
+  sky?.setIntensity(state.theme.petals?1:.33);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content',state.theme.background);
 }
 function setAppearance(next){
@@ -116,82 +120,54 @@ function setAppearance(next){
 }
 function persistPersonal(){store('myThemes',state.myThemes);store('savedDrops',state.savedDrops);store('themeName',state.themeName);}
 function actionButton(label,action,variant='primary',extra='') {return `<button class="btn ${variant}" data-action="${action}" ${extra}>${label}</button>`;}
-const spokenViews = new Set();
 function navigate(view,sub=''){
   if(!navLinks.some(link=>link[0]===view))view='home';
-  const previousView=state.view;
   state.view=view;
   if(view==='community'&&sub)state.communityTab=sub;
   history.replaceState(null,'',`#${view}${view==='community'&&state.communityTab==='drops'?'/drops':''}`);
   $('#sidebar').classList.remove('open');
   render();
   $('#view').scrollTop=0;
-  // She only has something to say when it adds to the page.
-  const lines={
-    home:'Oh, hey. Glad you’re here.',
-    studio:'Pick a color. You can always change it later.',
-    library:'Anything you save ends up here.'
-  };
-  if(state.companion&&previousView!==view&&lines[view]&&!spokenViews.has(view)){
-    spokenViews.add(view);
-    say(lines[view]);
-  }else if(previousView!==view){
-    closeChanDialogue();
-  }
 }
 function updateShell(){
   $('#mainNav').innerHTML=navLinks.map(([id,label,icon])=>`<button class="nav-link ${state.view===id?'selected':''}" data-nav="${id}">${glyph(icon,20)}<span>${label}</span></button>`).join('');
   $('#topLocation').textContent=navLinks.find(n=>n[0]===state.view)?.[1]||'Home';
   $('#profileName').textContent=state.user?.username||'Guest';
-  $('#profileSub').textContent=state.user?'Lightning member':'Sign in to share';
+  $('#profileSub').textContent=state.user?'Celestial member':'Sign in to share';
   $('#profileInitial').textContent=state.user?.username[0].toUpperCase()||'G';
   $('#topAvatar').textContent=state.user?.username[0].toUpperCase()||'G';
   $('#searchInput').value=state.search;
 }
 function render(){
   updateShell();
-  const shell=$('.app-shell');
-  // Park the persistent character nodes before replacing the page markup.
-  // Otherwise switching away from Home would destroy the dialogue and sprite.
-  for (const id of ['mascot','dialogue']) {
-    const element=$('#'+id);
-    if(element && element.parentElement!==shell) shell.append(element);
-  }
   const pages={home:homePage,browse:browsePage,library:libraryPage,ai:aiPage,community:communityPage,studio:studioPage,toolkit:toolkitPage,settings:settingsPage};
   $('#view').innerHTML=pages[state.view]();
-  const showChan=state.companion&&!['community','ai','toolkit'].includes(state.view);
-  shell.classList.toggle('mode-chan',showChan);
-  const dock=$('.desk-hero')||shell;
-  dock.append($('#mascot'));
-  dock.append($('#dialogue'));
-  $('#mascot').setAttribute('aria-hidden',String(!showChan));
-  if(!showChan)closeChanDialogue();
   if(state.view==='community'&&state.communityTab==='chat')scrollChat();
 }
 function pageEyebrow(text){return `<div class="eyebrow">${text}</div>`;}
 function sectionHeader(title,icon,side=''){return `<div class="panel-heading"><div class="panel-title">${glyph(icon,22)}<strong>${title}</strong></div>${side}</div>`;}
 function homePage(){
   const featured=state.drops.slice(0,3);
-  const greeting=state.user ? `Welcome back, ${escapeHTML(state.user.username)}` : 'Your corner of Lightning';
+  const greeting=state.user ? `Welcome back, ${escapeHTML(state.user.username)}` : 'Your universe starts here';
   return `<div class="page home-page home-rework">
     <header class="home-intro"><span class="home-kicker">Your workspace</span><span class="intro-profile"><i></i>${greeting}</span></header>
     <section class="desk-hero" aria-labelledby="deskTitle">
       <div class="desk-copy">
-        <div class="desk-note"><span class="desk-note-line"></span><span>THE GOOD STUFF STARTS HERE</span></div>
-        <h1 id="deskTitle">Make something <em>your own.</em></h1>
-        <p>Try a new theme, browse what people have shared, or settle in and work on an idea.</p>
+        <div class="desk-note"><span class="desk-note-line"></span><span>YOUR CREATIVE UNIVERSE</span></div>
+        <h1 id="deskTitle">Make room for <em>wonder.</em></h1>
+        <p>Create, explore, and make something worth sharing. Everything you need, under one sky.</p>
         <div class="desk-hero-actions">
-          <button class="btn primary" data-nav="studio">Open Theme Studio ${glyph('arrow',16)}</button>
+          <button class="btn primary" data-nav="studio">Enter the Forge ${glyph('arrow',16)}</button>
           <button class="btn secondary" data-nav="community">Visit Community</button>
         </div>
       </div>
-      <div class="desk-hero-side" aria-hidden="true"><span class="hero-signet">LIGHTNING / 06</span></div>
+      <div class="desk-hero-side" aria-hidden="true"><span class="hero-signet">CELESTIAL / ∞</span></div>
     </section>
     <div class="home-columns">
       <section class="home-column" aria-labelledby="quickStartTitle">
         <header class="home-section-heading"><h2 id="quickStartTitle">Pick up here</h2><p>A few good places to start.</p></header>
         <div class="home-actions">
-          <button class="home-action" data-nav="studio">${glyph('palette',22)}<strong>Theme Studio</strong><small>Make Lightning look like yours</small><span class="action-corner">↗</span></button>
+          <button class="home-action" data-nav="studio">${glyph('palette',22)}<strong>Theme Studio</strong><small>Shape your universe</small><span class="action-corner">↗</span></button>
           <button class="home-action" data-nav="browse">${glyph('compass',22)}<strong>Browse themes</strong><small>Find a new look</small><span class="action-corner">↗</span></button>
           <button class="home-action" data-nav="library">${glyph('library',22)}<strong>Library</strong><small>Everything you've saved</small><span class="action-corner">↗</span></button>
           <button class="home-action" data-nav="toolkit">${glyph('pen',22)}<strong>Scratchpad</strong><small>Keep a thought for later</small><span class="action-corner">↗</span></button>
@@ -202,7 +178,7 @@ function homePage(){
         <div class="home-drops">${featured.length ? featured.map(drop=>`<button class="home-drop" data-action="inspect-drop" data-id="${drop.id}"><span class="home-drop-swatch" style="--item-accent:${drop.theme.accent};--item-bg:${drop.theme.background}"></span><span class="home-drop-info"><strong>${escapeHTML(drop.title)}</strong><small>by ${escapeHTML(drop.author)}</small></span>${glyph('chevron',16)}</button>`).join('') : '<div class="saved-empty">No themes have been shared yet. Be the first.</div>'}</div>
       </section>
     </div>
-    <div class="home-note"><p>Lightning is a small place to make, save, and share things.</p><span>${state.stats.members} members · ${state.stats.drops} shared themes</span></div>
+    <div class="home-note"><p>A space to create without limits.</p><span>${state.stats.members} members · ${state.stats.drops} shared themes</span></div>
   </div>`;
 }
 function filterDrops(){
@@ -216,136 +192,47 @@ function filterDrops(){
   else list.sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
   return list;
 }
-function previewArt(theme){return `<div class="drop-art" style="--drop-accent:${theme.accent};--drop-background:${theme.background};--drop-surface:${theme.surface};--drop-line:${theme.line}"><div class="drop-art-grid"></div><span class="drop-bolt">ϟ</span><span class="drop-art-orbit"></span><span class="drop-art-bottom"><i></i><i></i><i></i></span></div>`;}
+function previewArt(theme){return `<div class="drop-art" style="--drop-accent:${theme.accent};--drop-background:${theme.background};--drop-surface:${theme.surface};--drop-line:${theme.line}"><div class="drop-art-grid"></div><span class="drop-bolt">✦</span><span class="drop-art-orbit"></span><span class="drop-art-bottom"><i></i><i></i><i></i></span></div>`;}
 function dropCard(d){return `<article class="drop-card">${previewArt(d.theme)}<div class="drop-card-body"><div class="drop-card-top"><span class="type-tag">THEME</span><span class="drop-author">by ${escapeHTML(d.author)}</span></div><h3>${escapeHTML(d.title)}</h3><p>${escapeHTML(d.description)}</p><div class="drop-card-bottom"><span>${glyph('heart',14)} ${d.likes}</span><span>${glyph('download',14)} ${d.downloads}</span><button class="card-arrow" data-action="inspect-drop" data-id="${d.id}" aria-label="View ${escapeHTML(d.title)}">${glyph('arrow',19)}</button></div></div></article>`;}
 function dropList(){const items=filterDrops();return `<div class="drop-cards">${items.map(dropCard).join('')}</div>${items.length?'':`<div class="empty-state">${glyph('search',28)}<strong>No Drops here yet.</strong><p>Try a different filter, or publish the first one.</p></div>`}`;}
-function browsePage(){return `<div class="page inner-page"><div class="page-title-row"><div>${pageEyebrow('BROWSE')}<h1>Browse themes</h1><p>Find themes shared by the community.</p></div><button class="btn primary" data-nav="studio">${glyph('plus',17)} Make a theme</button></div><div class="content-panel browser-intro"><div><h2>Community themes</h2><p>Preview, apply, and save themes.</p></div><div class="browser-bolts">ϟ ✦ ϟ</div></div><div class="filter-row"><div class="chip-group">${[['all','All Drops'],['starter','Starter Packs'],['favorites','Saved'],['mine','My Drops']].map(([id,name])=>`<button class="chip ${state.filter===id?'active':''}" data-filter="${id}">${name}</button>`).join('')}</div><label class="sort-label">Sort <select id="dropSort"><option value="new" ${state.sort==='new'?'selected':''}>Newest</option><option value="popular" ${state.sort==='popular'?'selected':''}>Popular</option></select></label></div>${dropList()}</div>`;}
-function libraryPage(){const saved=state.drops.filter(d=>state.savedDrops.includes(d.id));return `<div class="page inner-page"><div class="page-title-row"><div>${pageEyebrow('COLLECTION / LIBRARY')}<h1>Your <em>library.</em></h1><p>All the little things you wanted to keep.</p></div><button class="btn secondary" data-nav="browse">${glyph('compass',17)} Explore Drops</button></div><div class="stat-strip"><div><span>COLLECTED DROPS</span><strong>${saved.length}</strong></div><div><span>SAVED THEMES</span><strong>${state.myThemes.length}</strong></div><div><span>YOUR SPACE</span><strong>LOCAL</strong></div></div><h2 class="section-h2">Saved Drops</h2>${saved.length?`<div class="drop-cards">${saved.map(dropCard).join('')}</div>`:'<div class="empty-state"><strong>Your collection is empty.</strong><p>Find something you love in Community Drops, then save it here.</p><button class="btn primary" data-nav="browse">Browse themes</button></div>'}<h2 class="section-h2">My Theme Designs</h2>${myThemesMarkup()}</div>`;}
-function aiPage(){return `<div class="page inner-page ai-page"><div class="page-title-row"><div>${pageEyebrow('WORKSPACE / ASSISTANT')}<h1>AI <em>Assistant.</em></h1><p>One place for questions, ideas and creating.</p></div><span class="connection-badge">${glyph('alert',15)} Not set up</span></div><div class="ai-shell"><div class="ai-center"><span class="assistant-orb">${glyph('spark',43)}</span><h2>Assistant not set up yet</h2><p>An AI provider hasn't been configured on this server. You can still use the rest of Lightning.</p><div class="prompt-ideas"><button data-nav="studio">${glyph('palette',17)} Make a new theme</button><button data-action="open-drops">${glyph('gift',17)} Explore community Drops</button><button data-nav="toolkit">${glyph('tool',17)} Open the Toolkit</button></div></div><div class="ai-input-bar"><input disabled placeholder="Connect a server-side AI provider to start chatting…"><button disabled class="btn primary">Send ${glyph('arrow',16)}</button></div></div></div>`;}
+function browsePage(){return `<div class="page inner-page"><div class="page-title-row"><div>${pageEyebrow('BROWSE')}<h1>Browse themes</h1><p>Find themes shared by the community.</p></div><button class="btn primary" data-nav="studio">${glyph('plus',17)} Make a theme</button></div><div class="content-panel browser-intro"><div><h2>Community themes</h2><p>Preview, apply, and save themes.</p></div><div class="browser-bolts">✧ ✦ ✧</div></div><div class="filter-row"><div class="chip-group">${[['all','All Drops'],['starter','Starter Packs'],['favorites','Saved'],['mine','My Drops']].map(([id,name])=>`<button class="chip ${state.filter===id?'active':''}" data-filter="${id}">${name}</button>`).join('')}</div><label class="sort-label">Sort <select id="dropSort"><option value="new" ${state.sort==='new'?'selected':''}>Newest</option><option value="popular" ${state.sort==='popular'?'selected':''}>Popular</option></select></label></div>${dropList()}</div>`;}
+function libraryPage(){const saved=state.drops.filter(d=>state.savedDrops.includes(d.id));return `<div class="page inner-page"><div class="page-title-row"><div>${pageEyebrow('COLLECTION / LIBRARY')}<h1>Your <em>archive.</em></h1><p>All the little things you wanted to keep.</p></div><button class="btn secondary" data-nav="browse">${glyph('compass',17)} Explore Drops</button></div><div class="stat-strip"><div><span>COLLECTED DROPS</span><strong>${saved.length}</strong></div><div><span>SAVED THEMES</span><strong>${state.myThemes.length}</strong></div><div><span>YOUR SPACE</span><strong>LOCAL</strong></div></div><h2 class="section-h2">Saved Drops</h2>${saved.length?`<div class="drop-cards">${saved.map(dropCard).join('')}</div>`:'<div class="empty-state"><strong>Your collection is empty.</strong><p>Find something you love in Community Drops, then save it here.</p><button class="btn primary" data-nav="browse">Browse themes</button></div>'}<h2 class="section-h2">My Theme Designs</h2>${myThemesMarkup()}</div>`;}
+function aiPage(){return `<div class="page inner-page ai-page"><div class="page-title-row"><div>${pageEyebrow('WORKSPACE / ASSISTANT')}<h1>Meet <em>Oracle.</em></h1><p>One place for questions, ideas and creating.</p></div><span class="connection-badge">${glyph('alert',15)} Not set up</span></div><div class="ai-shell"><div class="ai-center"><span class="assistant-orb">${glyph('spark',43)}</span><h2>Oracle isn't connected yet</h2><p>An AI provider hasn't been configured on this server. You can still use the rest of Celestial.</p><div class="prompt-ideas"><button data-nav="studio">${glyph('palette',17)} Make a new theme</button><button data-action="open-drops">${glyph('gift',17)} Explore community Drops</button><button data-nav="toolkit">${glyph('tool',17)} Open the Toolkit</button></div></div><div class="ai-input-bar"><input disabled placeholder="Connect a server-side AI provider to start chatting…"><button disabled class="btn primary">Send ${glyph('arrow',16)}</button></div></div></div>`;}
 function renderMessages(){
   if(!state.messages.length)return `<div class="chat-empty"><span>${glyph('chat',28)}</span><h3>Start the conversation.</h3><p>This channel is yours to fill. Say hello!</p></div>`;
   return state.messages.map(message=>`<div class="message-row"><span class="message-avatar">${escapeHTML(message.author[0].toUpperCase())}</span><div class="message-content"><div class="message-head"><strong>${escapeHTML(message.author)}</strong><span>${infoTime(message.createdAt)}</span></div><p>${escapeHTML(message.text)}</p></div></div>`).join('');
 }
 function scrollChat(){const area=$('#messageList');if(area)area.scrollTop=area.scrollHeight;}
 function communityPage(){return `<div class="page community-page"><div class="community-header"><div>${pageEyebrow('PEOPLE / COMMUNITY')}<h1>Made better <em>together.</em></h1><p>Talk, share, remix. This is your place.</p></div><div class="community-tabs"><button class="segmented ${state.communityTab==='chat'?'active':''}" data-community-tab="chat">${glyph('chat',17)} Chat</button><button class="segmented ${state.communityTab==='drops'?'active':''}" data-community-tab="drops">${glyph('gift',17)} Drops</button></div></div>${state.communityTab==='chat'?communityChat():communityDrops()}</div>`;}
-function communityChat(){const channel=channels[state.channel];return `<section class="chat-layout"><aside class="chat-channels"><div class="chat-server"><span>ϟ</span><strong>Lightning Hub</strong><small>COMMUNITY</small></div><div class="chat-channel-caption">TEXT CHANNELS</div>${Object.entries(channels).map(([key,value])=>`<button class="channel ${state.channel===key?'selected':''}" data-channel="${key}"><span>#</span>${value.title}</button>`).join('')}<div class="channel-footer">${glyph('shield',17)}<span>A welcoming place to create.</span></div></aside><div class="chat-main"><div class="chat-main-header"><span class="hash">#</span><strong>${channel.title}</strong><span>${channel.description}</span></div><div class="message-list" id="messageList" role="log" aria-live="polite">${renderMessages()}</div>${state.user?`<form id="chatForm" class="chat-composer"><input id="chatInput" maxlength="600" placeholder="Message #${channel.title}" autocomplete="off" aria-label="Chat message" required><button type="submit" aria-label="Send message">${glyph('arrowUp',20)}</button></form>`:`<div class="guest-composer"><span>Want to join the conversation?</span><button class="btn primary small" data-action="show-login">Sign in</button></div>`}</div><aside class="chat-about"><span class="overline">ABOUT THIS CHANNEL</span><span class="about-icon">${glyph('users',28)}</span><h3>A little corner of Lightning.</h3><p>${channel.description}</p><hr><span class="overline">HOUSE RULES</span><div class="rule">✦ Be kind to each other</div><div class="rule">✦ Keep the channel on-topic</div><div class="rule">✦ Share your own work</div><div class="rule">✦ No spam or personal data</div><div class="presence">${glyph('shield',17)} Messages are stored on this server</div></aside></section>`;}
+function communityChat(){const channel=channels[state.channel];return `<section class="chat-layout"><aside class="chat-channels"><div class="chat-server"><span>✦</span><strong>Celestial Hub</strong><small>COMMUNITY</small></div><div class="chat-channel-caption">TEXT CHANNELS</div>${Object.entries(channels).map(([key,value])=>`<button class="channel ${state.channel===key?'selected':''}" data-channel="${key}"><span>#</span>${value.title}</button>`).join('')}<div class="channel-footer">${glyph('shield',17)}<span>A welcoming place to create.</span></div></aside><div class="chat-main"><div class="chat-main-header"><span class="hash">#</span><strong>${channel.title}</strong><span>${channel.description}</span></div><div class="message-list" id="messageList" role="log" aria-live="polite">${renderMessages()}</div>${state.user?`<form id="chatForm" class="chat-composer"><input id="chatInput" maxlength="600" placeholder="Message #${channel.title}" autocomplete="off" aria-label="Chat message" required><button type="submit" aria-label="Send message">${glyph('arrowUp',20)}</button></form>`:`<div class="guest-composer"><span>Want to join the conversation?</span><button class="btn primary small" data-action="show-login">Sign in</button></div>`}</div><aside class="chat-about"><span class="overline">ABOUT THIS CHANNEL</span><span class="about-icon">${glyph('users',28)}</span><h3>A space to connect.</h3><p>${channel.description}</p><hr><span class="overline">HOUSE RULES</span><div class="rule">✦ Be kind to each other</div><div class="rule">✦ Keep the channel on-topic</div><div class="rule">✦ Share your own work</div><div class="rule">✦ No spam or personal data</div><div class="presence">${glyph('shield',17)} Messages are stored on this server</div></aside></section>`;}
 function communityDrops(){return `<div class="drops-community"><div class="drops-lead"><div><div class="overline">COMMUNITY DROP ZONE</div><h2>Share the vibe.</h2><p>Publish a theme, find a new look, and show some love to other creators.</p></div><button class="btn primary" data-action="publish-theme">${glyph('upload',17)} Publish my theme</button></div><div class="drop-filters"><div class="chip-group">${[['all','Explore'],['starter','Official'],['favorites','Saved'],['mine','My uploads']].map(([id,label])=>`<button class="chip ${state.filter===id?'active':''}" data-filter="${id}">${label}</button>`).join('')}</div><label class="sort-label">Order <select id="dropSort"><option value="new" ${state.sort==='new'?'selected':''}>Newest</option><option value="popular" ${state.sort==='popular'?'selected':''}>Most loved</option></select></label></div>${dropList()}</div>`;}
 function colorControl(key,name){return `<label class="color-control"><span class="color-name">${name}</span><span class="color-input-wrap"><span class="color-hex" data-color-label="${key}">${state.theme[key]}</span><input type="color" data-theme-field="${key}" value="${state.theme[key]}" aria-label="${name} color"></span></label>`;}
-function themePreview(){return `<div class="theme-mini-app"><div class="mini-side"><div class="mini-logo"><img src="/assets/lightning-mark.svg" alt=""> Lightning</div><span class="mini-menu selected">⌂ &nbsp; Home</span><span class="mini-menu">◇ &nbsp; Explore</span><span class="mini-menu">▤ &nbsp; Library</span><span class="mini-menu">✧ &nbsp; Studio</span><span class="mini-profile">◉ &nbsp; Your profile</span></div><div class="mini-work"><div class="mini-top"><span>⌁ &nbsp; HOME / LIGHTNING</span><i>✧</i></div><div class="mini-hero"><span>✦ LIGHTNING</span><h3>Looks like you.</h3><p>A little more personality, a lot more color.</p></div><div class="mini-panels"><div class="mini-panel"><strong>What's new</strong><span class="mini-bar long"></span><span class="mini-bar"></span><span class="mini-bar short"></span></div><div class="mini-panel"><strong>Quick actions</strong><div class="mini-squares"><span>✦</span><span>◇</span><span>▦</span><span>⚙</span></div></div></div></div></div>`;}
-function studioPage(){return `<div class="page inner-page studio-page"><div class="page-title-row"><div>${pageEyebrow('CREATIVE / DESIGN LAB')}<h1>Theme <em>Studio.</em></h1><p>Build something that feels completely yours. Everything updates live.</p></div><div class="studio-head-actions"><button class="btn secondary" data-action="import-theme">${glyph('upload',17)} Import</button><button class="btn primary" data-action="export-theme">${glyph('download',17)} Export JSON</button></div></div><div class="studio-layout"><div class="studio-controls panel"><div class="studio-block-title"><div><span class="mini-overline">01 / START HERE</span><h3>Choose a direction</h3></div>${glyph('spark',19)}</div><div class="preset-grid">${Object.entries(presets).map(([name,theme])=>`<button class="preset" data-preset="${name}"><span class="preset-orbs" style="--preset-a:${theme.accent};--preset-b:${theme.background}"></span><span>${name}</span></button>`).join('')}</div><div class="studio-block-title second"><div><span class="mini-overline">02 / THE DETAILS</span><h3>Color palette</h3></div>${glyph('palette',19)}</div><div class="color-controls">${colorFields.map(([key,name])=>colorControl(key,name)).join('')}</div><div class="studio-block-title second"><div><span class="mini-overline">03 / FINISHING TOUCHES</span><h3>The little extras</h3></div>${glyph('sliders',19)}</div><div class="range-control"><label for="glowRange">Ambient glow <span id="glowValue">${state.theme.glow}%</span></label><input type="range" min="0" max="100" id="glowRange" data-theme-field="glow" value="${state.theme.glow}"></div><div class="range-control"><label for="radiusRange">Corner softness <span id="radiusValue">${state.theme.radius}px</span></label><input type="range" min="4" max="28" id="radiusRange" data-theme-field="radius" value="${state.theme.radius}"></div><label class="switch-row"><span>Blossom decorations<small>A subtle sakura touch</small></span><input type="checkbox" data-theme-field="petals" ${state.theme.petals?'checked':''}><i></i></label></div><div class="studio-preview-column"><section class="studio-preview panel"><div class="preview-heading"><div><span class="mini-overline">LIVE PREVIEW</span><h3>See your theme in action</h3></div><span class="live-dot">LIVE</span></div>${themePreview()}<p class="preview-note">The actual app uses these colors too. This isn't a static screenshot.</p></section><section class="panel studio-save-panel"><div><span class="mini-overline">YOUR CREATION</span><h3>Give it a name.</h3><p>Save it here, export it as a file, or release it as a Community Drop.</p></div><label class="theme-name-label">Theme name <input id="themeName" maxlength="46" value="${escapeHTML(state.themeName)}" placeholder="Midnight bloom"></label><div class="studio-save-actions"><button class="btn secondary" data-action="save-theme">${glyph('save',17)} Save to Library</button><button class="btn primary" data-action="publish-theme">${glyph('upload',17)} Publish Drop</button></div></section></div></div><h2 class="section-h2">Your saved designs</h2>${myThemesMarkup()}<input hidden type="file" id="themeFileInput" accept=".json,application/json"></div>`;}
+function themePreview(){return `<div class="theme-mini-app"><div class="mini-side"><div class="mini-logo"><img src="/assets/celestial-star.svg" alt=""> Celestial</div><span class="mini-menu selected">⌂ &nbsp; Home</span><span class="mini-menu">◇ &nbsp; Explore</span><span class="mini-menu">▤ &nbsp; Library</span><span class="mini-menu">✧ &nbsp; Studio</span><span class="mini-profile">◉ &nbsp; Your profile</span></div><div class="mini-work"><div class="mini-top"><span>⌁ &nbsp; HOME / CELESTIAL</span><i>✧</i></div><div class="mini-hero"><span>✦ CELESTIAL</span><h3>Looks like you.</h3><p>A little more personality, a lot more color.</p></div><div class="mini-panels"><div class="mini-panel"><strong>What's new</strong><span class="mini-bar long"></span><span class="mini-bar"></span><span class="mini-bar short"></span></div><div class="mini-panel"><strong>Quick actions</strong><div class="mini-squares"><span>✦</span><span>◇</span><span>▦</span><span>⚙</span></div></div></div></div></div>`;}
+function studioPage(){return `<div class="page inner-page studio-page"><div class="page-title-row"><div>${pageEyebrow('CREATIVE / DESIGN LAB')}<h1>The <em>Forge.</em></h1><p>Build something that feels completely yours. Everything updates live.</p></div><div class="studio-head-actions"><button class="btn secondary" data-action="import-theme">${glyph('upload',17)} Import</button><button class="btn primary" data-action="export-theme">${glyph('download',17)} Export JSON</button></div></div><div class="studio-layout"><div class="studio-controls panel"><div class="studio-block-title"><div><span class="mini-overline">01 / START HERE</span><h3>Choose a direction</h3></div>${glyph('spark',19)}</div><div class="preset-grid">${Object.entries(presets).map(([name,theme])=>`<button class="preset" data-preset="${name}"><span class="preset-orbs" style="--preset-a:${theme.accent};--preset-b:${theme.background}"></span><span>${name}</span></button>`).join('')}</div><div class="studio-block-title second"><div><span class="mini-overline">02 / THE DETAILS</span><h3>Color palette</h3></div>${glyph('palette',19)}</div><div class="color-controls">${colorFields.map(([key,name])=>colorControl(key,name)).join('')}</div><div class="studio-block-title second"><div><span class="mini-overline">03 / FINISHING TOUCHES</span><h3>The little extras</h3></div>${glyph('sliders',19)}</div><div class="range-control"><label for="glowRange">Ambient glow <span id="glowValue">${state.theme.glow}%</span></label><input type="range" min="0" max="100" id="glowRange" data-theme-field="glow" value="${state.theme.glow}"></div><div class="range-control"><label for="radiusRange">Corner softness <span id="radiusValue">${state.theme.radius}px</span></label><input type="range" min="4" max="28" id="radiusRange" data-theme-field="radius" value="${state.theme.radius}"></div><label class="switch-row"><span>Cosmic atmosphere<small>Enable the nebula and stars</small></span><input type="checkbox" data-theme-field="petals" ${state.theme.petals?'checked':''}><i></i></label></div><div class="studio-preview-column"><section class="studio-preview panel"><div class="preview-heading"><div><span class="mini-overline">LIVE PREVIEW</span><h3>See your theme in action</h3></div><span class="live-dot">LIVE</span></div>${themePreview()}<p class="preview-note">The actual app uses these colors too. This isn't a static screenshot.</p></section><section class="panel studio-save-panel"><div><span class="mini-overline">YOUR CREATION</span><h3>Give it a name.</h3><p>Save it here, export it as a file, or release it as a Community Drop.</p></div><label class="theme-name-label">Theme name <input id="themeName" maxlength="46" value="${escapeHTML(state.themeName)}" placeholder="Midnight bloom"></label><div class="studio-save-actions"><button class="btn secondary" data-action="save-theme">${glyph('save',17)} Save to Library</button><button class="btn primary" data-action="publish-theme">${glyph('upload',17)} Publish Drop</button></div></section></div></div><h2 class="section-h2">Your saved designs</h2>${myThemesMarkup()}<input hidden type="file" id="themeFileInput" accept=".json,application/json"></div>`;}
 function myThemesMarkup(){return state.myThemes.length?`<div class="saved-theme-grid">${state.myThemes.map((entry,index)=>`<div class="saved-theme" style="--saved-accent:${entry.theme.accent};--saved-bg:${entry.theme.background}"><span class="saved-dot"></span><div><strong>${escapeHTML(entry.name)}</strong><small>Saved in this browser</small></div><button data-action="apply-saved-theme" data-index="${index}">Apply</button><button data-action="delete-saved-theme" data-index="${index}" aria-label="Delete theme">×</button></div>`).join('')}</div>`:'<div class="saved-empty">Nothing saved yet. Your designs will appear here.</div>';}
-function toolkitPage(){return `<div class="page inner-page"><div class="page-title-row"><div>${pageEyebrow('TOOLS / WORKBENCH')}<h1>Your <em>toolkit.</em></h1><p>A place for your scratch work and shortcuts.</p></div></div><div class="toolkit-grid"><div class="panel note-panel">${sectionHeader('Scratchpad','pen')}<p class="muted">Quick ideas stay saved in this browser as you type.</p><textarea id="notesArea" spellcheck="false" placeholder="That one idea you don't want to forget...">${escapeHTML(state.notes)}</textarea><span class="note-saved">✦ Autosaved locally</span></div><div class="panel toolkit-shortcuts">${sectionHeader('Shortcuts','spark')}<button data-nav="studio">${glyph('palette',20)} <span>Open Theme Studio<small>Customize the whole interface</small></span>${glyph('arrow',16)}</button><button data-action="open-drops">${glyph('gift',20)} <span>Community Drops<small>Discover new theme packages</small></span>${glyph('arrow',16)}</button><button data-action="export-theme">${glyph('download',20)} <span>Export current theme<small>Save a portable JSON package</small></span>${glyph('arrow',16)}</button><button data-nav="settings">${glyph('settings',20)} <span>Preferences<small>Companion mode and accessibility</small></span>${glyph('arrow',16)}</button></div></div></div>`;}
-function settingsPage(){return `<div class="page inner-page settings-page"><div class="page-title-row"><div>${pageEyebrow('WORKSPACE / PREFERENCES')}<h1>Your <em>space.</em></h1><p>Everything how you like it, down to the last detail.</p></div></div><div class="setting-groups"><section class="panel setting-panel">${sectionHeader('Companion','spark')}<div class="setting-switch-row"><div class="setting-face"><img src="/assets/lightning-chan-idle.png" alt="Lightning-chan portrait"></div><div class="setting-description"><h3>Lightning-chan Mode</h3><p>Shows Lightning-chan around the app. She has a few things to say, but stays out of your way.</p><span class="setting-label">OPTIONAL · ON BY DEFAULT</span></div><label class="switch-control"><input id="companionToggle" type="checkbox" ${state.companion?'checked':''}><i></i><span class="sr-only">Toggle Lightning-chan Mode</span></label></div></section><section class="panel setting-panel">${sectionHeader('Appearance','palette')}<div class="setting-row mode-setting"><div><strong>Day / Night</strong><p class="mode-setting-hint">Use the glass switch in the header, or change the mode here. Each keeps its own Theme Studio palette.</p></div><button type="button" data-action="toggle-appearance">Switch to ${state.mode==='dark'?'day':'night'}</button></div><div class="setting-row"><div><strong>Theme Studio</strong><p>Edit the active colors, panels and glow.</p></div><button class="btn secondary" data-nav="studio">Customize ${glyph('arrow',15)}</button></div><div class="setting-row"><div><strong>Interface animations</strong><p>Turn off motion and moving effects.</p></div><label class="switch-control"><input id="motionToggle" type="checkbox" ${state.motion?'checked':''}><i></i><span class="sr-only">Toggle animations</span></label></div><div class="setting-row"><div><strong>Reset visual theme</strong><p>Return to the original Rebirth palette.</p></div><button class="btn secondary" data-action="reset-theme">Reset theme</button></div></section><section class="panel setting-panel">${sectionHeader('Account','shield')}<div class="setting-row"><div><strong>${state.user?escapeHTML(state.user.username):'Guest session'}</strong><p>${state.user?'Signed in to this Lightning server. Your shared posts and Drops are stored here.':'Guest mode lets you preview. Sign in to chat and publish.'}</p></div>${state.user?`<button class="btn secondary" data-action="logout">${glyph('logout',16)} Sign out</button>`:`<button class="btn primary" data-action="show-login">Sign in</button>`}</div></section></div></div>`;}
+function toolkitPage(){return `<div class="page inner-page"><div class="page-title-row"><div>${pageEyebrow('TOOLS / WORKBENCH')}<h1>Your <em>workshop.</em></h1><p>A place for your scratch work and shortcuts.</p></div></div><div class="toolkit-grid"><div class="panel note-panel">${sectionHeader('Scratchpad','pen')}<p class="muted">Quick ideas stay saved in this browser as you type.</p><textarea id="notesArea" spellcheck="false" placeholder="That one idea you don't want to forget...">${escapeHTML(state.notes)}</textarea><span class="note-saved">✦ Autosaved locally</span></div><div class="panel toolkit-shortcuts">${sectionHeader('Shortcuts','spark')}<button data-nav="studio">${glyph('palette',20)} <span>Open Theme Studio<small>Customize the whole interface</small></span>${glyph('arrow',16)}</button><button data-action="open-drops">${glyph('gift',20)} <span>Community Drops<small>Discover new theme packages</small></span>${glyph('arrow',16)}</button><button data-action="export-theme">${glyph('download',20)} <span>Export current theme<small>Save a portable JSON package</small></span>${glyph('arrow',16)}</button><button data-nav="settings">${glyph('settings',20)} <span>Preferences<small>Motion and appearance controls</small></span>${glyph('arrow',16)}</button></div></div></div>`;}
+function settingsPage(){return `<div class="page inner-page settings-page"><div class="page-title-row"><div>${pageEyebrow('WORKSPACE / PREFERENCES')}<h1>Mission <em>control.</em></h1><p>Everything how you like it, down to the last detail.</p></div></div><div class="setting-groups"><section class="panel setting-panel">${sectionHeader('Appearance','palette')}<div class="setting-row mode-setting"><div><strong>Day / Night</strong><p class="mode-setting-hint">Use the glass switch in the header, or change the mode here. Each keeps its own Theme Studio palette.</p></div><button type="button" data-action="toggle-appearance">Switch to ${state.mode==='dark'?'day':'night'}</button></div><div class="setting-row"><div><strong>Theme Studio</strong><p>Edit the active colors, panels and glow.</p></div><button class="btn secondary" data-nav="studio">Customize ${glyph('arrow',15)}</button></div><div class="setting-row"><div><strong>Interface animations</strong><p>Turn off motion and moving effects.</p></div><label class="switch-control"><input id="motionToggle" type="checkbox" ${state.motion?'checked':''}><i></i><span class="sr-only">Toggle animations</span></label></div><div class="setting-row"><div><strong>Reset visual theme</strong><p>Restore Celestial's default palette.</p></div><button class="btn secondary" data-action="reset-theme">Reset theme</button></div></section><section class="panel setting-panel">${sectionHeader('Account','shield')}<div class="setting-row"><div><strong>${state.user?escapeHTML(state.user.username):'Guest session'}</strong><p>${state.user?'Signed in to this Celestial server. Your shared posts and Drops are stored here.':'Guest mode lets you preview. Sign in to chat and publish.'}</p></div>${state.user?`<button class="btn secondary" data-action="logout">${glyph('logout',16)} Sign out</button>`:`<button class="btn primary" data-action="show-login">Sign in</button>`}</div></section></div></div>`;}
 function renderLogin(mode='login',mandatory=false,error=''){
   const register=mode==='register';
-  $('#authLayer').innerHTML=`<div class="auth-overlay"><div class="auth-frame"><section class="auth-art"><div class="auth-logo"><img src="/assets/lightning-mark.svg" alt="">Lightning<span>REBIRTH</span></div><div class="auth-light"></div><img class="auth-character" src="/assets/lightning-chan-wave.png" alt="Lightning-chan waving"><div class="auth-art-caption"><span>✦ WELCOME TO LIGHTNING</span><h2>Find your<br>kind of place.</h2><p>Build things, trade themes, and make yourself at home.</p></div></section><section class="auth-form-side"><div class="auth-top"><span>LIGHTNING // ACCOUNT</span>${!mandatory?`<button class="close-auth" data-action="close-auth" aria-label="Close login">×</button>`:''}</div><div class="auth-form-center"><div class="auth-mini-mark"><img src="/assets/lightning-mark.svg" alt=""></div><div class="mini-overline">${register?'JOIN THE COMMUNITY':'GOOD TO SEE YOU AGAIN'}</div><h1>${register?'Make yourself <em>at home.</em>':'Welcome <em>back.</em>'}</h1><p class="auth-sub">${register?'Create an account to join the chat and share your themes.':'Sign in to pick up where you left off.'}</p>${error?`<div class="form-error" role="alert">${escapeHTML(error)}</div>`:''}<form id="authForm" data-mode="${mode}"><label>USERNAME<input name="username" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" placeholder="Your username" required autofocus></label><label>PASSWORD<input name="password" type="password" autocomplete="${register?'new-password':'current-password'}" minlength="8" maxlength="128" placeholder="At least 8 characters" required></label><button class="btn primary auth-submit" type="submit">${register?'Create my account':'Sign in'} ${glyph('arrow',18)}</button></form><div class="auth-swap">${register?'Already have an account?':'New to Lightning?'} <button data-action="switch-auth" data-mode="${register?'login':'register'}">${register?'Sign in':'Create an account'}</button></div><div class="auth-divider">or</div><button class="guest-button" data-action="guest">Continue as guest ${glyph('arrow',16)}</button><p class="auth-disclaimer">Accounts belong to this server. No email is required. Guest mode can browse, but can't post.</p></div><div class="auth-bottom">© LIGHTNING REBIRTH <span>✦ BUILT FOR CREATORS</span></div></section></div></div>`;
+  $('#authLayer').innerHTML=`<div class="auth-overlay"><div class="auth-frame"><section class="auth-art"><div class="auth-logo"><img src="/assets/celestial-star.svg" alt="">Celestial<span>REBIRTH</span></div><div class="auth-light"></div><div class="auth-art-caption"><span>✦ WELCOME TO CELESTIAL</span><h2>Find your<br>kind of place.</h2><p>Build things, trade themes, and make yourself at home.</p></div></section><section class="auth-form-side"><div class="auth-top"><span>CELESTIAL // ACCOUNT</span>${!mandatory?`<button class="close-auth" data-action="close-auth" aria-label="Close login">×</button>`:''}</div><div class="auth-form-center"><div class="auth-mini-mark"><img src="/assets/celestial-star.svg" alt=""></div><div class="mini-overline">${register?'JOIN THE COMMUNITY':'GOOD TO SEE YOU AGAIN'}</div><h1>${register?'Make yourself <em>at home.</em>':'Welcome <em>back.</em>'}</h1><p class="auth-sub">${register?'Create an account to join the chat and share your themes.':'Sign in to pick up where you left off.'}</p>${error?`<div class="form-error" role="alert">${escapeHTML(error)}</div>`:''}<form id="authForm" data-mode="${mode}"><label>USERNAME<input name="username" autocomplete="username" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" placeholder="Your username" required autofocus></label><label>PASSWORD<input name="password" type="password" autocomplete="${register?'new-password':'current-password'}" minlength="8" maxlength="128" placeholder="At least 8 characters" required></label><button class="btn primary auth-submit" type="submit">${register?'Create my account':'Sign in'} ${glyph('arrow',18)}</button></form><div class="auth-swap">${register?'Already have an account?':'New to Celestial?'} <button data-action="switch-auth" data-mode="${register?'login':'register'}">${register?'Sign in':'Create an account'}</button></div><div class="auth-divider">or</div><button class="guest-button" data-action="guest">Continue as guest ${glyph('arrow',16)}</button><p class="auth-disclaimer">Accounts belong to this server. No email is required. Guest mode can browse, but can't post.</p></div><div class="auth-bottom">© CELESTIAL REBIRTH <span>✦ BUILT FOR CREATORS</span></div></section></div></div>`;
   $('#authForm [name="username"]')?.focus();
 }
 function closeAuth(){ $('#authLayer').innerHTML=''; }
-function showModal(content){$('#modalLayer').innerHTML=`<div class="modal-backdrop" data-action="close-modal"><div class="modal-panel" role="dialog" aria-modal="true" aria-label="Lightning detail">${content}</div></div>`;}
+function showModal(content){$('#modalLayer').innerHTML=`<div class="modal-backdrop" data-action="close-modal"><div class="modal-panel" role="dialog" aria-modal="true" aria-label="Celestial detail">${content}</div></div>`;}
 function closeModal(){$('#modalLayer').innerHTML='';}
 function inspectDrop(id){const drop=state.drops.find(d=>d.id===id);if(!drop)return toast('Drop not found','bad');showModal(`<div class="modal-head"><span class="mini-overline">COMMUNITY DROP / THEME</span><button class="modal-x" data-action="close-modal">×</button></div><div class="modal-hero">${previewArt(drop.theme)}</div><div class="modal-details"><h2>${escapeHTML(drop.title)}</h2><div class="modal-byline">by ${escapeHTML(drop.author)} · ${infoTime(drop.createdAt)}</div><p>${escapeHTML(drop.description)}</p><div class="modal-colors">${colorFields.slice(0,4).map(([key])=>`<span style="background:${drop.theme[key]}" title="${key}: ${drop.theme[key]}"></span>`).join('')}</div><div class="modal-stats">${glyph('heart',16)} ${drop.likes} likes &nbsp;&nbsp; ${glyph('download',16)} ${drop.downloads} installs</div><div class="modal-actions"><button class="btn primary" data-action="apply-drop" data-id="${drop.id}">${glyph('palette',17)} Apply theme</button><button class="btn secondary" data-action="download-drop" data-id="${drop.id}">${glyph('download',17)} Download</button><button class="btn icon-label" data-action="save-drop" data-id="${drop.id}">${glyph('library',17)} ${state.savedDrops.includes(drop.id)?'Saved':'Save'}</button></div><div class="modal-actions secondary-actions"><button class="text-btn" data-action="star-drop" data-id="${drop.id}">${glyph('heart',15)} ${drop.liked?'Unlike':'Like'} this Drop</button>${state.user?.id===drop.ownerId?`<button class="text-btn danger" data-action="remove-drop" data-id="${drop.id}">${glyph('trash',15)} Delete my Drop</button>`:''}</div></div>`);}
-function packageTheme(name=state.themeName,theme=state.theme){return {format:'lightning.theme',version:1,name:name.trim()||'My Lightning theme',author:state.user?.username||'Local designer',theme:validateTheme(theme)};}
+function packageTheme(name=state.themeName,theme=state.theme){return {format:'celestial.theme',version:1,name:name.trim()||'My Celestial theme',author:state.user?.username||'Local designer',theme:validateTheme(theme)};}
 function downloadJson(filename,data){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});downloadBlob(filename,blob);}
 function downloadBlob(filename,blob){const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-// Sixteen complete character drawings live in one 4 x 4 sprite sheet.
-// Rows are expressions; columns are closed, small, open and wide mouth.
-const chanExpressions = ['neutral', 'happy', 'surprised', 'thinking'];
-const chan = { expression:'neutral', mouth:0, typing:false, finished:true, line:'' };
-let chanIdleTimer = null;
-let chanTalkTick = 0;
-const chanReducedMotion = () => !state.motion || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-function setChanFrame(expression = chan.expression, mouth = 0) {
-  const sprite = $('#mascotSprite');
-  if (!sprite) return;
-  chan.expression = chanExpressions.includes(expression) ? expression : 'neutral';
-  chan.mouth = Math.min(3, Math.max(0, Math.trunc(mouth)));
-  const row = chanExpressions.indexOf(chan.expression);
-  sprite.style.setProperty('--sprite-x', (chan.mouth * 100 / 3) + '%');
-  sprite.style.setProperty('--sprite-y', (row * 100 / 3) + '%');
-  sprite.dataset.expression = chan.expression;
-  sprite.dataset.mouth = String(chan.mouth);
-}
-function chanExpressionFor(text) {
-  if (/\b(hmm|think|maybe|wonder|perhaps|idea|consider|how)\b/i.test(text)) return 'thinking';
-  if (/\b(wow|what|wait|whoa|really)\b|[!?]{2,}/i.test(text)) return 'surprised';
-  if (/\b(hey|welcome|love|nice|great|cute|yay|good|awesome|thanks|happy)\b|[!✦]/i.test(text)) return 'happy';
-  return 'neutral';
-}
-function stopChanLine() {
-  clearTimeout(dialogueTimer);
-  clearTimeout(autoTimer);
-  dialogueTimer = null;
-  autoTimer = null;
-  chan.typing = false;
-  setChanFrame(chan.expression, 0);
-}
-function closeChanDialogue() {
-  stopChanLine();
-  chan.finished = true;
-  $('#dialogue').hidden = true;
-}
-function finishChanLine() {
-  clearTimeout(dialogueTimer);
-  dialogueTimer = null;
-  chan.typing = false;
-  chan.finished = true;
-  $('#dialogueLine').textContent = chan.line;
-  setChanFrame(chan.expression, 0);
-  if (state.autoDialogue) autoTimer = setTimeout(closeChanDialogue, 2350);
-}
-function typeLine(line) {
-  stopChanLine();
-  chan.line = String(line);
-  chan.finished = false;
-  chan.typing = true;
-  const display = $('#dialogueLine');
-  if (!display) return;
-  display.textContent = '';
-  if (chanReducedMotion() || !chan.line.length) { finishChanLine(); return; }
-  let index = 0;
-  const step = () => {
-    if (!state.companion || !chan.typing) return;
-    const char = chan.line[index++];
-    display.textContent = chan.line.slice(0,index);
-    if (/\s/.test(char)) setChanFrame(chan.expression, 0);
-    else {
-      // Full image swaps, not an independently animated mouth layer.
-      const cadence = [1,2,1,3,2,1,0,2,1,2];
-      setChanFrame(chan.expression, cadence[(chanTalkTick++ + Math.floor(index / 5)) % cadence.length]);
-    }
-    if (index >= chan.line.length) { finishChanLine(); return; }
-    const pause = /[.!?]/.test(char) ? 230 : /[,;:]/.test(char) ? 120 : /\s/.test(char) ? 40 : 32 + Math.floor(Math.random() * 21);
-    dialogueTimer = setTimeout(step, pause);
-  };
-  dialogueTimer = setTimeout(step, 75);
-}
-function say(line) {
-  if (!state.companion || ['community','ai','toolkit'].includes(state.view)) return;
-  stopChanLine();
-  chan.expression = chanExpressionFor(line);
-  state.log.push({at:new Date().toLocaleTimeString(),text:line});
-  state.log = state.log.slice(-50);
-  $('#dialogue').hidden = false;
-  typeLine(line);
-}
-function startChanIdle() {
-  if (chanIdleTimer) return;
-  chanIdleTimer = setInterval(() => {
-    if (!state.companion || !$('.app-shell').classList.contains('mode-chan') || chan.typing || !$('#dialogue').hidden || chanReducedMotion()) return;
-    const expressions = ['neutral','neutral','neutral','happy','thinking'];
-    setChanFrame(expressions[Math.floor(Math.random() * expressions.length)],0);
-  }, 5200);
-}
 async function refreshRemote(kind='all'){
   try{
     if(kind==='all'){const [who,drops]=await Promise.all([api('/api/me'),api('/api/drops')]);state.user=who.user;state.stats=who.stats;state.drops=drops.drops;}
     else if(kind==='drops')state.drops=(await api('/api/drops')).drops;
     if(kind==='all'||kind==='chat')state.messages=(await api('/api/messages?channel='+state.channel)).messages;
     if(state.loaded){if(kind==='chat'&&state.view==='community'&&state.communityTab==='chat') {const list=$('#messageList');if(list){const atBottom=list.scrollHeight-list.scrollTop-list.clientHeight<130;list.innerHTML=renderMessages();if(atBottom)scrollChat();}}else if(kind==='drops'&&(state.view==='community'&&state.communityTab==='drops'||state.view==='browse'||state.view==='library'||state.view==='home'))render();else if(kind==='all')render();}
-  }catch(error){console.warn('Sync unavailable:',error.message);if(!state.loaded)toast('Could not connect to Lightning server.','bad');}
+  }catch(error){console.warn('Sync unavailable:',error.message);if(!state.loaded)toast('Could not connect to Celestial server.','bad');}
 }
-async function downloadDrop(id){try{const response=await fetch(`/api/drops/${encodeURIComponent(id)}/download`);if(!response.ok)throw Error('Download failed');const blob=await response.blob();downloadBlob(`lightning-${id}.json`,blob);await refreshRemote('drops');toast('Theme package downloaded');}catch(e){toast(e.message,'bad');}}
+async function downloadDrop(id){try{const response=await fetch(`/api/drops/${encodeURIComponent(id)}/download`);if(!response.ok)throw Error('Download failed');const blob=await response.blob();downloadBlob(`celestial-${id}.json`,blob);await refreshRemote('drops');toast('Theme package downloaded');}catch(e){toast(e.message,'bad');}}
 async function handleAction(action,button){const id=button.dataset.id;switch(action){
   case 'menu':$('#sidebar').classList.toggle('open');break;
   case 'profile':state.user?navigate('settings'):renderLogin('login');break;
@@ -362,19 +249,15 @@ async function handleAction(action,button){const id=button.dataset.id;switch(act
   case 'star-drop':if(!state.user){renderLogin('login');return;}try{await send(`/api/drops/${id}/star`,{});await refreshRemote('drops');inspectDrop(id);}catch(e){toast(e.message,'bad');}break;
   case 'remove-drop':if(!window.confirm('Delete your published Drop?'))return;try{await api(`/api/drops/${id}`,{method:'DELETE'});closeModal();await refreshRemote('drops');toast('Drop removed');}catch(e){toast(e.message,'bad');}break;
   case 'save-theme':{const input=$('#themeName');state.themeName=input?.value.trim()||state.themeName;state.myThemes.unshift({id:Date.now(),name:state.themeName,theme:structuredClone(state.theme)});state.myThemes=state.myThemes.slice(0,30);persistPersonal();render();toast('Theme saved to your Library');break;}
-  case 'export-theme':downloadJson('lightning-'+(state.themeName||'theme').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.json',packageTheme());toast('Theme exported');break;
+  case 'export-theme':downloadJson('celestial-'+(state.themeName||'theme').toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.json',packageTheme());toast('Theme exported');break;
   case 'import-theme':if($('#themeFileInput'))$('#themeFileInput').click();else {navigate('studio');toast('Choose Import to load your file');}break;
   case 'publish-theme':{if(!state.user){renderLogin('login');return;}const name=$('#themeName')?.value.trim()||state.themeName;state.themeName=name;persistPersonal();showModal(`<div class="modal-head"><span class="mini-overline">SHARE WITH COMMUNITY</span><button class="modal-x" data-action="close-modal">×</button></div><div class="publish-modal"><h2>Publish your theme.</h2><p>Share your current colors and settings as a downloadable Community Drop.</p><form id="publishForm"><label>Theme title<input name="title" maxlength="46" minlength="3" required value="${escapeHTML(name)}"></label><label>Tell people about it<textarea name="description" maxlength="240" minlength="8" required placeholder="What inspired these colors?"></textarea></label><button type="submit" class="btn primary">${glyph('upload',17)} Publish to Drops</button></form></div>`);break;}
   case 'apply-saved-theme':{const item=state.myThemes[Number(button.dataset.index)];if(!item)return;state.theme=validateTheme(item.theme);state.themeName=item.name;applyTheme();persistPersonal();render();toast(`Applied ${item.name}`);break;}
   case 'delete-saved-theme':state.myThemes.splice(Number(button.dataset.index),1);persistPersonal();render();toast('Saved theme deleted');break;
   case 'toggle-appearance':setAppearance(state.mode==='light'?'dark':'light');break;
-  case 'reset-theme':state.theme={...defaultTheme};state.themeName='My lightning theme';applyTheme();persistPersonal();render();toast('Rebirth theme restored');break;
+  case 'reset-theme':state.theme={...(state.mode==='light'?defaultLightTheme:defaultTheme)};state.themeName='My Celestial theme';applyTheme();persistPersonal();render();toast('Celestial palette restored');break;
   case 'logout':await send('/api/logout',{});state.user=null;state.guestSeen=false;store('guestSeen',false);render();renderLogin('login',true);toast('Signed out');break;
-  case 'auto-dialogue':state.autoDialogue=!state.autoDialogue;$('#autoDialogue')?.classList.toggle('active',state.autoDialogue);if(state.autoDialogue&&chan.finished&&!$('#dialogue').hidden){clearTimeout(autoTimer);autoTimer=setTimeout(closeChanDialogue,2350);}else if(!state.autoDialogue)clearTimeout(autoTimer);break;
-  case 'skip-dialogue':closeChanDialogue();break;
-  case 'close-dialogue':closeChanDialogue();break;
-  case 'next-dialogue':if(!chan.finished)finishChanLine();else closeChanDialogue();break;
-  case 'dialogue-log':showModal(`<div class="modal-head"><span class="mini-overline">LIGHTNING-CHAN / DIALOGUE LOG</span><button class="modal-x" data-action="close-modal">×</button></div><div class="log-modal"><h2>Our little conversations</h2>${state.log.slice(-25).map(m=>`<p><small>${escapeHTML(m.at)}</small> ${escapeHTML(m.text)}</p>`).join('')}</div>`);break;
+
 }}
 
 document.addEventListener('click',async event=>{
@@ -410,11 +293,10 @@ document.addEventListener('input',event=>{
 });
 document.addEventListener('change',async event=>{
   if(event.target.id==='dropSort'){state.sort=event.target.value;render();}
-  if(event.target.id==='companionToggle'){state.companion=event.target.checked;store('companion',state.companion);if(!state.companion)closeChanDialogue();applyTheme();render();if(state.companion)say('There you are. What should we work on?');}
   if(event.target.id==='motionToggle'){state.motion=event.target.checked;store('motion',state.motion);applyTheme();render();}
   if(event.target.id==='themeFileInput'){
     const file=event.target.files?.[0];if(!file)return;
-    try{if(file.size>15000)throw Error('That theme file is too large');const data=JSON.parse(await file.text());if(data.format!=='lightning.theme'||data.version!==1)throw Error('This is not a Lightning theme package');state.theme=validateTheme(data.theme);state.themeName=String(data.name||'Imported theme').slice(0,46);applyTheme();persistPersonal();render();toast(`${state.themeName} imported and applied`);}catch(error){toast(error.message,'bad');}
+    try{if(file.size>15000)throw Error('That theme file is too large');const data=JSON.parse(await file.text());if(!['celestial.theme','lightning.theme'].includes(data.format)||data.version!==1)throw Error('This is not a Celestial theme package');state.theme=validateTheme(data.theme);state.themeName=String(data.name||'Imported theme').slice(0,46);applyTheme();persistPersonal();render();toast(`${state.themeName} imported and applied`);}catch(error){toast(error.message,'bad');}
   }
 });
 $('#searchInput').addEventListener('keydown',event=>{if(event.key==='Enter'){state.search=event.target.value;navigate('browse');}});
@@ -423,6 +305,8 @@ window.addEventListener('hashchange',()=>{const hash=location.hash.replace('#','
 
 async function boot(){
   applyTheme();
+  sky=createCelestialSky($('#celestialSky'),{mode:state.mode,motion:state.motion});
+  sky.setIntensity(state.theme.petals?1:.33);
   appearanceControl=createGlassToggle($('#appearanceToggle'),{
     initial:state.mode,
     onChange:setAppearance
@@ -433,9 +317,8 @@ async function boot(){
   });
   appearanceControl.setReducedMotion(!state.motion);
   const hash=location.hash.replace('#','').split('/');state.view=navLinks.some(x=>x[0]===hash[0])?hash[0]:'home';if(hash[0]==='community'&&hash[1]==='drops')state.communityTab='drops';
-  await refreshRemote('all');state.loaded=true;render();setChanFrame('neutral',0);startChanIdle();
+  await refreshRemote('all');state.loaded=true;render();
   if(!state.user && !state.guestSeen)renderLogin('login',true);
   eventSource=new EventSource('/api/events');eventSource.addEventListener('refresh',async event=>{try{const {kind}=JSON.parse(event.data);await refreshRemote(kind);}catch{}});
-  if(state.companion)say('Oh, hey. I saved you a seat.');
 }
 boot();
