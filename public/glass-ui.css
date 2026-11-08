@@ -1,4 +1,4 @@
-/* Lightning Prism: quiet surfaces around one deliberately luminous control. */
+/* Celestial Prism: quiet surfaces around one deliberately luminous control. */
 :root {
   --panel: color-mix(in srgb, var(--surface) 86%, var(--background));
   --thin: color-mix(in srgb, var(--line) 38%, transparent);
