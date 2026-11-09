@@ -330,3 +330,14 @@
 @media(prefers-reduced-motion:reduce){
   .celestial-chat-toggle,.celestial-app-tile,.forest-browser.has-tabs .forest-tab{transition:none!important}
 }
+
+/* The tab strip remains visible on blank tabs without turning the new-tab page white. */
+.forest-browser.has-tabs.new-tab .forest-browser-stage{
+  background:linear-gradient(155deg,rgba(13,35,47,.93),rgba(5,20,29,.96))!important;
+}
+.forest-browser.has-tabs.new-tab .forest-browser-home{
+  transform:translateY(-3%);
+}
+.forest-browser.has-tabs.new-tab .forest-wordmark{
+  color:#f5fdff;
+}
