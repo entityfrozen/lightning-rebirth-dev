@@ -471,3 +471,8 @@ button,textarea,input{accent-color:#a7efc4}
  .launcher,.forest-chat-layout,.ai-panel,.ai-side,.forest-game-stage,.forest-browser-chrome{background:#0a2518ef}
  .forest-main-search{background:#183d29f2}
 }
+
+.forest-particles{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.7;mix-blend-mode:screen}
+.forest-particles canvas{display:block}
+.workspace-shell{z-index:2}
+:root[data-theme="light"] .forest-particles{opacity:.5}
