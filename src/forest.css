@@ -476,3 +476,22 @@ button,textarea,input{accent-color:#a7efc4}
 .forest-particles canvas{display:block}
 .workspace-shell{z-index:2}
 :root[data-theme="light"] .forest-particles{opacity:.5}
+
+/* Direct-message threads stay inside Chat, not a fifth app. */
+.forest-dm-block{display:flex;flex-direction:column;gap:4px;margin-top:18px;padding-top:16px;border-top:1px solid #b9ffd035;min-height:55px}
+.forest-dm-block .chat-group-label{margin:0 9px 7px}
+.forest-dm-link{display:flex;align-items:center;gap:9px;background:transparent;border:1px solid transparent;border-radius:9px;padding:9px 11px;text-align:left;color:#c4dec9;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.forest-dm-link span{color:#8fe6b0;font-size:13px}
+.forest-dm-link:hover{background:#79d69a20}
+.forest-dm-link.active{background:#9bebba2d;border-color:#c6ffd33b;color:#fff}
+.forest-chat-members .forest-online-member{border:1px solid transparent;width:100%;text-align:left;background:transparent;padding:3px 2px;border-radius:9px;cursor:pointer}
+.forest-chat-members .forest-online-member:hover{background:#a4ffc517}
+.forest-chat-members .forest-online-member:disabled{opacity:.7;cursor:default}
+.forest-dm-back{border:1px solid #aef2c83a;background:#45855b50;color:#cbffe0;border-radius:8px;font-size:10px;padding:6px 10px;margin-left:auto}
+.forest-chat-titlebar:has(.forest-dm-back)>b{margin-left:0}
+@media(max-width:580px){
+  .forest-dm-block{margin-top:0;padding-top:0;border:0;flex-direction:row;align-items:center;gap:4px;max-width:260px}
+  .forest-dm-block .chat-group-label{display:none}
+  .forest-dm-link{padding:6px;font-size:9px}
+  .forest-dm-back{font-size:8px;padding:5px}
+}
