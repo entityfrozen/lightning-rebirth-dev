@@ -12,6 +12,7 @@ import 'dialkit/styles.css';
 import './styles.css';
 import './forest.css';
 import './xylora.css';
+import './home-split.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
