@@ -1,11 +1,15 @@
 # Celestial — Aurora Edition
 
-Celestial keeps four working sections: **Browser**, **Arcade**, **Chat**, and
-**AI**. Its interface mirrors the uploaded Xylora shell rather than a card
-dashboard: a 44px edge-mounted dock with scalloped corners and a hide tab,
-compact filled Fluent icons, a centered wordmark/search input and small
-shortcut pills. The default backdrop is a dark pine forest under violet-blue
-northern lights, with icy teal glass controls. The product name is **Celestial**.
+Celestial now opens straight into **Celestial AI** after sign-in, while
+Browser, Arcade and Chat remain accessible in the navigation. The workspace
+requires a Celestial account: signed-out visitors see only the sign-in or
+registration screen.
+
+The interface mirrors the supplied Xylora shell rather than a card dashboard:
+a 44px edge-mounted dock with scalloped corners and a hide tab, compact filled
+Fluent icons, a centered Celestial wordmark and a natural-language conversation
+input. The default backdrop is a pine forest under violet-blue northern lights,
+with icy teal glass controls.
 
 The dock has a few shortcuts for convenience. Games opens Arcade; Cloud opens
 AI; Apps opens a lightweight launcher, Music opens a browser tab, and Settings
@@ -80,6 +84,11 @@ staff-moderation tools are not yet ported into the new UI.**
 
 ### AI
 
+- **Homepage-first:** the center search field is a Celestial conversation input
+  rather than a URL bar; replies and follow-ups appear on the homepage
+- **Mandatory sign-in:** guests cannot open the workspace or call the AI API
+- The server does not reveal provider names or model identifiers in AI status
+  responses, and the UI does not display setup/readiness labels
 - Conversation interface with saved local threads, rename/delete/new
 - Real backend provider calls, no fake responses
 - `OPENAI_API_KEY` (OpenAI Responses API), or `NVIDIA_API_KEY` (Bolt's
@@ -131,13 +140,13 @@ user data or live sessions.
 
 ## File map
 
-- `src/main.jsx`: reference-style dock, live status, settings and account login
-- `src/xylora.css`: Celestial palette and background styles, faithful edge dock
+- `src/main.jsx`: login gate, AI-first home, dock, settings and account
+- `src/xylora.css`: Celestial palette, background, AI home and faithful edge dock
 - `src/forest.css`: forest design, game/gallery and responsive layouts
 - `src/Browser.jsx`, `src/BoltProxy.js`: browser UI and proxy adapter
 - `src/Arcade.jsx`: six playable games
 - `src/Chat.jsx`, `src/useBoltLive.js`: community UI and WebSocket state
-- `src/AI.jsx`: local chat history and real server provider interface
+- `src/AI.jsx`: homepage chat, full chat history and authenticated server requests
 - `server.js`: Celestial accounts, API, proxy, AI and real-time hooks
 - `live.js`, `community-v2.js`, `chess-ai.js`: Bolt-origin game/social engine
 - `ai-provider.js`, `ai-stream.js`: Bolt-origin NVIDIA completion engine

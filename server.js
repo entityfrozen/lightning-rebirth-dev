@@ -151,11 +151,10 @@ async function handleAPI(req,res,url) {
   const user=account(req);
   const pathname=url.pathname;
   if(req.method==='GET' && pathname==='/api/me') return respond(res,200,{user:publicAccount(user),stats:{members:db.users.length,drops:db.drops.length,messages:db.messages.length}});
-  if(req.method==='GET' && pathname==='/api/ai/status') return respond(res,200,{
-    configured:Boolean(process.env.OPENAI_API_KEY||process.env.NVIDIA_API_KEY),
-    provider:process.env.OPENAI_API_KEY?'OpenAI':process.env.NVIDIA_API_KEY?'NVIDIA':null,
-    model:process.env.OPENAI_API_KEY?(process.env.OPENAI_MODEL||'gpt-4.1-mini'):(process.env.NVIDIA_MODEL||TEXT_MODEL)
-  });
+  if(req.method==='GET' && pathname==='/api/ai/status'){
+    if(!user)return fail(res,401,'Sign in required');
+    return respond(res,200,{configured:Boolean(process.env.OPENAI_API_KEY||process.env.NVIDIA_API_KEY)});
+  }
   if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),authenticated:Boolean(user)});
 
   if(req.method==='GET' && pathname==='/api/dms'){
@@ -250,7 +249,7 @@ async function handleAPI(req,res,url) {
     return respond(res,201,{message:{...row,author:user.username}});
   }
   if(pathname==='/api/ai' && req.method==='POST'){
-    if(!process.env.OPENAI_API_KEY&&!process.env.NVIDIA_API_KEY)return fail(res,503,'AI is not configured on this server');
+    if(!process.env.OPENAI_API_KEY&&!process.env.NVIDIA_API_KEY)return fail(res,503,'Celestial is unavailable right now.');
     if(limited(req,'ai:'+user.id,16,3600000))return fail(res,429,'Too many AI requests. Try again later.');
     if(!Array.isArray(body.messages)||body.messages.length<1||body.messages.length>14) return fail(res,400,'Send between 1 and 14 messages');
     const messages=[];
@@ -269,7 +268,7 @@ async function handleAPI(req,res,url) {
           signal:AbortSignal.timeout(40000),
           maxTokens:950
         });
-        return respond(res,200,{text:answer.reply.slice(0,10000),provider:'NVIDIA'});
+        return respond(res,200,{text:answer.reply.slice(0,10000)});
       }
       const upstream=await fetch('https://api.openai.com/v1/responses',{
         method:'POST',
@@ -286,14 +285,14 @@ async function handleAPI(req,res,url) {
       const data=await upstream.json().catch(()=>({}));
       if(!upstream.ok){
         console.warn('AI provider response:',upstream.status,data?.error?.type||'unknown');
-        return fail(res,502,'AI provider is unavailable. Check server configuration or try again.');
+        return fail(res,502,'Celestial is temporarily unavailable. Please try again.');
       }
       const text=(data.output||[]).flatMap(item=>item.type==='message'?item.content||[]:[]).filter(part=>part.type==='output_text').map(part=>part.text).join('\n').trim();
-      if(!text)return fail(res,502,'The AI provider returned no text');
+      if(!text)return fail(res,502,'Celestial could not complete that request.');
       return respond(res,200,{text:text.slice(0,10000)});
     }catch(error){
       console.warn('AI request failed:',error?.name||'unknown');
-      return fail(res,502,'Could not reach the AI provider.');
+      return fail(res,502,'Celestial is temporarily unavailable. Please try again.');
     }
   }
   if(pathname==='/api/messages' && req.method==='POST') {
