@@ -12,7 +12,7 @@ const layout = readFileSync(path.join(root, 'src/home-split.css'), 'utf8');
 
 test('home splits the real main page and Celestial AI into side-by-side panels', () => {
   assert.match(main, /sections\.has\(route\).*:'home'/);
-  assert.match(main, /view==='home'\?<div className="celestial-home-split"/);
+  assert.match(main, /view==='home'\?<div className=\{[\s\S]*?celestial-home-split/);
   assert.match(main, /className="celestial-home-main"/);
   assert.match(main, /<Browser user=\{user\} onAuth=\{setModal\} onShortcut=\{openDock\} homeMode/);
   assert.match(main, /className="celestial-home-rail"/);
@@ -29,6 +29,21 @@ test('AI sidebar is a functional conversation, not a decorative widget', () => {
   assert.match(ai, /New conversation/);
   assert.match(ai, /\/api\/ai/);
   assert.match(layout, /@media\(max-width: 760px\)/);
+  assert.match(main, /\[showHomeAI,setShowHomeAI\]=useState/);
+  assert.match(main, /setShowHomeAI\(false\)/);
+  assert.match(main, /setShowHomeAI\(true\)/);
+  assert.match(ai, /Hide Celestial AI sidebar/);
+  assert.match(layout, /\.celestial-home-split\.ai-hidden/);
+  assert.match(layout, /grid-template-rows: minmax\(100dvh, 1fr\)/);
+
+});
+
+test('AI sidebar preference can be changed and restored from Settings', () => {
+  const settings=readFileSync(path.join(root,'src/Settings.jsx'),'utf8');
+  assert.match(settings, /Celestial AI sidebar/);
+  assert.match(settings, /checked=\{showHomeAI\} onChange=\{setShowHomeAI\}/);
+  assert.match(main, /saveLocal\('home-ai-sidebar',showHomeAI\)/);
+  assert.match(settings, /if\(typeof data\.showHomeAI==='boolean'\)setShowHomeAI\(data\.showHomeAI\)/);
 });
 
 test('signed-in account is required before the workspace mounts', () => {
