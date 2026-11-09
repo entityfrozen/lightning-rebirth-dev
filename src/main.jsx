@@ -7,14 +7,15 @@ import 'dialkit/styles.css';
 import './styles.css';
 import './forest.css';
 import {useBoltLive} from './useBoltLive.js';
-import { Arcade } from './Arcade.jsx';
-import { Browser } from './Browser.jsx';
-import { Chat } from './Chat.jsx';
-import { AI } from './AI.jsx';
+const Arcade=React.lazy(()=>import('./Arcade.jsx').then(m=>({default:m.Arcade})));
+const Browser=React.lazy(()=>import('./Browser.jsx').then(m=>({default:m.Browser})));
+const Chat=React.lazy(()=>import('./Chat.jsx').then(m=>({default:m.Chat})));
+const AI=React.lazy(()=>import('./AI.jsx').then(m=>({default:m.AI})));
+const ForestParticles=React.lazy(()=>import('./ForestParticles.jsx').then(m=>({default:m.ForestParticles})));
 import { api, navigation, readLocal, saveLocal } from './constants.js';
 import { Icon } from './icons.jsx';
 import { SceneBoundary } from './SceneBoundary.jsx';
-import {ForestParticles} from './ForestParticles.jsx';
+
 
 const allowed=new Set(['arcade','browser','chat','ai']);
 const fromHash=()=>{
@@ -135,7 +136,7 @@ function App(){
   const effectiveReduced=reduced||(typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   return <>
     <div className="forest-backdrop" aria-hidden="true"><span className="forest-light"/><span className="forest-fireflies"/></div>
-    <SceneBoundary><ForestParticles reduced={effectiveReduced}/></SceneBoundary>
+    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced}/></Suspense></SceneBoundary>
     <div className="workspace-shell">
       <aside className="launcher glass">
         <button className="brand-mark" onClick={()=>navigate('browser')} aria-label="Celestial Browser"><img src="/assets/celestial-star.svg" alt=""/></button>
@@ -158,7 +159,9 @@ function App(){
           </div>
         </header>
         <main className="content-shell" id="main-content">
-          {view==='arcade'?<Arcade user={user} onAuth={setModal} live={live}/>:view==='browser'?<Browser user={user} onAuth={setModal}/>:view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:<AI user={user} onAuth={setModal}/>}
+          <Suspense fallback={<div className="forest-loading">✦ <span>Opening {name.label.toLowerCase()}…</span></div>}>
+            {view==='arcade'?<Arcade user={user} onAuth={setModal} live={live}/>:view==='browser'?<Browser user={user} onAuth={setModal}/>:view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:<AI user={user} onAuth={setModal}/>}
+          </Suspense>
         </main>
         <footer className="app-status"><span><i/> {loading?'CONNECTING':live.connected?'COMMUNITY CONNECTED':'CELESTIAL READY'}</span><span>CELESTIAL / 8.1 <b>•</b> {name.label.toUpperCase()}</span></footer>
       </div>
