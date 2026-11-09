@@ -112,7 +112,8 @@ try{
     return Boolean(frame && frame.src &&
       (frame.src.includes('/~/sj/')||frame.src.includes('/scram/')));
   },null,{timeout:45000});
-  assert.match(worker,/\/sw\.js$/,'active Scramjet worker has the correct URL');
+  assert.ok(worker && new URL(worker).pathname.endsWith('/sw.js'),
+    'active Scramjet worker URL: '+String(worker));
   for(const required of ['/proxy-entry.js','/scram/scramjet.js',
       '/controller/controller.api.js','/scram/scramjet-utils.js',
       '/clients/libcurl-client.js']){
