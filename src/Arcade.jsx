@@ -13,7 +13,7 @@ const random=(a,b)=>a+Math.random()*(b-a);
 function CometGame({onRecord}) {
   const ref=useRef(null);
   const state=useRef({x:90,y:210,rocks:[],orbs:[],frame:0,score:0,lives:3,over:false});
-  const pointer=useRef({x:95,y:210});
+  const pointer=useRef({x:95,y:210,active:false});
   const [started,setStarted]=useState(false);
   const [score,setScore]=useState(0);
   const [lives,setLives]=useState(3);
@@ -21,7 +21,7 @@ function CometGame({onRecord}) {
 
   function start(){
     state.current={x:90,y:210,rocks:[],orbs:[],frame:0,score:0,lives:3,over:false};
-    pointer.current={x:95,y:210};
+    pointer.current={x:95,y:210,active:false};
     setScore(0);setLives(3);setEnded(false);setStarted(true);
   }
   useEffect(()=>{
@@ -31,12 +31,13 @@ function CometGame({onRecord}) {
     if(!ctx)return;
     let raf=0,last=0;
     const keys=new Set();
-    const down=e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'].includes(e.code)){keys.add(e.code);e.preventDefault();}};
+    const down=e=>{if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'].includes(e.code)){keys.add(e.code);pointer.current.active=false;e.preventDefault();}};
     const up=e=>keys.delete(e.code);
-    const move=e=>{const b=canvas.getBoundingClientRect();pointer.current={x:(e.clientX-b.left)/b.width*720,y:(e.clientY-b.top)/b.height*420};};
+    const move=e=>{const b=canvas.getBoundingClientRect();pointer.current={x:(e.clientX-b.left)/b.width*720,y:(e.clientY-b.top)/b.height*420,active:true};};
     window.addEventListener('keydown',down);
     window.addEventListener('keyup',up);
     canvas.addEventListener('pointermove',move);
+    canvas.addEventListener('pointerdown',move);
     const render=(now)=>{
       const dt=Math.min(2,(now-(last||now))/16.667);last=now;
       const g=state.current;
@@ -53,6 +54,7 @@ function CometGame({onRecord}) {
       if(keys.has('ArrowLeft')||keys.has('KeyA'))g.x-=speed;
       if(keys.has('ArrowRight')||keys.has('KeyD'))g.x+=speed;
       g.y=Math.max(25,Math.min(395,g.y));g.x=Math.max(22,Math.min(698,g.x));
+      if(pointer.current.active){g.x+=(pointer.current.x-g.x)*Math.min(1,.19*dt);g.y+=(pointer.current.y-g.y)*Math.min(1,.19*dt);}
       g.frame+=dt;
       if(g.frame%32<dt)g.rocks.push({x:740,y:random(20,400),r:random(11,22),speed:random(3.2,5.5)});
       if(g.frame%53<dt)g.orbs.push({x:740,y:random(20,400),r:8,speed:3.7});
@@ -80,7 +82,7 @@ function CometGame({onRecord}) {
       if(!g.over)raf=requestAnimationFrame(render);
     };
     raf=requestAnimationFrame(render);
-    return()=>{cancelAnimationFrame(raf);window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);canvas.removeEventListener('pointermove',move);};
+    return()=>{cancelAnimationFrame(raf);window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerdown',move);};
   },[started,onRecord]);
   return <div className="game-play glass">
     <div className="game-top"><div><span className="micro">01 / COMET DRIFT</span><h2>Navigate the stellar debris field</h2></div><div className="game-metrics"><span>ENERGY <b>{score}</b></span><span>SHIELDS <b>{'◆'.repeat(Math.max(0,lives))}</b></span></div></div>
