@@ -457,7 +457,8 @@ export function createServer(){
   // server; old user IDs remain stable, preserving community identity.
   attachLightningLive({
     server,sessionFromHeaders:liveIdentity,dataDir:DATA_DIR,
-    getDisplayName:(_id,username)=>username,getRole:()=> 'user'
+    getDisplayName:(_id,username)=>username,
+    getRole:userId=>db.users.find(person=>person.id===userId&&activeAccount(person))?.role||'user'
   });
   return server;
 }
