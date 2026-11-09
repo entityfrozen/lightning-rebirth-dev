@@ -1,5 +1,5 @@
 
-import React, {Suspense, useEffect, useState} from 'react';
+import React, {Suspense, useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {
   Home24Filled, Games24Filled, Grid24Filled, Globe24Filled,
@@ -151,6 +151,7 @@ function App() {
   const [toast,setToast]=useState('');
   const [homeSignal,setHomeSignal]=useState(0);
   const [browserLaunch,setBrowserLaunch]=useState(null);
+  const internalHashChange=useRef(false);
   const live=useBoltLive(user);
   const actor=user?.username||'Guest';
   const effectiveReduced=reduced||window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -172,6 +173,10 @@ function App() {
     const sync=()=>{
       const next=routeFromHash();
       setView(next);
+      if(internalHashChange.current){
+        internalHashChange.current=false;
+        return;
+      }
       setActiveDock(next==='arcade'?'study':next==='ai'?'cloud':next==='chat'?'chat':'browser');
     };
     window.addEventListener('hashchange',sync);
@@ -193,7 +198,7 @@ function App() {
     setModal(null);
     setView(section);
     setActiveDock(section==='arcade'?'study':section==='ai'?'cloud':section==='chat'?'chat':'browser');
-    if(location.hash!=='#'+section)location.hash=section;
+    if(location.hash!=='#'+section){internalHashChange.current=true;location.hash=section;}
   }
   function openDock(id) {
     if(id==='settings'){setModal('settings');return;}
@@ -201,13 +206,13 @@ function App() {
     if(id==='home'){
       setView('browser');setActiveDock('home');setModal(null);
       setHomeSignal(value=>value+1);
-      if(location.hash!=='#browser')location.hash='browser';
+      if(location.hash!=='#browser'){internalHashChange.current=true;location.hash='browser';}
       return;
     }
     if(id==='music'){
       setBrowserLaunch({id:Date.now(),url:'https://music.youtube.com/'});
       setView('browser');setActiveDock('music');setModal(null);
-      if(location.hash!=='#browser')location.hash='browser';
+      if(location.hash!=='#browser'){internalHashChange.current=true;location.hash='browser';}
       return;
     }
     selectSection(id==='study'?'arcade':id==='cloud'?'ai':id);
@@ -228,7 +233,8 @@ function App() {
       <main className="celestial-stage" id="main-content">
         <Suspense fallback={<div className="celestial-loading">Opening Celestial…</div>}>
           {view==='browser'?<Browser user={user} onAuth={setModal} onShortcut={openDock}
-            homeSignal={homeSignal} launch={browserLaunch}/>:
+            homeSignal={homeSignal} homeMode={activeDock==='home'}
+            launch={activeDock==='music'?browserLaunch:null}/>:
           view==='arcade'?<Arcade user={user} onAuth={setModal} live={live}/>:
           view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:
           <AI user={user} onAuth={setModal}/>}
