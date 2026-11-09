@@ -111,6 +111,7 @@ async function handleAPI(req,res,url) {
   const user=account(req);
   const pathname=url.pathname;
   if(req.method==='GET' && pathname==='/api/me') return respond(res,200,{user:publicAccount(user),stats:{members:db.users.length,drops:db.drops.length,messages:db.messages.length}});
+  if(req.method==='GET' && pathname==='/api/ai/status') return respond(res,200,{configured:Boolean(process.env.OPENAI_API_KEY),model:process.env.OPENAI_MODEL||'gpt-4.1-mini'});
   if(req.method==='GET' && pathname==='/api/events') {
     res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});
     res.write(': connected\n\n'); listeners.add(res);
@@ -164,6 +165,42 @@ async function handleAPI(req,res,url) {
     await persist();return respond(res,200,{ok:true});
   }
   if(!user)return fail(res,401,'Sign in to use this feature');
+  if(pathname==='/api/ai' && req.method==='POST'){
+    if(!process.env.OPENAI_API_KEY)return fail(res,503,'AI is not configured on this server');
+    if(limited(req,'ai:'+user.id,16,3600000))return fail(res,429,'Too many AI requests. Try again later.');
+    if(!Array.isArray(body.messages)||body.messages.length<1||body.messages.length>14) return fail(res,400,'Send between 1 and 14 messages');
+    const messages=[];
+    for(const item of body.messages) {
+      if(!item||!['user','assistant'].includes(item.role)||typeof item.content!=='string'||!item.content.trim()||item.content.length>2500)return fail(res,400,'Invalid AI message');
+      messages.push({role:item.role,content:item.content.trim()});
+    }
+    if(messages.at(-1).role!=='user'||messages.reduce((total,m)=>total+m.content.length,0)>12000)return fail(res,400,'Invalid conversation');
+    try {
+      const upstream=await fetch('https://api.openai.com/v1/responses',{
+        method:'POST',
+        headers:{Authorization:'Bearer '+process.env.OPENAI_API_KEY,'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:process.env.OPENAI_MODEL||'gpt-4.1-mini',
+          instructions:'You are Celestial AI, a helpful, clear creative assistant inside a workspace with Arcade, Browser and Community Chat. Be warm, practical and concise. Never claim you accessed user data or websites unless that data is actually provided.',
+          input:messages,
+          max_output_tokens:850,
+          store:false
+        }),
+        signal:AbortSignal.timeout(35000)
+      });
+      const data=await upstream.json().catch(()=>({}));
+      if(!upstream.ok){
+        console.warn('AI provider response:',upstream.status,data?.error?.type||'unknown');
+        return fail(res,502,'AI provider is unavailable. Check server configuration or try again.');
+      }
+      const text=(data.output||[]).flatMap(item=>item.type==='message'?item.content||[]:[]).filter(part=>part.type==='output_text').map(part=>part.text).join('\n').trim();
+      if(!text)return fail(res,502,'The AI provider returned no text');
+      return respond(res,200,{text:text.slice(0,10000)});
+    }catch(error){
+      console.warn('AI request failed:',error?.name||'unknown');
+      return fail(res,502,'Could not reach the AI provider.');
+    }
+  }
   if(pathname==='/api/messages' && req.method==='POST') {
     if(limited(req,`message:${user.id}`,18,60000))return fail(res,429,'Slow down a little');
     const text=cleanLine(body.text,600);const channel=body.channel;

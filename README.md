@@ -1,87 +1,91 @@
-# Celestial
+# Celestial v8 — Four worlds. One universe.
 
-A creative workspace with a cosmic interface: WebGL nebula and starfield,
-illuminated glass panels, a refractive day/night toggle, theme creation,
-a shared community and a private local archive.
+Celestial is now built around exactly four applications: **Arcade**, **Browser**,
+**Chat** and **AI**. The previous dashboard, theme galleries, studios and
+character UI were deleted rather than renamed.
 
-Celestial is built with modern browser APIs and the Node.js standard library.
-There is **no frontend framework, build tool or third-party runtime dependency**.
+## Install and run
 
-## Start locally
+Requires Node.js 20.19+:
 
-Node.js 20 or newer:
+    npm install
+    npm start
 
-```bash
-npm start
-```
+Visit http://localhost:3080. Run tests with:
 
-Visit **http://localhost:3080**.
+    npm run check
 
-```bash
-npm run check
-```
+The install builds the React frontend into public/bundle automatically.
+The normal server serves the compiled files, plus the existing account and
+community API. There is no runtime dependency on a CDN.
 
-The check runs JavaScript syntax validation and the integration tests.
+## The four applications
 
-## Interface
+**Arcade:** Three playable minigames — Comet Drift, Pulse Reflex and
+Constellation memory — with local best scores. The hero contains interactive
+3D glass.
 
-The sections are:
+**Browser:** Tabs, address/search input, back/forward history, bookmarks,
+new tabs and an in-page iframe. Browsers cannot embed every website:
+sites with X-Frame-Options or CSP frame-ancestors restrictions may refuse
+to display. The Open Directly button is always provided. This is not a
+Chromium-based unrestricted browser.
 
-- **Observatory** — dashboard and shortcuts
-- **Discover** — browse shared themes
-- **Archive** — saved themes and Drops
-- **Oracle** — AI assistant placeholder, deliberately *not connected*
-- **Constellation** — community chat and theme Drops
-- **Forge** — six-color live editor, presets, glow, corners and ambient effects
-- **Workshop** — local scratchpad and shortcuts
-- **Control** — appearance, animation preferences and account
+**Chat:** Real-time community channels using the existing server message API.
+Guests can read. Signed-in users can post. Existing stored messages and
+account cookies remain compatible.
 
-The old character/companion and dialogue systems were removed, including their
-artwork, UI controls and script logic. The Celestial star replaces the bolt logo.
+**AI:** An actual server proxy to the OpenAI Responses API. Set OPENAI_API_KEY
+in the hosting environment and optionally OPENAI_MODEL. The key is never
+sent to the browser. Without a configured provider, AI visibly reports that
+the service is unavailable instead of simulating responses.
 
-### Visual architecture
+## Visual architecture
 
-- `public/celestial.css` — primary interface design tokens, liquid-glass panel
-  styling, hover illumination, page composition and responsive overrides
-- `public/celestial-sky.js` — lightweight WebGL 1 background. A fullscreen
-  fragment shader draws nebula noise, orbit glow and a layered procedural
-  starfield at a capped resolution and ~30fps; it pauses when hidden or when
-  animations are disabled
-- `public/glass-toggle.js` — single-pass refractive glass day/night toggle.
-  The moon/sun pixel morph can be scrubbed by dragging; accessibility and
-  CSS fallback are provided
-- `public/assets/celestial-star.svg` — custom star brand symbol
+- React 19 + React Three Fiber 9 + Three.js and Drei
+- MeshPhysicalMaterial transmission, IOR, thickness, roughness and dispersion
+- True 3D scene texture refraction: the glass refracts the scene's own rendered
+  lettering and scenery, not a screenshot of a user browser tab
+- Drei Html projection for an HTML annotation attached to the 3D sculpture
+- DialKit live tuning for glass parameters, shown during development; add
+  ?tune=1 to the URL to opt into its controls on a deployed build
+- Responsive liquid-glass shell, 3D star ambience and a reduced-motion switch
 
-The motion preference and `prefers-reduced-motion` disable animations.
-When WebGL is unavailable, CSS fills provide a static background and a normal
-working theme toggle. Light and dark modes have separate saved theme palettes.
+The creative direction is an original take on the **Glass Hero** style
+demonstrated by Zsolt Kacso (May 2026), rather than a copy of their code.
 
-### Data and compatibility
+Reference: https://experiments.thisiswhitespace.com/glass-hero
 
-Existing accounts, passwords, sessions, community messages and published Drops
-are **not deleted or rewritten** by this redesign. The server still uses the
-same JSON data store by default (`data/store.json`). When deployed on Railway,
-the existing persistent volume and `LIGHTNING_DATA_FILE=/data/store.json` value
-must be preserved.
+## Development
 
-Browser preferences now save under `celestial.*` keys, but the UI automatically
-reads the former `lightning.*` keys when the new value is absent. Theme exports
-use `celestial.theme` v1, and the importer continues to accept previous
-`lightning.theme` v1 packages.
+Main React entry: src/main.jsx
+Pages: src/Arcade.jsx, src/Browser.jsx, src/Chat.jsx, src/AI.jsx
+3D scene: src/GlassHero.jsx
+Styling: src/styles.css
+Vite: vite.config.js
+Node API: server.js
 
-Community posting and publishing require an account. The backend writes account
-password hashes, HTTP-only session cookies, community messages and shared themes
-to a persistent JSON file. The AI assistant is **not connected**: no API key is
-embedded in client-side files or hallucinated as a working feature.
+To rebuild the frontend after editing source:
 
-## Deployment
+    npm run build
 
-The Railway project and existing service may still be named
-`lightning-rebirth-dev` / `lightning-web` — these are infrastructure identifiers
-and changing them isn't necessary to display Celestial. Railway is configured
-to deploy the `main` branch, run `npm start`, healthcheck `/api/me` and mount
-its data volume at `/data`.
+The old static CSS/JavaScript files are intentionally removed. Do not
+re-introduce the old app.js from the previous UI.
 
-The current server is a single-instance MVP, not a production-audited social
-network. For broad public use, add moderation, spam controls, durable database
-storage, backups, monitoring and account recovery.
+## Deployment and data safety
+
+Railway service and repository identifiers may still contain the word
+"lightning"; changing them is unnecessary for the Celestial UI.
+
+Keep LIGHTNING_DATA_FILE pointing to the existing persistent volume path.
+The legacy key and cookie name are retained intentionally, ensuring previously
+registered accounts and active sessions continue to work. No migration deletes
+users, messages or saved data.
+
+Railway currently reported a trial-expired billing problem, so a successful
+GitHub merge does not imply the app is deployed. Set the plan and deploy
+the latest main branch after verifying the build.
+
+The AI endpoint is rate limited and requires authentication. Add database
+backups, moderation, logging and more substantial abuse safeguards before
+inviting a large public community.
