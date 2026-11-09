@@ -1,7 +1,7 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 
 function applyServerMessage(servers,event){
-  if(event.type==='v2Server')return servers.map(s=>s.id===event.server.id?event.server:s);
+  if(event.type==='v2Server')return servers.some(s=>s.id===event.server.id)?servers.map(s=>s.id===event.server.id?event.server:s):[...servers,event.server];
   if(!event.serverId)return servers;
   return servers.map(server=>{
     if(server.id!==event.serverId)return server;
