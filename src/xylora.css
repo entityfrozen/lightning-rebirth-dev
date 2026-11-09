@@ -628,3 +628,11 @@ body{background:var(--bg);color:var(--text);font-family:"Segoe UI",Arial,system-
   .celestial-ambient {animation:none!important;transform:none!important}
   .dock-link>svg,.forest-shortcuts button>svg,.forest-main-search {transition:none!important}
 }
+
+:root[data-motion="reduced"] .celestial-backdrop,
+:root[data-motion="reduced"] .celestial-backdrop::before,
+:root[data-motion="reduced"] .celestial-backdrop::after,
+:root[data-motion="reduced"] .celestial-ambient {animation:none!important;transform:none!important}
+:root[data-motion="reduced"] .dock-link>svg,
+:root[data-motion="reduced"] .forest-shortcuts button>svg,
+:root[data-motion="reduced"] .forest-main-search {transition:none!important}
