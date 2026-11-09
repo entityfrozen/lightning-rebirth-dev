@@ -1,0 +1,95 @@
+/* CELESTIAL / FOREST GLASS — original environment-first interface.
+   No dashboard backgrounds. The landscape is the canvas; tools float above it. */
+:root {
+  --bg: #07140f; --deep:#06110d;
+  --panel:rgba(6,25,17,.58); --panel-bright:rgba(9,35,23,.72);
+  --stroke:rgba(175,241,199,.19);--strong-stroke:rgba(167,255,199,.37);
+  --text:#f0f9f1;--muted:#b5cabd;--quiet:#809b8d;
+  --cyan:#94dfb7;--violet:#a8e8bb;--gold:#b8efa8;--mint:#90e9ba;
+  --glow:rgba(118,225,152,.21);--shade:rgba(0,0,0,.3);
+  --forest-glass:rgba(7,30,20,.58);--forest-border:rgba(181,255,205,.23);
+  --forest-mint:#93edc0;--forest-light:#c4f6d2;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  color-scheme:dark;
+  --bg:#0d1a15;--deep:#091711;--panel:rgba(17,43,29,.66);--panel-bright:rgba(22,53,35,.76);
+  --stroke:rgba(185,246,210,.24);--strong-stroke:rgba(190,255,220,.47);
+  --text:#fbfff8;--muted:#d3e6d7;--quiet:#adcab9;
+  --cyan:#b7fcd2;--violet:#d6fac5;--gold:#fcf1b2;--mint:#b2f2c5;
+  --glow:rgba(168,244,191,.27);--shade:rgba(0,0,0,.3);
+}
+html,body,#app {height:100%;width:100%;overflow:hidden}
+body {background:#05130d;color:var(--text);font-family:"Instrument Sans",Inter,ui-sans-serif,system-ui,sans-serif}
+body::selection{background:var(--forest-mint);color:#062218}
+#app{isolation:isolate}
+.forest-backdrop{position:fixed;inset:-2%;z-index:0;pointer-events:none;overflow:hidden;
+  background-image:linear-gradient(180deg,rgba(2,11,7,.37),rgba(0,14,7,.33) 46%,rgba(0,8,6,.62)),
+    url("https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=2500&q=85");
+  background-size:cover;background-position:center center;filter:saturate(1.04) contrast(1.14);
+  transform:scale(1.04);animation:forest-breathe 34s ease-in-out infinite alternate}
+.forest-backdrop::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 67% 60% at 50% 40%,transparent 24%,rgba(0,7,3,.18) 68%,rgba(0,4,3,.74)),linear-gradient(90deg,#030c0a75,transparent 30%,transparent 70%,#010a0677);z-index:1}
+.forest-backdrop::after{content:"";position:absolute;inset:0;z-index:2;opacity:.19;mix-blend-mode:screen;background-image:
+radial-gradient(circle at 15% 25%,#8effa9 0 1px,transparent 3px),
+radial-gradient(circle at 32% 63%,#85ffa4 0 1px,transparent 3px),
+radial-gradient(circle at 62% 38%,#82f4a1 0 1px,transparent 3px),
+radial-gradient(circle at 78% 72%,#88e9a9 0 1px,transparent 3px);
+background-size:230px 290px,310px 210px,410px 390px,580px 300px}
+.forest-light{position:absolute;inset:0;background:radial-gradient(ellipse 55% 49% at 55% 36%,#2b723d1c,transparent 76%)}
+.forest-fireflies{position:absolute;inset:0;background-image:
+radial-gradient(circle,#b4ffbc 1px,transparent 2.5px),
+radial-gradient(circle,#93ffaa 1px,transparent 2px),
+radial-gradient(circle,#a2ffc7 .8px,transparent 2px);
+background-position:17% 38%, 63% 75%, 87% 24%;background-size:311px 281px,439px 369px,529px 389px;
+opacity:.27;animation:forest-fireflies 13s ease-in-out infinite alternate}
+@keyframes forest-breathe{from{transform:scale(1.04)}to{transform:scale(1.09) translate3d(-.3%,.2%,0)}}
+@keyframes forest-fireflies{from{opacity:.12;transform:translateY(6px)}to{opacity:.40;transform:translateY(-9px)}}
+.workspace-shell{position:relative;z-index:1;display:block;height:100dvh;max-height:100dvh;padding:0}
+.glass{background:var(--forest-glass);border:1px solid var(--forest-border);box-shadow:inset 0 1px 0 #ffffff15,0 13px 43px #00000032;backdrop-filter:blur(20px) saturate(1.35);-webkit-backdrop-filter:blur(20px) saturate(1.35)}
+.launcher{position:fixed;z-index:31;top:50%;left:10px;transform:translateY(-50%);width:50px;min-height:auto;padding:9px 5px;gap:11px;border-radius:17px;display:flex;flex-direction:column;align-items:center;
+background:rgba(6,27,17,.72);border-color:rgba(172,238,185,.16);box-shadow:0 20px 53px #0008}
+.launcher .brand-mark{display:none}
+.launcher .launcher-rule{display:none}
+.launcher-nav{display:flex;flex-direction:column;gap:5px;width:100%;align-items:center}
+.launcher-link{width:39px;min-height:43px;height:43px;flex-shrink:0;border-radius:12px;gap:0;padding:0;background:transparent;color:#b8d8c1}
+.launcher-link span{display:none}
+.launcher-link svg{width:18px;height:18px}
+.launcher-link:hover{transform:translateX(1px);color:#f0fff4;background:#8affae1b}
+.launcher-link.active{background:#98ffc51a;border:1px solid #c0ffdf30;color:var(--forest-mint);box-shadow:0 0 19px #6eeaac1b}
+.launcher-link.active::before{display:none}
+.launcher-link.active svg{color:var(--forest-mint);filter:drop-shadow(0 0 7px #77ffad83)}
+.launcher-bottom{display:none}
+.main-shell{position:absolute;inset:0;min-width:0;background:transparent!important;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;display:block;overflow:visible}
+.app-topbar{position:absolute;top:12px;right:13px;left:13px;z-index:21;display:flex;justify-content:space-between;align-items:flex-start;padding:0;background:transparent;border:0;pointer-events:none;height:auto}
+.app-topbar>*{pointer-events:auto}
+.top-identity{padding:7px 10px;border-radius:11px;display:none}
+.top-identity-icon{display:none}
+.top-identity small{font-size:8px}
+.top-identity strong{font-size:10px}
+.topbar-actions{margin-left:auto;gap:8px;display:flex;align-items:center}
+.online-pill{position:fixed;top:12px;left:12px;display:inline-flex!important;gap:6px;height:30px;align-items:center;padding:6px 10px;background:#082016b8;border:1px solid #c0f7ca16;box-shadow:0 4px 22px #0006;color:#efffef;font:700 11px/1 ui-sans-serif,sans-serif;letter-spacing:0;text-transform:lowercase;border-radius:8px}
+.online-pill i{width:6px;height:6px;background:var(--forest-mint);box-shadow:0 0 8px #8effb3}
+.online-pill strong{color:var(--forest-mint);font-weight:800}
+.icon-button{width:34px;height:34px;border-radius:10px;background:rgba(11,38,24,.68);border:1px solid #cdf8d22f;backdrop-filter:blur(18px);font-size:15px}
+.icon-button:hover{background:#2b6d4b8a}
+.profile-menu{height:35px;padding:4px 10px 4px 5px;gap:7px;border-radius:10px;background:#0b2b1cae;border:1px solid #e0ffde2a;backdrop-filter:blur(18px);font-size:11px;color:#edfff4}
+.avatar{width:26px;height:26px;border-radius:7px;color:#092319;background:linear-gradient(125deg,#b5f5c9,#79cda8)}
+.content-shell{position:absolute;inset:0;min-height:0;overflow:auto;padding:0;background:transparent;scrollbar-width:thin;scrollbar-color:#c2e9c158 transparent}
+.app-status{position:absolute;bottom:11px;right:12px;left:auto;z-index:17;width:auto;min-height:25px;height:auto;padding:4px 9px;border:0;border-radius:9px;background:rgba(7,25,15,.58);color:#c5e1cc8c;backdrop-filter:blur(13px);font:700 9px/1.4 ui-sans-serif,sans-serif;gap:15px}
+.app-status span:first-child{display:none}
+.app-status b{color:var(--forest-mint)}
+.screen,.forest-app{color:var(--text)}
+.forest-app{position:relative;min-height:100%;padding:72px clamp(32px,5vw,80px) 52px 82px;max-width:1740px;margin:auto;display:flex;flex-direction:column}
+.forest-app-head{position:relative;display:flex;flex-direction:column;align-items:flex-start;margin:0 0 26px;max-width:800px}
+.forest-app-head .eyebrow{color:var(--forest-mint);letter-spacing:.18em;font-size:10px;font-weight:850}
+.forest-app-head h1{font-size:clamp(36px,4vw,57px);line-height:1.04;font-weight:760;letter-spacing:-.072em;margin:11px 0 10px;text-shadow:0 4px 27px #000e}
+.forest-app-head h1 em{font-family:Georgia,serif;font-style:italic;font-weight:400;color:#9dedd0}
+.forest-app-head>p{font-size:12px;color:#d5efdbc9;margin:0;text-shadow:0 1px 8px #000a}
+.forest-app-head .forest-chat-presence{position:absolute;right:0;bottom:6px;border:1px solid #b3ebc43e;background:#1130219a;padding:9px 12px;border-radius:12px;font-size:10px;color:#e4fbe8}
+.forest-chat-presence i{display:inline-block;width:6px;height:6px;background:#8cffaf;border-radius:50%;box-shadow:0 0 8px #8cffaf;margin-right:7px}
+.forest-app button{transition:background .18s,border-color .18s,box-shadow .18s,transform .18s}
+.forest-app button:hover:not(:disabled){border-color:#b6ffce75}
+.forest-app .forest-game-stage,.forest-chat-layout,.ai-panel,.ai-side{background:rgba(5,22,15,.79)!important;border:1px solid rgba(190,250,210,.19);box-shadow:0 24px 65px #0008,inset 0 1px 0 #fff1;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:19px}
+.forest-app button.primary-btn,.primary-btn,.forest-app .forest-game-controls button:first-child{background:linear-gradient(120deg,#b1efca,#8bd9b4);color:#0b281a;border:1px solid #e0ffde60;font-weight:850;box-shadow:0 8px 26px #8cffb01d}
+.forest-app button.primary-btn:hover,.primary-btn:hover{box-shadow:0 9px 28px #98ffc744}
+button,textarea,input{accent-color:#a7efc4}
