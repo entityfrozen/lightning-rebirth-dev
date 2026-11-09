@@ -37,21 +37,44 @@ export function Chat({user,onAuth,live}){
   const member=server?.members?.some(m=>m.id===user?.id);
   const [memberSearch,setMemberSearch]=useState('');
   const [rosterOpen,setRosterOpen]=useState(false);
+  const [directoryMembers,setDirectoryMembers]=useState([]);
   const onlineIds=useMemo(()=>new Set(live.online.map(person=>person.id)),[live.online]);
-  const fullRoster=useMemo(()=>(server?.members||[]).slice().sort((a,b)=>{
-    const aOn=onlineIds.has(a.id),bOn=onlineIds.has(b.id);
-    if(aOn!==bOn)return aOn?-1:1;
-    return (a.name||a.username||'').localeCompare(b.name||b.username||'');
-  }),[server?.members,onlineIds]);
+  const fullRoster=useMemo(()=>{
+    const members=new Map((server?.members||[]).map(person=>[person.id,person]));
+    if(server?.permanent) {
+      for(const account of directoryMembers){
+        members.set(account.id,{...account,...(members.get(account.id)||{}),platformRole:account.platformRole});
+      }
+    }
+    return [...members.values()].sort((a,b)=>{
+      const aOnline=onlineIds.has(a.id),bOnline=onlineIds.has(b.id);
+      if(aOnline!==bOnline)return aOnline?-1:1;
+      return (a.name||a.username||'').localeCompare(b.name||b.username||'');
+    });
+  },[server?.members,server?.permanent,directoryMembers,onlineIds]);
   const matchingRoster=fullRoster.filter(person=>(person.name+' '+person.username).toLowerCase().includes(memberSearch.toLowerCase()));
   const onlineCount=fullRoster.filter(person=>onlineIds.has(person.id)).length;
-  const rosterById=useMemo(()=>new Map((server?.members||[]).map(person=>[person.id,person])),[server?.members]);
-  const rosterByName=useMemo(()=>new Map((server?.members||[]).filter(person=>person.username||person.name).map(person=>[String(person.username||person.name).toLowerCase(),person])),[server?.members]);
+  const rosterById=useMemo(()=>new Map(fullRoster.map(person=>[person.id,person])),[fullRoster]);
+  const rosterByName=useMemo(()=>new Map(fullRoster.filter(person=>person.username||person.name).map(person=>
+    [String(person.username||person.name).toLowerCase(),person])),[fullRoster]);
   const taggedMember=row=>rosterById.get(row.userId)||rosterByName.get(String(row.username||row.by||'').toLowerCase())||
     (row.userId===user.id?{id:user.id,platformRole:user.role,role:'member'}:null);
   useEffect(()=>{if(server&&!channels.some(c=>c.id===channel))setChannel(channels[0]?.id||'general');},[server?.id,channels.length]);
   useEffect(()=>{if(feed.current)feed.current.scrollTop=feed.current.scrollHeight;},[messages.length,active?.id]);
   useEffect(()=>{if(live.error&&!dmUser)setError(live.error);},[live.error]);
+  useEffect(()=>{
+    if(!user)return;
+    let cancelled=false;
+    const refresh=async()=>{
+      try{
+        const directory=await api('/api/community/members');
+        if(!cancelled)setDirectoryMembers(directory.members||[]);
+      }catch{}
+    };
+    refresh();
+    const timer=setInterval(refresh,20000);
+    return()=>{cancelled=true;clearInterval(timer);};
+  },[user?.id]);
   useEffect(()=>{
     if(!user)return;
     let cancelled=false;
@@ -100,7 +123,7 @@ export function Chat({user,onAuth,live}){
     <div className="forest-app-head"><span className="eyebrow">CELESTIAL / COMMUNITY</span><h1>Community <em>chat.</em></h1><p>Conversations and people, all in one place.</p><span className="forest-chat-presence"><i/>{live.online.length} online · {live.connected?'connected':'reconnecting'}</span></div>
     <div className="forest-chat-layout">
       <aside className="forest-chat-servers"><span className="chat-group-label">SERVERS</span>{live.servers.map(s=><button key={s.id} title={s.name} className={'forest-server-icon '+(s.id===server?.id?'active':'')} onClick={()=>{setDmUser(null);setSid(s.id);setChannel(s.channels[0]?.id||'general')}}>{s.permanent?'✦':s.name?.[0]}</button>)}<button title="Create server" className="forest-server-add" onClick={create}>+</button></aside>
-      <aside className="forest-chat-channels"><div className="forest-chat-server-title"><span>{server?.name||'Celestial'}</span><small>{server?.memberCount||0} members</small></div><span className="chat-group-label">TEXT CHANNELS {server?.canManage&&<button title="Add channel" onClick={addChannel}>+</button>}</span><div className="forest-channel-list">{channels.map(c=><button key={c.id} className={'forest-channel-link '+(active?.id===c.id?'active':'')} onClick={()=>{setDmUser(null);setChannel(c.id);setReply(null)}}><span>#</span>{c.name}{c.readOnly&&<small>◆</small>}</button>)}</div><div className="forest-dm-block"><span className="chat-group-label">DIRECT MESSAGES</span>
+      <aside className="forest-chat-channels"><div className="forest-chat-server-title"><span>{server?.name||'Celestial'}</span><small>{fullRoster.length} members</small></div><span className="chat-group-label">TEXT CHANNELS {server?.canManage&&<button title="Add channel" onClick={addChannel}>+</button>}</span><div className="forest-channel-list">{channels.map(c=><button key={c.id} className={'forest-channel-link '+(active?.id===c.id?'active':'')} onClick={()=>{setDmUser(null);setChannel(c.id);setReply(null)}}><span>#</span>{c.name}{c.readOnly&&<small>◆</small>}</button>)}</div><div className="forest-dm-block"><span className="chat-group-label">DIRECT MESSAGES</span>
         {dmThreads.map(thread=><button key={thread.user.id} className={'forest-dm-link '+(dmUser?.id===thread.user.id?'active':'')}
           onClick={()=>{setDmUser(thread.user);setError('')}}><span>◉</span>{thread.user.username}</button>)}
         </div>{server&&!member&&<button className="forest-join-server" onClick={()=>live.send({type:'v2Join',serverId:server.id})}>Join server ↗</button>}<div className="forest-chat-channel-footer">✦ {user.username}</div></aside>
