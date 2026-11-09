@@ -112,7 +112,8 @@ try{
     return Boolean(frame && frame.src &&
       (frame.src.includes('/~/sj/')||frame.src.includes('/scram/')));
   },null,{timeout:45000});
-  for(const required of ['/proxy-entry.js','/sw.js','/scram/scramjet.js',
+  assert.match(worker,/\/sw\.js$/,'active Scramjet worker has the correct URL');
+  for(const required of ['/proxy-entry.js','/scram/scramjet.js',
       '/controller/controller.api.js','/scram/scramjet-utils.js',
       '/clients/libcurl-client.js']){
     assert.ok(scriptPaths.has(required),'Required browser asset never loaded: '+required+
