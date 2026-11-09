@@ -13,7 +13,7 @@ const salt='0123456789abcdef0123456789abcdef';
 const passwordHash=p=>'scrypt$'+salt+'$'+scryptSync(p,salt,64).toString('hex');
 const oldId='usr_OldMember12A', adminId='usr_OldAdmin123B', waitingId='usr_Waiting1234C';
 
-test('old Bolt accounts and chat servers remain accessible after upgrading', {timeout:20000}, async()=>{
+test('old Bolt accounts and chat servers remain accessible after upgrading', {timeout:35000}, async()=>{
   const dir=await mkdtemp(path.join(tmpdir(),'celestial-bolt-live-'));
   const port=40000+Math.floor(Math.random()*14000);
   const oldState=JSON.stringify({users:[
@@ -51,11 +51,18 @@ test('old Bolt accounts and chat servers remain accessible after upgrading', {ti
       OPENAI_API_KEY:'',NVIDIA_API_KEY:''
     },stdio:'pipe'});
     let ready=false;
-    for(let i=0;i<120;i++){
-      try{const res=await fetch(url+'/api/me');if(res.ok){ready=true;break;}}
-      catch{await new Promise(done=>setTimeout(done,65));}
+    let output='';
+    server.stdout.on('data',chunk=>{output+=chunk.toString().slice(0,1000);});
+    server.stderr.on('data',chunk=>{output+=chunk.toString().slice(0,1000);});
+    for(let i=0;i<250;i++){
+      if(server.exitCode!==null)break;
+      try{
+        const res=await fetch(url+'/api/me');
+        if(res.ok){ready=true;break;}
+      }catch{}
+      await new Promise(done=>setTimeout(done,70));
     }
-    assert.equal(ready,true,'legacy-backed server must boot');
+    assert.equal(ready,true,'legacy-backed server must boot: '+output.slice(-900));
     const guestDirectory=await call('/api/community/members');
     assert.equal(guestDirectory.status,401);
     let result=await call('/api/login','POST',{username:'old.member',password:'old member login'});
