@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 
 export default defineConfig({
+  base: '/bundle/',
   build: {
     target: 'es2022',
     outDir: 'public/bundle',
