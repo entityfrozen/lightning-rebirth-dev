@@ -118,6 +118,7 @@ function App() {
     return initial==='home'?'home':initial==='ai'?'cloud':initial==='chat'?'chat':initial==='apps'?'apps':initial==='settings'?'settings':'browser';
   });
   const [dockOpen,setDockOpen]=useState(()=>readLocal('dock-open',true));
+  const [showHomeAI,setShowHomeAI]=useState(()=>readLocal('home-ai-sidebar',true)!==false);
   const [palette,setPalette]=useState(()=>readLocal('celestial-palette','aurora'));
   const [backdrop,setBackdrop]=useState(()=>readLocal('celestial-backdrop','aurora'));
   const [reduced,setReduced]=useState(()=>readLocal('reduce-motion',false));
@@ -143,6 +144,7 @@ function App() {
     document.documentElement.dataset.motion=reduced?'reduced':'full';
   },[reduced]);
   useEffect(()=>saveLocal('dock-open',dockOpen),[dockOpen]);
+  useEffect(()=>saveLocal('home-ai-sidebar',showHomeAI),[showHomeAI]);
   useEffect(()=>{applyCloak();},[]);
   useEffect(()=>{
     let mounted=true;
@@ -218,19 +220,24 @@ function App() {
     <div className="celestial-workspace">
       <main className="celestial-stage" id="main-content">
         <Suspense fallback={<div className="celestial-loading">Opening Celestial…</div>}>
-          {view==='home'?<div className="celestial-home-split">
+          {view==='home'?<div className={'celestial-home-split '+(!showHomeAI?'ai-hidden':'')}>
             <section className="celestial-home-main" aria-label="Main page">
               <Browser user={user} onAuth={setModal} onShortcut={openDock} homeMode/>
+              {!showHomeAI&&<button type="button" className="celestial-show-home-ai"
+                aria-label="Show Celestial AI sidebar" title="Restore Celestial AI"
+                onClick={()=>setShowHomeAI(true)}><span aria-hidden="true">✧</span> Show Celestial AI</button>}
             </section>
-            <aside className="celestial-home-rail" aria-label="Celestial AI sidebar">
-              <AI key="celestial-home-sidebar" sidebar user={user} onAuth={setModal}/>
-            </aside>
+            {showHomeAI&&<aside className="celestial-home-rail" aria-label="Celestial AI sidebar">
+              <AI key="celestial-home-sidebar" sidebar user={user} onAuth={setModal}
+                onHide={()=>setShowHomeAI(false)}/>
+            </aside>}
           </div>:
           view==='browser'?<Browser user={user} onAuth={setModal} onShortcut={openDock}
             launch={activeDock==='music'?browserLaunch:null}/>:
           view==='apps'?<Apps onNavigate={selectSection} onMusic={()=>openDock('music')}/>:
           view==='settings'?<Settings user={user} palette={palette} setPalette={setPalette}
             backdrop={backdrop} setBackdrop={setBackdrop} reduced={reduced} setReduced={setReduced}
+            showHomeAI={showHomeAI} setShowHomeAI={setShowHomeAI}
             onBack={()=>selectSection('home')} onLogout={logout}/>:
           view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:
           <AI key="celestial-ai" user={user} onAuth={setModal}/>}
