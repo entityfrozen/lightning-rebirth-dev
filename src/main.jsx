@@ -14,6 +14,7 @@ import { AI } from './AI.jsx';
 import { api, navigation, readLocal, saveLocal } from './constants.js';
 import { Icon } from './icons.jsx';
 import { SceneBoundary } from './SceneBoundary.jsx';
+import {ForestParticles} from './ForestParticles.jsx';
 
 const allowed=new Set(['arcade','browser','chat','ai']);
 const fromHash=()=>{
@@ -134,6 +135,7 @@ function App(){
   const effectiveReduced=reduced||(typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   return <>
     <div className="forest-backdrop" aria-hidden="true"><span className="forest-light"/><span className="forest-fireflies"/></div>
+    <SceneBoundary><ForestParticles reduced={effectiveReduced}/></SceneBoundary>
     <div className="workspace-shell">
       <aside className="launcher glass">
         <button className="brand-mark" onClick={()=>navigate('browser')} aria-label="Celestial Browser"><img src="/assets/celestial-star.svg" alt=""/></button>
