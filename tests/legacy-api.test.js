@@ -75,6 +75,15 @@ test('old Bolt accounts and chat servers remain accessible after upgrading', {ti
       const main=snapshot.servers.find(server=>server.id==='lightning-main');
       assert.ok(main,'original community retained');
       assert.ok(main.messages.general.some(row=>row.message==='Our original community chat'));
+      assert.ok(main.members.some(member=>member.id===adminId),
+        'offline admins remain in the saved member list');
+      const offlineAdmin=main.members.find(member=>member.id===adminId);
+      assert.equal(offlineAdmin.platformRole,'admin');
+      assert.equal(offlineAdmin.admin,true);
+      assert.equal(main.members.find(member=>member.id===oldId).platformRole,'user');
+      const currentlyOnline=events.find(event=>event.type==='hello')?.online||[];
+      assert.ok(!currentlyOnline.some(member=>member.id===adminId),
+        'offline role labels do not depend on active sockets');
     }finally{ws.close();}
     result=await call('/api/logout','POST',{});
     assert.equal(result.status,200);
