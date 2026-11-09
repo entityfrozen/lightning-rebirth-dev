@@ -1,8 +1,15 @@
-# Celestial — Forest Edition
+# Celestial — Aurora Edition
 
-A browser-first workspace with four sections: **Browser**, **Arcade**, **Chat**,
-and **AI**. The visual style is an immersive forest with restrained mint glass,
-an icon rail, soft WebGL fireflies, and functional floating workspaces.
+Celestial keeps four working sections: **Browser**, **Arcade**, **Chat**, and
+**AI**. Its interface mirrors the uploaded Xylora shell rather than a card
+dashboard: a 44px edge-mounted dock with scalloped corners and a hide tab,
+compact filled Fluent icons, a centered wordmark/search input and small
+shortcut pills. The default backdrop is a dark pine forest under violet-blue
+northern lights, with icy teal glass controls. The product name is **Celestial**.
+
+The dock has a few shortcuts for convenience. Games opens Arcade; Cloud opens
+AI; Apps opens a lightweight launcher, Music opens a browser tab, and Settings
+contains appearance controls. All four actual app engines remain unchanged.
 
 The project was rebuilt using **Celestial v8** as a base, with substantial
 feature logic reviewed and ported from the connected
@@ -32,7 +39,7 @@ engine may download and cache its own runtime assets during bootstrap.
 
 ### Browser
 
-- Forest new-tab search homepage
+- Xylora-proportioned centered Celestial search homepage with functional quick links
 - Multiple tabs and remembered tabs
 - Address field, web search, bookmark bar, back/forward, reload
 - Bolt's **Scramjet** proxy controller with Wisp transport for signed-in users
@@ -102,25 +109,30 @@ limitations.
 
 ## Visual design
 
-The forest experience is built in `src/forest.css`, with a photographic
-backdrop from Unsplash, deep green translucency, a mint search lens, and a
-compact icon rail. App pages and the WebGL particle system are loaded lazily
-so the forest and search interface can appear before heavier modules. `src/ForestParticles.jsx` uses WebGL and R3F to render
-subtle animated forest lights; CSS fallback remains when WebGL fails or when
-reduced motion is preferred. Browser, games, chat and AI are ordinary
-accessible HTML controls over the atmosphere.
+- `src/xylora.css`: **reference-matched navigation geometry** and the aurora
+  visual layer. The shell is intentionally flat and edge-mounted, not a
+  floating card. It overrides the older forest stylesheet without replacing
+  the functional app-specific styles.
+- `src/main.jsx`: handles the original dock pattern, collapse button,
+  account controls, Apps launcher and appearance modal.
+- `src/Browser.jsx`: centered search, five shortcut pills and browser tabs.
+- `src/ForestParticles.jsx`: optional low-power WebGL fireflies. Motion can
+  be reduced under Settings.
 
-Unsplash photos are licensed under the Unsplash License for projects like this:
-https://unsplash.com/license. Replace the image URL in `src/forest.css` if
-you want to use your own forest photography.
+Settings offers three palettes (**Aurora**, **Evergreen**, **Amethyst**) and
+three backgrounds (**Northern lights**, **Deep forest**, **Midnight gradient**).
+These choices persist locally. The default photograph is by Troy Olson,
+available under the Unsplash License:
+https://unsplash.com/photos/aurora-borealis-lights-up-the-night-sky-over-forest-9h8pkF_N0FE
 
-The code also includes the older `src/GlassHero.jsx` R3F optical glass
-experiment, but it is **not mounted in the forest home screen**. This avoids
-distracting from the photography and centered search.
+The alternative forest is an Unsplash photograph. If remote images are
+unavailable, a dark CSS background remains. Appearance choices never change
+user data or live sessions.
 
 ## File map
 
-- `src/main.jsx`: minimal shell and account login
+- `src/main.jsx`: reference-style dock, live status, settings and account login
+- `src/xylora.css`: Celestial palette and background styles, faithful edge dock
 - `src/forest.css`: forest design, game/gallery and responsive layouts
 - `src/Browser.jsx`, `src/BoltProxy.js`: browser UI and proxy adapter
 - `src/Arcade.jsx`: six playable games

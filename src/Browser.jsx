@@ -1,14 +1,15 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {Icon} from './icons.jsx';
+import {Games20Filled,Grid20Filled,MusicNote220Filled,Cloud20Filled,Settings20Filled} from '@fluentui/react-icons';
 import {readLocal,saveLocal,safeUrl} from './constants.js';
 import {createProxyFrame} from './BoltProxy.js';
 
 const shortcuts=[
- {name:'study',query:'research techniques for studying'},
- {name:'apps',query:'web applications'},
- {name:'games',query:'browser games'},
- {name:'music',query:'online music'},
- {name:'cloud',query:'cloud services'}
+  {id:'study',name:'study',icon:Games20Filled},
+  {id:'apps',name:'apps',icon:Grid20Filled},
+  {id:'music',name:'music',icon:MusicNote220Filled},
+  {id:'cloud',name:'cloud',icon:Cloud20Filled},
+  {id:'settings',name:'settings',icon:Settings20Filled}
 ];
 const blank=()=>({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),url:'',history:[],cursor:-1});
 function BrowserFrame({tab,active,user,openTab,onLocation,register}){
@@ -36,7 +37,7 @@ function BrowserFrame({tab,active,user,openTab,onLocation,register}){
           await frame.current.go(tab.url);
         }else{
           el.src=tab.url;
-          setError('Some sites block embedded viewing. Sign in to use the full Bolt browser engine.');
+          setError('Some sites block embedded viewing. Sign in to use the Celestial browser engine.');
         }
       }catch(e){
         if(!disposed){setError(e.message||'The proxy is unavailable');el.src=tab.url;}
@@ -57,18 +58,15 @@ function BrowserFrame({tab,active,user,openTab,onLocation,register}){
     {error&&active&&<div className="browser-embed-warning">{error} <a href={tab.url} target="_blank" rel="noopener noreferrer">Open directly ↗</a></div>}
   </div>;
 }
-export function Browser({user,onAuth,compact=false}){
+export function Browser({user,onAuth,onShortcut,homeSignal=0,homeMode=false,launch=null}){
   const [tabs,setTabs]=useState(()=>readLocal('forest-browser-tabs',[blank()]).slice(0,12));
   const [active,setActive]=useState(null);
   const [input,setInput]=useState('');
-  const [bookmarks,setBookmarks]=useState(()=>readLocal('forest-browser-bookmarks',[
-    {label:'Wikipedia',url:'https://www.wikipedia.org/'},
-    {label:'GitHub',url:'https://github.com/'},
-    {label:'YouTube',url:'https://www.youtube.com/'}
-  ]));
+  const [bookmarks,setBookmarks]=useState(()=>readLocal('forest-browser-bookmarks',[]));
   const [message,setMessage]=useState('');
   const controls=useRef(new Map());
   const box=useRef(null);
+  const lastLaunch=useRef(null);
   const current=useMemo(()=>tabs.find(t=>t.id===active)||tabs[0], [tabs,active]);
   const activeId=current?.id;
   const visibleUrl=current?.url||'';
@@ -110,6 +108,19 @@ export function Browser({user,onAuth,compact=false}){
     });
   },[modify]);
   const addTab=()=>{const next=blank();setTabs(all=>[...all.slice(-11),next]);setActive(next.id);setInput('');};
+  useEffect(()=>{
+    if(!homeMode||!current?.url)return;
+    const fresh=blank();
+    setTabs(all=>[...all.slice(-11),fresh]);
+    setActive(fresh.id);
+  },[homeSignal,homeMode]);
+  useEffect(()=>{
+    if(!launch?.url||lastLaunch.current===launch.id)return;
+    lastLaunch.current=launch.id;
+    const fresh={...blank(),url:launch.url,history:[launch.url],cursor:0};
+    setTabs(all=>[...all.slice(-11),fresh]);
+    setActive(fresh.id);
+  },[launch?.id]);
   const closeTab=id=>{
     if(tabs.length===1){const next=blank();setTabs([next]);setActive(next.id);return;}
     const remaining=tabs.filter(t=>t.id!==id);
@@ -146,15 +157,18 @@ export function Browser({user,onAuth,compact=false}){
     </div>}
     <div className="forest-browser-stage">
       {!visibleUrl&&<div className="forest-browser-home">
-        <div className="forest-wordmark" aria-label="Celestial">celes<span>tial</span><sup>✦</sup></div>
+        <div className="forest-wordmark" aria-label="Celestial">celes<span>tial</span></div>
         <form className="forest-main-search" onSubmit={go}>
           <Icon name="browser" size={19}/>
           <input ref={box} value={input} onChange={e=>setInput(e.target.value)} placeholder="search or enter a url" aria-label="Search or enter a URL" autoComplete="off" spellCheck={false}/>
           <button type="submit" aria-label="Search"><Icon name="arrow" size={20}/></button>
         </form>
-        <div className="forest-shortcuts">{shortcuts.map(s=><button key={s.name} onClick={()=>navigate(s.query)}>{s.name}</button>)}</div>
+        <div className="forest-shortcuts">{shortcuts.map(item=>{
+          const FilledIcon=item.icon;
+          return <button key={item.id} onClick={()=>onShortcut?.(item.id)}><FilledIcon/>{item.name}</button>;
+        })}</div>
         {bookmarks.length>0&&<div className="forest-bookmarks">{bookmarks.slice(0,4).map(b=><button key={b.url} onClick={()=>navigate(b.url)}>✧ {b.label}</button>)}</div>}
-        {!user&&<button className="forest-browser-tip" onClick={()=>onAuth('login')}>Sign in for Bolt's full-site browsing engine ↗</button>}
+        
       </div>}
       {tabs.map(tab=>tab.url?<BrowserFrame key={tab.id} tab={tab} active={tab.id===activeId} user={user}
         onLocation={onLocation} openTab={value=>{const t=blank();setTabs(all=>[...all.slice(-11),{...t,url:value,history:[value],cursor:0}]);setActive(t.id);}}

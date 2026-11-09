@@ -105,7 +105,7 @@ function Chess({live,user}){
    live.send({type:'chessMove',id:game.id,from:selected,to:square,promotion:'q'});setSelected(null);
   }else setSelected(from.has(square)?square:null);
  };
- if(!game)return <div className="forest-game-stage"><div className="forest-game-symbol">♞</div><h2>Chess</h2><p>Challenge someone online or face Bolt's verified chess bot.</p>
+ if(!game)return <div className="forest-game-stage"><div className="forest-game-symbol">♞</div><h2>Chess</h2><p>Challenge someone online or face Celestial's chess bot.</p>
    <div className="forest-game-controls"><button disabled={!user||!live.connected||queued} onClick={()=>{live.send({type:'queue',game:'chess'});setQueued(true)}}>{queued?'Finding an opponent…':'Find a player'}</button><button disabled={!user||!live.connected} onClick={()=>live.send({type:'chessBot',difficulty:'normal'})}>Play versus bot</button>{queued&&<button onClick={()=>{live.send({type:'chessCancelQueue'});setQueued(false)}}>Cancel</button>}</div></div>;
  return <div className="forest-game-stage"><div className="forest-game-heading"><h2>Chess</h2><span>{game.over?game.result:game.turn===game.color?'YOUR TURN':'OPPONENT TURN'}</span></div>
    <div className="forest-chess-layout"><div className="forest-chess-board">{order.flatMap(y=>order.map(x=>{
@@ -156,7 +156,7 @@ function World({live,user}){
  const chosen=tile!==null&&world?{x:tile%world.width,y:Math.floor(tile/world.width)}:null;
  const me=world?.players?.find(p=>p.id===live.selfId);
  const act=(action,kind)=>{if(!chosen)return;live.send({type:'worldAction',action,kind,x:chosen.x,y:chosen.y,ratio:.35});};
- if(!world)return <div className="forest-game-stage"><div className="forest-game-symbol">◉</div><h2>WorldPvP</h2><p>Conquer territory in real time. The authoritative Bolt world engine manages all nations, battles and resources.</p><div className="forest-game-controls">
+ if(!world)return <div className="forest-game-stage"><div className="forest-game-symbol">◉</div><h2>WorldPvP</h2><p>Conquer territory in real time. The live Celestial world engine manages all nations, battles and resources.</p><div className="forest-game-controls">
     <button disabled={!user||!live.connected} onClick={()=>{live.send({type:'worldQueue'});setQueued(true)}}>{queued?'Queued for a world…':'Join live world'}</button>
     <button disabled={!user||!live.connected} onClick={()=>{live.send({type:'worldPractice'});setQueued(true)}}>Practice with bots</button>
     {queued&&<button onClick={()=>{live.send({type:'worldCancel'});setQueued(false)}}>Cancel</button>}</div></div>;
