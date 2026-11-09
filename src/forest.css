@@ -93,3 +93,115 @@ background:rgba(6,27,17,.72);border-color:rgba(172,238,185,.16);box-shadow:0 20p
 .forest-app button.primary-btn,.primary-btn,.forest-app .forest-game-controls button:first-child{background:linear-gradient(120deg,#b1efca,#8bd9b4);color:#0b281a;border:1px solid #e0ffde60;font-weight:850;box-shadow:0 8px 26px #8cffb01d}
 .forest-app button.primary-btn:hover,.primary-btn:hover{box-shadow:0 9px 28px #98ffc744}
 button,textarea,input{accent-color:#a7efc4}
+
+/* New-tab browser: the forest stays visible around a single piece of glass. */
+.forest-browser{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;color:#f5fff7}
+.forest-browser-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.forest-browser-home{width:min(100%,540px);padding:22px 15px 40px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:translateY(-5%);position:relative;z-index:2}
+.forest-wordmark{font-size:clamp(38px,4.4vw,61px);font-weight:800;letter-spacing:-.068em;line-height:1;white-space:nowrap;color:white;text-shadow:0 3px 25px #000d;margin-bottom:26px}
+.forest-wordmark span{color:#9becb8}
+.forest-wordmark sup{font-size:16px;vertical-align:super;color:#a4ffc3;margin-left:7px;text-shadow:0 0 20px #b0ffca}
+.forest-main-search{height:48px;width:min(100%,490px);display:flex;align-items:center;gap:12px;border:1px solid #c7ffd14d;border-radius:50px;padding:5px 6px 5px 16px;background:linear-gradient(105deg,rgba(14,47,30,.91),rgba(49,91,54,.63));box-shadow:0 0 0 2px #040f0770,0 13px 43px #0008,inset 0 1px 0 #d1ffe33b;backdrop-filter:blur(18px)}
+.forest-main-search>svg{color:#91eaba;flex-shrink:0}
+.forest-main-search input{border:0;outline:0;background:transparent;color:#f4fff7;min-width:0;width:100%;flex:1;font-size:13px;letter-spacing:-.02em}
+.forest-main-search input::placeholder{color:#e6f2e8cf}
+.forest-main-search button{height:34px;width:34px;flex-shrink:0;display:grid;place-items:center;border:0;border-radius:50%;background:#96e5bb;color:#143024;box-shadow:0 0 15px #9affbf3c}
+.forest-main-search button:hover{transform:scale(1.05);background:#c1f6d5}
+.forest-shortcuts,.forest-bookmarks{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:15px}
+.forest-shortcuts button,.forest-bookmarks button{border:1px solid #cef8d841;border-radius:30px;background:rgba(22,53,35,.63);box-shadow:inset 0 1px 0 #ffffff10;backdrop-filter:blur(13px);color:#f0fff2;font-size:11px;padding:8px 13px;line-height:1}
+.forest-shortcuts button::before{content:"✧";font-size:12px;color:#a1f4c1;margin-right:7px}
+.forest-shortcuts button:hover,.forest-bookmarks button:hover{background:#2c73527a;transform:translateY(-1px)}
+.forest-bookmarks{margin-top:15px;opacity:.85}
+.forest-bookmarks button{background:#071b1480;border-color:#e5ffe127;font-size:10px}
+.forest-browser-tip{margin-top:27px;color:#d1f1dc9e;background:none;border:0;font-size:10px;text-shadow:0 2px 9px #000b}
+.forest-browser-tip:hover{color:#fff}
+.forest-browser.is-browsing{background:rgba(5,14,10,.3)}
+.forest-browser-chrome{position:relative;margin:48px 17px 0 76px;z-index:5;border-radius:15px 15px 0 0;border:1px solid #adf5c23c;background:#0c2119d9;backdrop-filter:blur(24px);box-shadow:0 8px 40px #0008}
+.forest-tabs{height:40px;display:flex;align-items:end;gap:2px;padding:4px 8px 0;overflow-x:auto;scrollbar-width:none}
+.forest-tab{min-width:100px;max-width:180px;display:flex;align-items:center;height:33px;border-radius:9px 9px 0 0;border:1px solid transparent;overflow:hidden}
+.forest-tab.active{background:#3f604f73;border-color:#d2ffe73e}
+.forest-tab>button:first-child{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:9px 8px;color:#ebfff0;border:0;background:transparent;font-size:10px;text-align:left}
+.forest-tab-close,.forest-add-tab{flex-shrink:0;border:0;background:transparent;color:#def9e3;font-size:16px;padding:5px 8px}
+.forest-tab-close:hover,.forest-add-tab:hover{background:#ffffff17}
+.forest-toolbar{height:48px;display:flex;align-items:center;gap:6px;padding:5px 11px;border-top:1px solid #d2ffe519}
+.forest-toolbar>button,.forest-toolbar>a{height:32px;width:32px;flex-shrink:0;display:grid;place-items:center;text-decoration:none;border-radius:8px;border:1px solid transparent;background:transparent;color:#d7ebdb}
+.forest-toolbar>button:hover,.forest-toolbar>a:hover{background:#ffffff14}
+.forest-toolbar>button:disabled{opacity:.35}
+.forest-toolbar>button.favorite{color:#a6ffd6}
+.forest-toolbar form{height:35px;display:flex;align-items:center;gap:9px;padding:0 10px;flex:1;min-width:0;background:#04180ece;border:1px solid #d6fede37;border-radius:11px}
+.forest-toolbar form input{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font-size:12px}
+.forest-toolbar form button{border:0;background:transparent;color:#a6f8c5;font-size:20px}
+.forest-browser.is-browsing .forest-browser-stage{margin:0 17px 30px 76px;border-radius:0 0 13px 13px;background:#06120d;border:1px solid #d2ffdf37;border-top:0;overflow:hidden;box-shadow:0 15px 40px #000a}
+.browser-frame{display:none;position:absolute;inset:0;background:white}
+.browser-frame.active{display:block}
+.portal-iframe{width:100%;height:100%;border:0;background:#fff}
+.browser-embed-warning{position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:90%;color:#effff4;background:#09271de8;border:1px solid #bdf4c87a;border-radius:10px;padding:9px 13px;font-size:11px;z-index:5;box-shadow:0 8px 28px #000a}
+.browser-embed-warning a{color:#98f7c0;margin-left:8px}
+.forest-browser-toast{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);background:#0c2b1aee;color:white;padding:10px 16px;border-radius:10px}
+/* Game selection: photoreal world first, compact playable windows second. */
+.forest-arcade .forest-app-head{margin-bottom:32px}
+.forest-game-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:1160px}
+.forest-game-card{position:relative;min-height:224px;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;isolation:isolate;padding:20px;text-align:left;border-radius:19px;border:1px solid #d1ffe439;background:linear-gradient(145deg,#162e21e3,#0a1f15ed);color:#fff;box-shadow:0 15px 40px #0007,inset 0 1px 0 #ffffff1c;backdrop-filter:blur(20px)}
+.forest-game-card::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 76% 28%,#9ceaaf41,transparent 55%),linear-gradient(155deg,transparent 40%,#0a1711 85%)}
+.forest-game-chess::before{background:radial-gradient(circle at 78% 22%,#dae6ad56,transparent 55%),linear-gradient(155deg,transparent 40%,#071810 85%)}
+.forest-game-rps::before{background:radial-gradient(circle at 76% 26%,#ecc7a651,transparent 55%),linear-gradient(155deg,transparent 40%,#091810 85%)}
+.forest-game-puzzle::before{background:radial-gradient(circle at 77% 20%,#96dace52,transparent 55%),linear-gradient(155deg,transparent 40%,#091810 85%)}
+.forest-game-uma::before{background:radial-gradient(circle at 79% 18%,#df8cae4f,transparent 55%),linear-gradient(155deg,transparent 40%,#071810 85%)}
+.forest-card-number{position:absolute;left:20px;top:17px;color:#dbf8e3b6;font-size:9px;letter-spacing:.1em;font-weight:790}
+.forest-card-symbol{position:absolute;right:22px;top:40px;font:500 75px/1 Georgia,serif;color:#c6ffddaa;text-shadow:0 0 43px #adffcb8a}
+.forest-game-card strong{font-size:21px;letter-spacing:-.055em;font-weight:760;margin-bottom:7px;max-width:70%}
+.forest-game-card small{font-size:11px;color:#b4d9c6;max-width:80%;line-height:1.55}
+.forest-card-play{margin-top:18px;border-top:1px solid #ffffff2f;padding-top:11px;width:100%;display:flex;justify-content:space-between;color:#b3f8cf;font-size:10px;font-weight:800;letter-spacing:.13em}
+.forest-card-play b{font-size:16px}
+.forest-game-card:hover{transform:translateY(-5px);box-shadow:0 23px 54px #0009,0 0 30px #79e3a521;border-color:#a4fbc48e}
+.forest-game-card:hover .forest-card-symbol{transform:scale(1.05)}
+.forest-active-game{width:min(1100px,100%);display:flex;flex-direction:column;gap:13px}
+.forest-return{align-self:flex-start;color:#c9f5d6;font-size:10px;letter-spacing:.15em;border:0;padding:9px 0;background:transparent}
+.forest-game-login{margin:0;background:#09281de3;padding:10px 14px;border:1px solid #d8fbd94a;border-radius:10px;font-size:11px;color:#e2f9e7}
+.forest-game-login button{color:#93e8b7;border:0;background:transparent}
+.forest-game-stage{padding:23px;min-height:400px;display:flex;flex-direction:column;gap:17px}
+.forest-game-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #d0f8dc27;padding-bottom:12px}
+.forest-game-heading h2{font-size:28px;letter-spacing:-.055em;margin:0}
+.forest-game-heading>span{color:#a9ecbf;font-size:11px;letter-spacing:.11em;font-weight:780}
+.forest-game-stage>p{font-size:12px;line-height:1.7;color:#c4e6d3c8;margin:0}
+.forest-game-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.forest-game-controls button,.forest-chess-layout aside button,.forest-world-layout aside button{border:1px solid #d0f8db46;color:#e0ffea;background:#3f694b60;padding:11px 15px;border-radius:11px;font-size:11px;font-weight:750}
+.forest-game-controls button:hover,.forest-chess-layout aside button:hover{background:#59896372}
+.forest-game-controls button:first-child{color:#10311d!important}
+.forest-game-symbol{font-size:78px;color:#b9ffca;text-shadow:0 0 34px #8defaf7c;margin:15px 0}
+.forest-2048-board{width:min(360px,100%);aspect-ratio:1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#1738249e;border:1px solid #adf2bb51;border-radius:15px;padding:8px}
+.forest-2048-tile{display:grid;place-items:center;border-radius:9px;background:#03170b9e;color:#dcf4e3;font-size:25px;font-weight:800;font-variant-numeric:tabular-nums}
+.forest-2048-tile[data-value="2"],.forest-2048-tile[data-value="4"]{background:#567b5a}
+.forest-2048-tile[data-value="8"],.forest-2048-tile[data-value="16"]{background:#639c69}
+.forest-2048-tile[data-value="32"],.forest-2048-tile[data-value="64"]{background:#528c6f}
+.forest-2048-tile[data-value="128"],.forest-2048-tile[data-value="256"],.forest-2048-tile[data-value="512"],.forest-2048-tile[data-value="1024"],.forest-2048-tile[data-value="2048"]{background:#b4dfae;color:#10321d;font-size:20px}
+.forest-mines-board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;width:min(420px,100%);aspect-ratio:1}
+.forest-mine{display:grid;place-items:center;border:1px solid #9ae5ad55;border-radius:6px;background:#194732cc;color:#e2ffe7;font-weight:800;font-size:15px}
+.forest-mine.revealed{background:#789e82a0;color:#f7fff7}
+.forest-mine.danger{background:#9c4848}
+.forest-chess-layout,.forest-world-layout{display:grid;grid-template-columns:minmax(260px,485px) minmax(190px,1fr);gap:24px;align-items:start}
+.forest-chess-board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;overflow:hidden;border:1px solid #f2ffee3c;border-radius:10px;box-shadow:0 11px 38px #0007}
+.forest-chess-square{border:0;border-radius:0;display:grid;place-items:center;font-size:clamp(22px,3vw,36px);padding:0;aspect-ratio:1;color:#ecfff0}
+.forest-chess-square.dark{background:#2d593b}.forest-chess-square.light{background:#789a71}
+.forest-chess-square.selected{box-shadow:inset 0 0 0 4px #b7f4b7;background:#447e4a}
+.forest-chess-square.target{background:#94ba6a}
+.forest-chess-layout aside{display:flex;flex-direction:column;gap:12px}
+.forest-chess-layout aside h3{font-size:29px;margin:0}
+.forest-chess-layout aside p{font-size:12px;color:#cae9d1;line-height:1.7}
+.forest-chess-layout aside small{color:#a5d2b5}
+.forest-rps .forest-rps-scores{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;width:min(560px,100%)}
+.forest-rps-scores>div{display:grid;place-items:center;gap:8px;padding:12px;border:1px solid #b2e8b747;border-radius:14px;background:#2047317d}
+.forest-rps-scores>div strong{font-size:60px}
+.forest-rps-scores>div span,.forest-rps-scores>div small{font-size:10px;color:#c7e8d1}
+.forest-rps-scores>b{color:#a6f7c4}
+.forest-rps-choices{display:flex;flex-wrap:wrap;gap:11px}
+.forest-rps-choices button{display:flex;flex-direction:column;align-items:center;gap:5px;background:#355b4082;border:1px solid #a9e7bd54;border-radius:13px;font-size:43px;padding:15px;min-width:116px}
+.forest-rps-choices small{font-size:11px;color:#d0f5d8}
+.forest-world-layout canvas{width:100%;image-rendering:pixelated;border-radius:10px;background:#071b20;border:1px solid #b4f2ba47;cursor:crosshair}
+.forest-world-layout aside{display:flex;flex-direction:column;gap:11px}
+.forest-world-layout aside h3{font-size:24px;margin:0}
+.forest-world-layout aside p{font-size:11px;color:#c4e6d0;line-height:1.65}
+.forest-world-stats{font-size:11px;color:#aeeabe}
+.forest-world-notice{color:#fff3bd}
+.forest-uma iframe{width:100%;min-height:420px;flex:1;border:1px solid #d7f6d73b;border-radius:11px;background:#101d16}
+.forest-uma a{color:#b5ffd3}
