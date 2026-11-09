@@ -29,6 +29,9 @@ export function useBoltLive(user){
   const [servers,setServers]=useState([]);
   const [directory,setDirectory]=useState([]);
   const [latest,setLatest]=useState(null);
+  const [selfId,setSelfId]=useState('');
+  const [chess,setChess]=useState(null),[rps,setRps]=useState(null),[world,setWorld]=useState(null);
+  const [queue,setQueue]=useState(null);
   const [error,setError]=useState('');
   const socket=useRef(null);
   const counter=useRef(0);
@@ -48,6 +51,15 @@ export function useBoltLive(user){
       ws.onmessage=event=>{
         let msg;try{msg=JSON.parse(event.data);}catch{return;}
         if(msg.type==='presence'||msg.type==='hello')setOnline(msg.online||[]);
+        if(msg.type==='hello')setSelfId(msg.id||'');
+        if(msg.type==='chessStart'||msg.type==='chessState')setChess(prev=>msg.type==='chessStart'?msg:{...(prev||{}),...msg});
+        if(msg.type==='rpsStart'||msg.type==='rpsRoundStart')setRps(prev=>msg.type==='rpsStart'?msg:{...(prev||{}),...msg});
+        if(msg.type==='rpsResult'||msg.type==='rpsWaiting'||msg.type==='rpsOpponentReady')setRps(prev=>prev?{...prev,...msg,result:msg.type==='rpsResult'?msg:prev.result}:prev);
+        if(msg.type==='rpsNotFound'||msg.type==='rpsLeave')setRps(null);
+        if(msg.type==='world')setWorld(msg);
+        if(msg.type==='worldEnded')setWorld(null);
+        if(['queued','worldQueued','chessQueueCancelled','rpsQueueCancelled'].includes(msg.type))setQueue(msg);
+
         if(msg.type==='v2State'){
           setServers(msg.servers||[]);setDirectory(msg.directory||[]);
         }
@@ -64,5 +76,5 @@ export function useBoltLive(user){
     connect();
     return()=>{stop=true;clearTimeout(timer);socket.current?.close();socket.current=null;};
   },[user?.id]);
-  return {connected,online,servers,directory,latest,error,send};
+  return {connected,online,servers,directory,latest,error,send,selfId,chess,rps,world,queue,setChess,setRps,setWorld};
 }
