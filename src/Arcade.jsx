@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { GlassHero } from './GlassHero.jsx';
+import { SceneBoundary } from './SceneBoundary.jsx';
 import { Icon } from './icons.jsx';
 import { readLocal, saveLocal } from './constants.js';
 
@@ -145,7 +146,7 @@ export function Arcade({reduced}){
   return <div className="screen arcade-screen">
     <section className="arcade-hero">
       <div className="arcade-hero-copy"><span className="eyebrow">CELESTIAL / ENTERTAINMENT SYSTEM</span><h1>Play outside<br/><em>the ordinary.</em></h1><p>Three mini-games. One universe. Your next high score is waiting.</p><span className="hero-tag">✧ DRAG THE GLASS TO EXPLORE THE LIGHT</span></div>
-      <GlassHero reduced={reduced}/>
+      <SceneBoundary fallback={<div className="glass-canvas-fallback">✧</div>}><GlassHero reduced={reduced}/></SceneBoundary>
     </section>
     <div className="section-heading"><div><span className="micro">YOUR ARCADE</span><h2>Choose your game</h2></div><span className="muted-small">03 PLAYABLE EXPERIENCES</span></div>
     <div className="arcade-grid">
