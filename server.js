@@ -43,6 +43,7 @@ try {
   if(error.code !== 'ENOENT') throw error;
   db = emptyStore();
 }
+if(!Array.isArray(db.dms))db.dms=[];
 
 // Migrate the original Celestial public chat history into Bolt's
 // social format once. Keep the source store untouched.
@@ -157,6 +158,29 @@ async function handleAPI(req,res,url) {
   });
   if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),authenticated:Boolean(user)});
 
+  if(req.method==='GET' && pathname==='/api/dms'){
+    if(!user)return fail(res,401,'Sign in to view direct messages');
+    const people=db.users.filter(other=>other.id!==user.id);
+    const threads=people.map(other=>{
+      const messages=db.dms.filter(row=>(row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id));
+      const last=messages.at(-1);
+      return last?{user:{id:other.id,username:other.username},last:{id:last.id,text:last.text,createdAt:last.createdAt},count:messages.length}:null;
+    }).filter(Boolean).sort((a,b)=>b.last.createdAt.localeCompare(a.last.createdAt)).slice(0,60);
+    return respond(res,200,{threads});
+  }
+  const directTarget=pathname.match(/^\/api\/dms\/([a-f0-9]{24})$/);
+  if(req.method==='GET'&&directTarget){
+    if(!user)return fail(res,401,'Sign in to view direct messages');
+    const other=db.users.find(member=>member.id===directTarget[1]&&member.id!==user.id);
+    if(!other)return fail(res,404,'Member not found');
+    const messages=db.dms.filter(row=>(row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id)).slice(-150);
+    return respond(res,200,{user:{id:other.id,username:other.username},messages:messages.map(row=>({
+      id:row.id,from:row.from,to:row.to,text:row.text,createdAt:row.createdAt,
+      author:row.from===user.id?user.username:other.username
+    }))});
+  }
+
+
   if(req.method==='GET' && pathname==='/api/events') {
     res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});
     res.write(': connected\n\n'); listeners.add(res);
@@ -210,6 +234,21 @@ async function handleAPI(req,res,url) {
     await persist();return respond(res,200,{ok:true});
   }
   if(!user)return fail(res,401,'Sign in to use this feature');
+  if(pathname.startsWith('/api/dms/')&&req.method==='POST'){
+    const match=pathname.match(/^\/api\/dms\/([a-f0-9]{24})$/);
+    if(!match)return fail(res,404,'Member not found');
+    const other=db.users.find(member=>member.id===match[1]&&member.id!==user.id);
+    if(!other)return fail(res,404,'Member not found');
+    if(limited(req,'dm:'+user.id,28,60000))return fail(res,429,'Too many messages. Try again shortly.');
+    const text=cleanLine(body.text,1000);
+    if(!text)return fail(res,400,'Write a message first');
+    const row={id:id(),from:user.id,to:other.id,text,createdAt:new Date().toISOString()};
+    db.dms.push(row);
+    db.dms=db.dms.slice(-5000);
+    await persist();
+    notify('dm');
+    return respond(res,201,{message:{...row,author:user.username}});
+  }
   if(pathname==='/api/ai' && req.method==='POST'){
     if(!process.env.OPENAI_API_KEY&&!process.env.NVIDIA_API_KEY)return fail(res,503,'AI is not configured on this server');
     if(limited(req,'ai:'+user.id,16,3600000))return fail(res,429,'Too many AI requests. Try again later.');
