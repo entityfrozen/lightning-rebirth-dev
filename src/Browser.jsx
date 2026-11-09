@@ -26,26 +26,33 @@ const savedTabs=()=> {
     })):[blank()];
 };
 function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
-  const iframe=useRef(null),frame=useRef(null);
+  const iframe=useRef(null),frame=useRef(null),loadingTimeout=useRef(null);
   const lastUrl=useRef(''),navigateRef=useRef(onNavigate),popupRef=useRef(onPopup);
   const [state,setState]=useState('loading'),[error,setError]=useState('');
+  const [loadedOnce,setLoadedOnce]=useState(false);
   navigateRef.current=onNavigate;popupRef.current=onPopup;
 
   useEffect(()=>{
     let cancelled=false;
     const el=iframe.current;
     if(!el||!tab.url)return;
-    setState('loading');setError('');
+    setState('loading');setError('');setLoadedOnce(false);
+    clearTimeout(loadingTimeout.current);
+    loadingTimeout.current=setTimeout(()=>{
+      if(!cancelled){setState('error');setError('The site took too long to respond. Try again or open it directly.');}
+    },26000);
     (async()=>{
       try{
         if(!user)throw Error('Sign in to browse in Celestial.');
+        if(!window.isSecureContext)throw Error('The browser needs a secure HTTPS connection.');
+        if(!window.crossOriginIsolated)throw Error('Browser isolation is not enabled. Reload Celestial once; if this persists, the server needs a configuration update.');
         const status=await api('/api/browser/status');
         if(!status.authenticated)throw Error('Sign in to browse in Celestial.');
         if(!status.proxy)throw Error('The browser engine is unavailable on this server.');
         const connection=await createProxyFrame(el,
           url=>{if(!cancelled)navigateRef.current(tab.id,url);},
           url=>{if(!cancelled)popupRef.current(url);});
-        if(cancelled)return;
+        if(cancelled){disposeProxyFrame(connection);return;}
         frame.current=connection;
         register(tab.id,{
           back:()=>connection.back(),
@@ -53,18 +60,22 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
           reload:()=>connection.reload()
         });
         lastUrl.current=tab.url;
-        connection.go(tab.url); // Scramjet Frame.go() is synchronous.
+        connection.go(tab.url); // Frame.go() navigates synchronously.
       }catch(failure){
-        if(!cancelled){setState('error');setError(failure.message||'Unable to open this site.');}
+        if(!cancelled){clearTimeout(loadingTimeout.current);setState('error');setError(failure.message||'Unable to open this site.');}
       }
     })();
-    return()=>{cancelled=true;register(tab.id,null);disposeProxyFrame(frame.current);frame.current=null;};
+    return()=>{cancelled=true;clearTimeout(loadingTimeout.current);register(tab.id,null);disposeProxyFrame(frame.current);frame.current=null;};
   },[tab.id,Boolean(user),retryKey]);
   useEffect(()=>{
     if(!tab.url||!frame.current||tab.url===lastUrl.current)return;
     try{
       lastUrl.current=tab.url;
       setState('loading');setError('');
+      clearTimeout(loadingTimeout.current);
+      loadingTimeout.current=setTimeout(()=>{
+        setState('error');setError('This page did not finish loading. Try again or open it directly.');
+      },26000);
       frame.current.go(tab.url);
     }catch(failure){setState('error');setError(failure.message||'Unable to navigate.');}
   },[tab.url]);
@@ -73,8 +84,10 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
     <iframe ref={iframe} title={'Browsing '+tab.url} className="portal-iframe"
       allow="fullscreen; clipboard-read; clipboard-write; picture-in-picture"
       referrerPolicy="no-referrer"
-      onLoad={()=>{if(frame.current)setState('ready');}}/>
-    {state==='loading'&&active&&<div className="celestial-browser-loading"><span className="celestial-browser-spinner"/>Opening page…</div>}
+      onLoad={()=>{if(frame.current){
+        clearTimeout(loadingTimeout.current);setState('ready');setLoadedOnce(true);
+      }}}/>
+    {state==='loading'&&active&&!loadedOnce&&<div className="celestial-browser-loading"><span className="celestial-browser-spinner"/>Connecting to the site…</div>}
     {state==='error'&&active&&<div className="celestial-browser-failure">
       <span className="celestial-browser-failure-icon">◈</span>
       <h2>We couldn't open that page.</h2>
@@ -94,6 +107,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
   const controls=useRef(new Map()),box=useRef(null),lastLaunch=useRef(null);
   const current=useMemo(()=>tabs.find(t=>t.id===activeId)||tabs[0], [tabs,activeId]);
   const currentId=current?.id,visibleUrl=current?.url||'';
+  const hasTabs=tabs.length>1||tabs.some(tab=>tab.url);
 
   useEffect(()=>{
     const listener=event=>setPrefs(event.detail);
@@ -175,10 +189,8 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
   const goHistory=direction=>{
     const tab=current;
     if(!tab||tab.cursor+direction<0||tab.cursor+direction>=tab.history.length)return;
-    const proxy=controls.current.get(tab.id);
-    if(proxy&&!proxy.retry){
-      try{direction<0?proxy.back():proxy.forward();}catch{}
-    }
+    // One navigation only; frame.go() reacts to the updated tab URL.
+    // Calling frame.back() here as well caused duplicate navigations.
     modify(tab.id,old=>{
       const cursor=old.cursor+direction;
       return {...old,url:old.history[cursor],cursor};
@@ -191,9 +203,9 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
   };
   const favorite=bookmarks.some(bookmark=>bookmark.url===visibleUrl);
   const submit=event=>{event.preventDefault();navigate(input);};
-  return <section className={'forest-browser '+(visibleUrl?'is-browsing':'new-tab')+(prefs.compactTabs?' compact-tabs':'')}
+  return <section className={'forest-browser '+(hasTabs?'has-tabs ':'')+(visibleUrl?'is-browsing':'new-tab')+(prefs.compactTabs?' compact-tabs':'')}
     aria-label="Celestial Browser">
-    {visibleUrl&&<div className="forest-browser-chrome">
+    {hasTabs&&<div className="forest-browser-chrome">
       <div className="forest-tabs">{tabs.map(tab=><div key={tab.id}
         className={'forest-tab '+(tab.id===currentId?'active':'')}>
         <button onClick={()=>setActiveId(tab.id)} title={tab.url||'New tab'}>
@@ -204,13 +216,17 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
       <div className="forest-toolbar">
         <button disabled={current?.cursor<=0} onClick={()=>goHistory(-1)} aria-label="Back"><Icon name="back" size={16}/></button>
         <button disabled={current?.cursor>=current?.history?.length-1} onClick={()=>goHistory(1)} aria-label="Forward">→</button>
-        <button onClick={()=>controls.current.get(currentId)?.reload()} aria-label="Reload"><Icon name="reload" size={16}/></button>
+        <button onClick={()=>{
+          const control=controls.current.get(currentId);
+          if(control?.reload)control.reload();
+          else if(visibleUrl)setRetry(all=>({...all,[currentId]:(all[currentId]||0)+1}));
+        }} aria-label="Reload" disabled={!visibleUrl}><Icon name="reload" size={16}/></button>
         <form onSubmit={submit}><Icon name="browser" size={15}/>
           <input ref={box} value={input} onChange={e=>setInput(e.target.value)}
             aria-label="Website address" autoComplete="off"/>
           <button type="submit" aria-label="Visit site">→</button></form>
         <button onClick={toggleBookmark} className={favorite?'favorite':''} aria-label="Bookmark"><Icon name="bookmark" size={16}/></button>
-        <a href={visibleUrl} target="_blank" rel="noopener noreferrer" title="Open directly" aria-label="Open directly"><Icon name="external" size={16}/></a>
+        {visibleUrl&&<a href={visibleUrl} target="_blank" rel="noopener noreferrer" title="Open directly" aria-label="Open directly"><Icon name="external" size={16}/></a>}
       </div>
     </div>}
     <div className="forest-browser-stage">
