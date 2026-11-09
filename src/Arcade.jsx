@@ -170,8 +170,16 @@ function World({live,user}){
 function Uma(){
  return <div className="forest-game-stage forest-uma"><div className="forest-game-heading"><h2>Uma Versus</h2><span>THIRD-PARTY FIGHTER</span></div><iframe src="https://umaversus.lol/" title="Uma Versus fighting game" allow="fullscreen; gamepad" referrerPolicy="no-referrer"/><p>Made by its original creator. If the embed is unavailable, <a href="https://umaversus.lol/" target="_blank" rel="noopener noreferrer">open the game directly ↗</a></p></div>;
 }
-export function Arcade({user,onAuth,live}){
- const [selected,setSelected]=useState(null);
+export function Arcade({user,onAuth,live,gameId=null,embedded=false}){
+ const [selected,setSelected]=useState(gameId);
+ useEffect(()=>{if(gameId)setSelected(gameId);},[gameId]);
+ if(embedded&&selected)return <div className="celestial-embedded-game">
+   {selected==='world'?<World live={live} user={user}/>:
+     selected==='chess'?<Chess live={live} user={user}/>:
+     selected==='rps'?<RPS live={live} user={user}/>:
+     selected==='2048'?<Puzzle2048/>:
+     selected==='mines'?<Minesweeper/>:<Uma/>}
+ </div>;
  return <section className="forest-app forest-arcade">
    <div className="forest-app-head"><span className="eyebrow">PLAY SPACE / CELESTIAL</span><h1>Enter the <em>arcade.</em></h1><p>Strategy, puzzles, duels, and worlds to conquer. Pick your game.</p></div>
    {!selected?<div className="forest-game-gallery">{catalog.map((game,i)=><button key={game.id} className={'forest-game-card forest-game-'+game.tone} onClick={()=>setSelected(game.id)}>
