@@ -26,6 +26,7 @@ const Settings=React.lazy(()=>import('./Settings.jsx').then(mod=>({default:mod.S
 const Chat=React.lazy(()=>import('./Chat.jsx').then(mod=>({default:mod.Chat})));
 const AI=React.lazy(()=>import('./AI.jsx').then(mod=>({default:mod.AI})));
 const ForestParticles=React.lazy(()=>import('./ForestParticles.jsx').then(mod=>({default:mod.ForestParticles})));
+const WorkspaceChat=React.lazy(()=>import('./WorkspaceChat.jsx').then(mod=>({default:mod.WorkspaceChat})));
 
 const sections=new Set(['home','browser','apps','chat','ai','settings']);
 const dockItems=[
@@ -119,6 +120,7 @@ function App() {
   });
   const [dockOpen,setDockOpen]=useState(()=>readLocal('dock-open',true));
   const [showHomeAI,setShowHomeAI]=useState(()=>readLocal('home-ai-sidebar',true)!==false);
+  const [chatOpen,setChatOpen]=useState(()=>readLocal('workspace-chat-open',false)===true);
   const [palette,setPalette]=useState(()=>readLocal('celestial-palette','aurora'));
   const [backdrop,setBackdrop]=useState(()=>readLocal('celestial-backdrop','aurora'));
   const [reduced,setReduced]=useState(()=>readLocal('reduce-motion',false));
@@ -131,6 +133,7 @@ function App() {
   const live=useBoltLive(user);
   const actor=user?.username||'Guest';
   const effectiveReduced=reduced||window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const showCompanion=chatOpen&&['home','browser','apps'].includes(view);
 
   useEffect(()=>{
     document.documentElement.dataset.palette=palette;
@@ -145,6 +148,7 @@ function App() {
   },[reduced]);
   useEffect(()=>saveLocal('dock-open',dockOpen),[dockOpen]);
   useEffect(()=>saveLocal('home-ai-sidebar',showHomeAI),[showHomeAI]);
+  useEffect(()=>saveLocal('workspace-chat-open',chatOpen),[chatOpen]);
   useEffect(()=>{applyCloak();},[]);
   useEffect(()=>{
     let mounted=true;
@@ -219,29 +223,50 @@ function App() {
     <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced}/></Suspense></SceneBoundary>
     <div className="celestial-workspace">
       <main className="celestial-stage" id="main-content">
-        <Suspense fallback={<div className="celestial-loading">Opening Celestial…</div>}>
-          {view==='home'?<div className={'celestial-home-split '+(!showHomeAI?'ai-hidden':'')}>
-            <section className="celestial-home-main" aria-label="Main page">
-              <Browser user={user} onAuth={setModal} onShortcut={openDock} homeMode/>
-              {!showHomeAI&&<button type="button" className="celestial-show-home-ai"
-                aria-label="Show Celestial AI sidebar" title="Restore Celestial AI"
-                onClick={()=>setShowHomeAI(true)}><span aria-hidden="true">✧</span> Show Celestial AI</button>}
-            </section>
-            {showHomeAI&&<aside className="celestial-home-rail" aria-label="Celestial AI sidebar">
-              <AI key="celestial-home-sidebar" sidebar user={user} onAuth={setModal}
-                onHide={()=>setShowHomeAI(false)}/>
-            </aside>}
-          </div>:
-          view==='browser'?<Browser user={user} onAuth={setModal} onShortcut={openDock}
-            launch={activeDock==='music'?browserLaunch:null}/>:
-          view==='apps'?<Apps onNavigate={selectSection} onMusic={()=>openDock('music')}/>:
-          view==='settings'?<Settings user={user} palette={palette} setPalette={setPalette}
-            backdrop={backdrop} setBackdrop={setBackdrop} reduced={reduced} setReduced={setReduced}
-            showHomeAI={showHomeAI} setShowHomeAI={setShowHomeAI}
-            onBack={()=>selectSection('home')} onLogout={logout}/>:
-          view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:
-          <AI key="celestial-ai" user={user} onAuth={setModal}/>}
-        </Suspense>
+        <div className={'celestial-activity-layout '+(showCompanion?'with-chat':'')}>
+          <div className="celestial-activity-main">
+            <Suspense fallback={<div className="celestial-loading">Opening Celestial…</div>}>
+              {view==='home'?<div className={'celestial-home-split '+(!showHomeAI||showCompanion?'ai-hidden':'')}>
+                <section className="celestial-home-main" aria-label="Main page">
+                  <Browser user={user} onAuth={setModal} onShortcut={openDock} homeMode/>
+                  {!showHomeAI&&!showCompanion&&<button type="button" className="celestial-show-home-ai"
+                    aria-label="Show Celestial AI sidebar" title="Restore Celestial AI"
+                    onClick={()=>setShowHomeAI(true)}><span aria-hidden="true">✧</span> Show Celestial AI</button>}
+                </section>
+                {showHomeAI&&!showCompanion&&<aside className="celestial-home-rail" aria-label="Celestial AI sidebar">
+                  <AI key="celestial-home-sidebar" sidebar user={user} onAuth={setModal}
+                    onHide={()=>setShowHomeAI(false)}/>
+                </aside>}
+              </div>:
+              view==='browser'?<Browser user={user} onAuth={setModal} onShortcut={openDock}
+                launch={activeDock==='music'?browserLaunch:null}/>:
+              view==='apps'?<Apps user={user} live={live} onAuth={setModal}
+                onNavigate={selectSection} onMusic={()=>openDock('music')}/>:
+              view==='settings'?<Settings user={user} palette={palette} setPalette={setPalette}
+                backdrop={backdrop} setBackdrop={setBackdrop} reduced={reduced} setReduced={setReduced}
+                showHomeAI={showHomeAI} setShowHomeAI={setShowHomeAI}
+                onBack={()=>selectSection('home')} onLogout={logout}/>:
+              view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:
+              <AI key="celestial-ai" user={user} onAuth={setModal}/>}
+            </Suspense>
+            {['home','browser','apps'].includes(view)&&<button type="button"
+              className={'celestial-chat-toggle '+(showCompanion?'is-open':'')+
+                (view==='home'&&showHomeAI&&!showCompanion?' beside-ai':'')}
+              aria-label={showCompanion?'Hide community Chat panel':'Open community Chat beside this page'}
+              aria-expanded={showCompanion}
+              onClick={()=>setChatOpen(value=>!value)}>
+              <Chat24Filled/>
+              <span>{showCompanion?'Hide Chat':'Chat while you '+(view==='apps'?'play':'browse')}</span>
+              <i aria-hidden="true">{live.online.length}</i>
+            </button>}
+          </div>
+          {showCompanion&&<aside className="celestial-activity-chat" aria-label="Community Chat panel">
+            <Suspense fallback={<div className="celestial-chat-loading">Connecting to chat…</div>}>
+              <WorkspaceChat user={user} live={live} onClose={()=>setChatOpen(false)}
+                onOpenChat={()=>selectSection('chat')}/>
+            </Suspense>
+          </aside>}
+        </div>
       </main>
       <div className="celestial-online" title={loading?'Connecting':'Current live connections'}>
         online users: <strong>{live.connected?live.online.length:'—'}</strong>
