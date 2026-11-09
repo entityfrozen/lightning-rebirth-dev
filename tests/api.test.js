@@ -48,6 +48,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     let result=await call('/api/me');assert.equal(result.response.status,200);assert.equal(result.data.user,null);
     result=await call('/api/messages','POST',{channel:'general',text:'Guest post'});assert.equal(result.response.status,401);
     result=await call('/api/register','POST',{username:'TestCelestial',password:'correct horse battery staple'});assert.equal(result.response.status,201);assert.equal(result.data.user.username,'TestCelestial');
+    const ownerId=result.data.user.id;
     result=await call('/api/messages','POST',{channel:'general',text:'Hello from API test'});assert.equal(result.response.status,201);
     result=await call('/api/messages?channel=general');assert.equal(result.data.messages.at(-1).text,'Hello from API test');
     const browserStatus=await call('/api/browser/status');
@@ -87,7 +88,6 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     }
 
 
-    const ownerId=hello.id;
     const ownerCookie=cookie;
     result=await call('/api/register','POST',{username:'TestPeer',password:'another correct horse staple'});
     assert.equal(result.response.status,201);
