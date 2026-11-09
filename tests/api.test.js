@@ -13,7 +13,7 @@ const palette={accent:'#b67cff',background:'#0f0b1b',surface:'#20152f',text:'#f9
 test('end-to-end account, chat, and community drop API', {timeout:18000}, async ()=>{
   const tmp=await mkdtemp(path.join(tmpdir(),'celestial-test-'));
   const port=31000+Math.floor(Math.random()*10000);
-  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,OPENAI_API_KEY:'',NVIDIA_API_KEY:'',PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
+  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,OPENAI_API_KEY:'',NVIDIA_API_KEY:'',BOLT_ADMIN_USER:'ReviewAdmin',BOLT_ADMIN_PASSWORD:'a very long test password 123!',BOLT_DATA_DIR:tmp,PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
   let cookie='';
   const url=`http://127.0.0.1:${port}`;
   const call=async(route,method='GET',body)=>{
@@ -48,8 +48,32 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(retiredAsset.status,404);
     let result=await call('/api/me');assert.equal(result.response.status,200);assert.equal(result.data.user,null);
     result=await call('/api/messages','POST',{channel:'general',text:'Guest post'});assert.equal(result.response.status,401);
-    result=await call('/api/register','POST',{username:'TestCelestial',password:'correct horse battery staple'});assert.equal(result.response.status,201);assert.equal(result.data.user.username,'TestCelestial');
+    result=await call('/api/register','POST',{username:'TestCelestial',password:'correct horse battery staple'});
+    assert.equal(result.response.status,202);
+    assert.equal(result.data.status,'pending');
+    assert.equal(cookie,'');
+    result=await call('/api/login','POST',{username:'TestCelestial',password:'correct horse battery staple'});
+    assert.equal(result.response.status,403);
+    result=await call('/api/admin/accounts/pending');
+    assert.equal(result.response.status,401);
+    result=await call('/api/login','POST',{username:'ReviewAdmin',password:'a very long test password 123!'});
+    assert.equal(result.response.status,200);
+    assert.equal(result.data.user.role,'admin');
+    result=await call('/api/admin/accounts/pending');
+    assert.equal(result.response.status,200);
+    const request=result.data.accounts.find(a=>a.username==='TestCelestial');
+    assert.ok(request);
+    result=await call('/api/admin/accounts/'+request.id+'/approve','POST',{});
+    assert.equal(result.response.status,200);
+    assert.equal(result.data.status,'approved');
+    result=await call('/api/logout','POST',{});
+    assert.equal(result.response.status,200);
+    cookie='';
+    result=await call('/api/login','POST',{username:'TestCelestial',password:'correct horse battery staple'});
+    assert.equal(result.response.status,200);
     const ownerId=result.data.user.id;
+    result=await call('/api/admin/accounts/pending');
+    assert.equal(result.response.status,403);
     const aiStatus=await call('/api/ai/status');
     assert.equal(aiStatus.response.status,200);
     assert.equal(typeof aiStatus.data.configured,'boolean');
@@ -98,8 +122,20 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
 
     const ownerCookie=cookie;
     result=await call('/api/register','POST',{username:'TestPeer',password:'another correct horse staple'});
-    assert.equal(result.response.status,201);
-    const peerId=result.data.user.id;
+    assert.equal(result.response.status,202);
+    cookie='';
+    result=await call('/api/login','POST',{username:'ReviewAdmin',password:'a very long test password 123!'});
+    assert.equal(result.response.status,200);
+    result=await call('/api/admin/accounts/pending');
+    assert.equal(result.response.status,200);
+    const peerRequest=result.data.accounts.find(a=>a.username==='TestPeer');
+    assert.ok(peerRequest);
+    const peerId=peerRequest.id;
+    result=await call('/api/admin/accounts/'+peerId+'/approve','POST',{});
+    assert.equal(result.response.status,200);
+    cookie='';
+    result=await call('/api/login','POST',{username:'TestPeer',password:'another correct horse staple'});
+    assert.equal(result.response.status,200);
     result=await call('/api/dms/'+ownerId,'POST',{text:'A private message from TestPeer'});
     assert.equal(result.response.status,201);
     result=await call('/api/dms/'+ownerId);
@@ -116,7 +152,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     const dropId=result.data.drop.id;
     result=await call('/api/drops');assert.ok(result.data.drops.some(d=>d.id===dropId));
     assert.ok(result.data.drops.some(d=>d.ownerId==='system'&&d.author==='Celestial Studio'));
-    const download=await fetch(url+`/api/drops/${dropId}/download`);
+    const download=await fetch(url+`/api/drops/${dropId}/download`,{headers:{Cookie:cookie}});
     assert.equal(download.status,200);
     assert.equal((await download.json()).format,'celestial.theme');
     result=await call(`/api/drops/${dropId}/star`,'POST',{});assert.equal(result.data.drop.likes,1);

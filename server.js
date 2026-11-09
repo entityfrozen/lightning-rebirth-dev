@@ -3,6 +3,7 @@ import http from 'node:http';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { bootstrap } from '@mercuryworkshop/proxy-bootstrap';
 import { attachLightningLive } from './live.js';
+import {importBoltData,bootstrapAdministrator,backupBoltData} from './legacy-data.js';
 import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
 import { readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
 import { randomBytes, createHash, scryptSync, timingSafeEqual } from 'node:crypto';
@@ -11,9 +12,19 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
-const STORE_FILE = process.env.LIGHTNING_DATA_FILE || path.join(ROOT, 'data', 'store.json');
-const PORT = Number(process.env.PORT || 3080);
-const DATA_DIR = path.dirname(STORE_FILE);
+const DATA_DIR=path.resolve(ROOT,process.env.BOLT_DATA_DIR||
+  process.env.RAILWAY_VOLUME_MOUNT_PATH||
+  (process.env.LIGHTNING_DATA_FILE?path.dirname(process.env.LIGHTNING_DATA_FILE):path.join(ROOT,'data')));
+const STORE_FILE=process.env.LIGHTNING_DATA_FILE||path.join(DATA_DIR,'store.json');
+const PORT=Number(process.env.PORT||3080);
+const hadStore=existsSync(STORE_FILE);
+if(process.env.RAILWAY_VOLUME_MOUNT_PATH){
+  const mount=path.resolve(ROOT,process.env.RAILWAY_VOLUME_MOUNT_PATH);
+  const onVolume=value=>value===mount||value.startsWith(mount+path.sep);
+  if(!onVolume(DATA_DIR)||!onVolume(path.resolve(STORE_FILE))){
+    throw Error('Account data paths are outside the attached Railway volume; refusing ephemeral storage');
+  }
+}
 mkdirSync(DATA_DIR,{recursive:true});
 // The Bolt-era backend provides real browser proxying and multiplayer.
 // Missing proxy downloads must never block the rest of the platform.
@@ -72,13 +83,37 @@ function persist() {
   });
   return writeChain;
 }
+const legacyBackup=await backupBoltData(DATA_DIR);
+const legacyImport=await importBoltData(db,DATA_DIR);
+if(process.env.RAILWAY_VOLUME_MOUNT_PATH&&!hadStore&&!legacyImport.legacyFound){
+  throw Error('No account database found on the mounted Railway volume; refusing to start with empty accounts');
+}
+const adminCreated=bootstrapAdministrator(db);
+if(legacyImport.accountsImported||legacyImport.conversationsImported||adminCreated)await persist();
+console.log('Celestial data ready',JSON.stringify({
+  directory:DATA_DIR,legacyFound:legacyImport.legacyFound,
+  originalFilesBackedUp:legacyBackup.files,
+  accountsImported:legacyImport.accountsImported,
+  directMessagesImported:legacyImport.conversationsImported,
+  skippedConflicts:legacyImport.skippedConflicts,
+  hasApprover:db.users.some(u=>u.role==='admin'||u.role==='account_manager')
+}));
 function tokenHash(token) {return createHash('sha256').update(token).digest('hex');}
 function parseCookie(value='') {return Object.fromEntries(value.split(';').map(v => v.trim().split('=').map(decodeURIComponent)).filter(p=>p.length===2));}
+function activeAccount(user) {
+  return Boolean(user && user.approved!==false && user.enabled!==false &&
+    user.reviewStatus!=='rejected' &&
+    (!user.expiresAt || Number(user.expiresAt)>Date.now()));
+}
+function managesAccounts(user) {
+  return activeAccount(user) && ['admin','account_manager'].includes(user.role);
+}
 function account(req) {
   const value = parseCookie(req.headers.cookie).lightning_session;
   if(!value) return null;
   const session = db.sessions.find(s => s.hash===tokenHash(value) && s.expires>Date.now());
-  return session ? db.users.find(u=>u.id===session.userId) || null : null;
+  const user = session ? db.users.find(u=>u.id===session.userId) : null;
+  return activeAccount(user)?user:null;
 }
 function liveIdentity(headers){
   const token=parseCookie(headers.cookie||'').lightning_session;
@@ -86,10 +121,10 @@ function liveIdentity(headers){
   const session=db.sessions.find(row=>row.hash===tokenHash(token)&&row.expires>Date.now());
   if(!session)return null;
   const user=db.users.find(row=>row.id===session.userId);
-  if(!user)return null;
-  return {identity:{id:user.id,username:user.username,role:'user'},session};
+  if(!activeAccount(user))return null;
+  return {identity:{id:user.id,username:user.username,role:user.role||'user'},session};
 }
-function publicAccount(user) {return user ? {id:user.id,username:user.username,joinedAt:user.joinedAt} : null;}
+function publicAccount(user) {return user ? {id:user.id,username:user.username,joinedAt:user.joinedAt,role:user.role||'user'} : null;}
 function respond(res,status,body,headers={}) {
   res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...headers});
   res.end(JSON.stringify(body));
@@ -156,10 +191,17 @@ async function handleAPI(req,res,url) {
     return respond(res,200,{configured:Boolean(process.env.OPENAI_API_KEY||process.env.NVIDIA_API_KEY)});
   }
   if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),authenticated:Boolean(user)});
+  if(req.method==='GET' && pathname==='/api/admin/accounts/pending'){
+    if(!user)return fail(res,401,'Sign in required');
+    if(!managesAccounts(user))return fail(res,403,'Not authorized to review accounts');
+    return respond(res,200,{accounts:db.users.filter(u=>u.approved===false&&u.reviewStatus!=='rejected')
+      .map(u=>({id:u.id,username:u.username,joinedAt:u.joinedAt||null}))
+      .sort((a,b)=>String(a.joinedAt||'').localeCompare(String(b.joinedAt||'')))});
+  }
 
   if(req.method==='GET' && pathname==='/api/dms'){
     if(!user)return fail(res,401,'Sign in to view direct messages');
-    const people=db.users.filter(other=>other.id!==user.id);
+    const people=db.users.filter(other=>other.id!==user.id&&activeAccount(other));
     const threads=people.map(other=>{
       const messages=db.dms.filter(row=>(row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id));
       const last=messages.at(-1);
@@ -167,10 +209,10 @@ async function handleAPI(req,res,url) {
     }).filter(Boolean).sort((a,b)=>b.last.createdAt.localeCompare(a.last.createdAt)).slice(0,60);
     return respond(res,200,{threads});
   }
-  const directTarget=pathname.match(/^\/api\/dms\/([a-f0-9]{24})$/);
+  const directTarget=pathname.match(/^\/api\/dms\/(usr_[a-zA-Z0-9_-]{8,40}|[a-f0-9]{24})$/);
   if(req.method==='GET'&&directTarget){
     if(!user)return fail(res,401,'Sign in to view direct messages');
-    const other=db.users.find(member=>member.id===directTarget[1]&&member.id!==user.id);
+    const other=db.users.find(member=>member.id===directTarget[1]&&member.id!==user.id&&activeAccount(member));
     if(!other)return fail(res,404,'Member not found');
     const messages=db.dms.filter(row=>(row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id)).slice(-150);
     return respond(res,200,{user:{id:other.id,username:other.username},messages:messages.map(row=>({
@@ -181,6 +223,7 @@ async function handleAPI(req,res,url) {
 
 
   if(req.method==='GET' && pathname==='/api/events') {
+    if(!user)return fail(res,401,'Sign in required');
     res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});
     res.write(': connected\n\n'); listeners.add(res);
     const timer=setInterval(()=>{try{res.write(': heartbeat\n\n');}catch{}},25000);
@@ -188,13 +231,16 @@ async function handleAPI(req,res,url) {
     return;
   }
   if(req.method==='GET' && pathname==='/api/messages') {
+    if(!user)return fail(res,401,'Sign in required');
     const channel=channels.has(url.searchParams.get('channel'))?url.searchParams.get('channel'):'general';
     return respond(res,200,{messages:db.messages.filter(m=>m.channel===channel).slice(-140)});
   }
   if(req.method==='GET' && pathname==='/api/drops') {
+    if(!user)return fail(res,401,'Sign in required');
     return respond(res,200,{drops:db.drops.map(d=>publicDrop(d,user)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))});
   }
   if(req.method==='GET' && /^\/api\/drops\/[^/]+\/download$/.test(pathname)) {
+    if(!user)return fail(res,401,'Sign in required');
     const drop=db.drops.find(d=>d.id===pathname.split('/')[3]);
     if(!drop)return fail(res,404,'Drop not found');
     drop.downloads=(drop.downloads||0)+1;
@@ -208,22 +254,42 @@ async function handleAPI(req,res,url) {
   const body=req.method==='POST'?await bodyJSON(req):{};
   if(pathname==='/api/register' && req.method==='POST') {
     if(limited(req,'register',7,600000))return fail(res,429,'Too many sign-up attempts');
-    const username=cleanLine(body.username,30);const password=body.password;
+    const username=cleanLine(body.username,40);const password=body.password;
     if(!/^[a-zA-Z0-9_]{3,20}$/.test(username))return fail(res,400,'Username must be 3–20 letters, numbers or underscores');
     if(typeof password!=='string' || password.length<8 || password.length>128)return fail(res,400,'Password must be 8–128 characters');
     if(db.users.some(u=>u.username.toLowerCase()===username.toLowerCase()))return fail(res,409,'Username is already taken');
     const salt=randomBytes(16).toString('hex');
-    const account={id:id(),username,salt,hash:scryptSync(password,salt,64).toString('hex'),joinedAt:new Date().toISOString()};
-    db.users.push(account);startSession(res,account,req);await persist();
-    return respond(res,201,{user:publicAccount(account)});
+    const pending={id:id(),username,salt,hash:scryptSync(password,salt,64).toString('hex'),
+      joinedAt:new Date().toISOString(),role:'user',enabled:true,
+      approved:false,reviewStatus:'pending'};
+    db.users.push(pending);
+    await persist();
+    return respond(res,202,{ok:true,status:'pending',
+      message:'Your account request was received. An administrator must approve it before you can sign in.'});
   }
   if(pathname==='/api/login' && req.method==='POST') {
     if(limited(req,'login',15,600000))return fail(res,429,'Too many sign-in attempts');
-    const username=cleanLine(body.username,30);const password=body.password;
+    const username=cleanLine(body.username,40);const password=body.password;
     const found=db.users.find(u=>u.username.toLowerCase()===username.toLowerCase());
     if(typeof password!=='string'||!found)return fail(res,401,'Incorrect username or password');
-    const actual=scryptSync(password,found.salt,64);
-    if(!timingSafeEqual(actual,Buffer.from(found.hash,'hex')))return fail(res,401,'Incorrect username or password');
+    let valid=false;
+    try{
+      if(typeof found.passwordHash==='string'&&found.passwordHash.startsWith('scrypt$')){
+        const [,salt,hash]=found.passwordHash.split('$');
+        const expected=Buffer.from(hash,'hex');
+        const actual=scryptSync(password,salt,expected.length);
+        valid=expected.length===64&&timingSafeEqual(actual,expected);
+      }else if(typeof found.salt==='string'&&typeof found.hash==='string'){
+        const actual=scryptSync(password,found.salt,64);
+        const expected=Buffer.from(found.hash,'hex');
+        valid=expected.length===actual.length&&timingSafeEqual(actual,expected);
+      }
+    }catch{valid=false;}
+    if(!valid)return fail(res,401,'Incorrect username or password');
+    if(found.approved===false)return fail(res,403,found.reviewStatus==='rejected'?
+      'Your account request was declined. Contact an administrator.' :
+      'Your account is awaiting manual approval.');
+    if(!activeAccount(found))return fail(res,403,'This account is disabled or expired.');
     startSession(res,found,req);await persist();return respond(res,200,{user:publicAccount(found)});
   }
   if(pathname==='/api/logout' && req.method==='POST') {
@@ -233,10 +299,29 @@ async function handleAPI(req,res,url) {
     await persist();return respond(res,200,{ok:true});
   }
   if(!user)return fail(res,401,'Sign in to use this feature');
+  const review=pathname.match(/^\/api\/admin\/accounts\/(usr_[a-zA-Z0-9_-]{8,40}|[a-f0-9]{24})\/(approve|reject)$/);
+  if(review&&req.method==='POST'){
+    if(!managesAccounts(user))return fail(res,403,'Not authorized to review accounts');
+    if(limited(req,'review:'+user.id,100,60000))return fail(res,429,'Too many review actions');
+    const target=db.users.find(u=>u.id===review[1]);
+    if(!target)return fail(res,404,'Account not found');
+    if(target.approved!==false)return fail(res,409,'Account is already active');
+    if(target.role&&target.role!=='user')return fail(res,403,'Staff accounts need a separate review');
+    if(review[2]==='approve'){
+      target.approved=true;target.reviewStatus='approved';
+    }else{
+      target.approved=false;target.reviewStatus='rejected';
+      db.sessions=db.sessions.filter(session=>session.userId!==target.id);
+    }
+    target.reviewedAt=new Date().toISOString();
+    target.reviewedBy=user.id;
+    await persist();
+    return respond(res,200,{ok:true,username:target.username,status:target.reviewStatus});
+  }
   if(pathname.startsWith('/api/dms/')&&req.method==='POST'){
-    const match=pathname.match(/^\/api\/dms\/([a-f0-9]{24})$/);
+    const match=pathname.match(/^\/api\/dms\/(usr_[a-zA-Z0-9_-]{8,40}|[a-f0-9]{24})$/);
     if(!match)return fail(res,404,'Member not found');
-    const other=db.users.find(member=>member.id===match[1]&&member.id!==user.id);
+    const other=db.users.find(member=>member.id===match[1]&&member.id!==user.id&&activeAccount(member));
     if(!other)return fail(res,404,'Member not found');
     if(limited(req,'dm:'+user.id,28,60000))return fail(res,429,'Too many messages. Try again shortly.');
     const text=cleanLine(body.text,1000);
