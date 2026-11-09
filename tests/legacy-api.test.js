@@ -56,10 +56,18 @@ test('old Bolt accounts and chat servers remain accessible after upgrading', {ti
       catch{await new Promise(done=>setTimeout(done,65));}
     }
     assert.equal(ready,true,'legacy-backed server must boot');
+    const guestDirectory=await call('/api/community/members');
+    assert.equal(guestDirectory.status,401);
     let result=await call('/api/login','POST',{username:'old.member',password:'old member login'});
     assert.equal(result.status,200);
     assert.equal(result.data.user.id,oldId);
     assert.equal(result.data.user.role,'user');
+    result=await call('/api/community/members');
+    assert.equal(result.status,200);
+    assert.ok(result.data.members.some(member=>member.id===adminId&&member.platformRole==='admin'));
+    assert.ok(result.data.members.some(member=>member.id===oldId));
+    assert.ok(!result.data.members.some(member=>member.id===waitingId),
+      'pending accounts must be omitted from the directory');
     const ws=new WebSocket(url.replace(/^http/,'ws')+'/live',{headers:{Cookie:cookie}});
     const events=[];
     ws.on('message',raw=>{try{events.push(JSON.parse(raw.toString()));}catch{}});
