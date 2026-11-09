@@ -27,7 +27,7 @@ export async function backupBoltData(dataDir) {
   } catch(error) {
     if(error.code!=='ENOENT')throw error;
   }
-  const filenames=['bolt.json','lightning-accounts.json',
+  const filenames=['store.json','bolt.json','lightning-accounts.json',
     'lightning-social.json','lightning-v2-communities.json'];
   const present=[];
   for(const name of filenames) {
