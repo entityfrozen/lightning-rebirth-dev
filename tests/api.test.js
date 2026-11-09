@@ -59,7 +59,6 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     result=await call('/api/login','POST',{username:'ReviewAdmin',password:'a very long test password 123!'});
     assert.equal(result.response.status,200);
     assert.equal(result.data.user.role,'admin');
-    const adminCookie=cookie;
     result=await call('/api/admin/accounts/pending');
     assert.equal(result.response.status,200);
     const request=result.data.accounts.find(a=>a.username==='TestCelestial');
@@ -124,7 +123,9 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     const ownerCookie=cookie;
     result=await call('/api/register','POST',{username:'TestPeer',password:'another correct horse staple'});
     assert.equal(result.response.status,202);
-    cookie=adminCookie;
+    cookie='';
+    result=await call('/api/login','POST',{username:'ReviewAdmin',password:'a very long test password 123!'});
+    assert.equal(result.response.status,200);
     result=await call('/api/admin/accounts/pending');
     assert.equal(result.response.status,200);
     const peerRequest=result.data.accounts.find(a=>a.username==='TestPeer');
