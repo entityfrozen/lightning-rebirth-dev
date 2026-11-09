@@ -1,5 +1,9 @@
 /** Celestial's small single-instance server. No npm dependencies needed. */
 import http from 'node:http';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { bootstrap } from '@mercuryworkshop/proxy-bootstrap';
+import { attachLightningLive } from './live.js';
+import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
 import { readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
 import { randomBytes, createHash, scryptSync, timingSafeEqual } from 'node:crypto';
 import path from 'node:path';
@@ -9,6 +13,15 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
 const STORE_FILE = process.env.LIGHTNING_DATA_FILE || path.join(ROOT, 'data', 'store.json');
 const PORT = Number(process.env.PORT || 3080);
+const DATA_DIR = path.dirname(STORE_FILE);
+mkdirSync(DATA_DIR,{recursive:true});
+// The Bolt-era backend provides real browser proxying and multiplayer.
+// Missing proxy downloads must never block the rest of the platform.
+let proxyBackend=null;
+if(process.env.DISABLE_WEB_PROXY!=='1')try{
+  proxyBackend=await bootstrap();
+}catch(error){console.warn('Browser proxy unavailable:',error.message);}
+
 const channels = new Set(['general', 'help', 'showcase']);
 const listeners = new Set();
 const loginAttempts = new Map();
@@ -30,6 +43,24 @@ try {
   if(error.code !== 'ENOENT') throw error;
   db = emptyStore();
 }
+if(!Array.isArray(db.dms))db.dms=[];
+
+// Migrate the original Celestial public chat history into Bolt's
+// social format once. Keep the source store untouched.
+const SOCIAL_FILE=path.join(DATA_DIR,'lightning-social.json');
+if(!existsSync(SOCIAL_FILE)&&db.messages.length){
+  const history={general:[],games:[],suggestions:[],support:[]};
+  for(const message of db.messages){
+    const channel=message.channel==='help'?'support':message.channel==='showcase'?'games':'general';
+    history[channel].push({
+      id:message.id,by:message.author,username:message.author,
+      userId:message.ownerId,channel,message:message.text,
+      at:Date.parse(message.createdAt)||Date.now(),replyTo:null,reactions:{}
+    });
+  }
+  try{writeFileSync(SOCIAL_FILE,JSON.stringify(history),{flag:'wx'});}
+  catch(error){console.warn('Legacy chat migration unavailable:',error.message);}
+}
 
 function persist() {
   const snapshot = JSON.stringify(db, null, 2);
@@ -48,6 +79,15 @@ function account(req) {
   if(!value) return null;
   const session = db.sessions.find(s => s.hash===tokenHash(value) && s.expires>Date.now());
   return session ? db.users.find(u=>u.id===session.userId) || null : null;
+}
+function liveIdentity(headers){
+  const token=parseCookie(headers.cookie||'').lightning_session;
+  if(!token)return null;
+  const session=db.sessions.find(row=>row.hash===tokenHash(token)&&row.expires>Date.now());
+  if(!session)return null;
+  const user=db.users.find(row=>row.id===session.userId);
+  if(!user)return null;
+  return {identity:{id:user.id,username:user.username,role:'user'},session};
 }
 function publicAccount(user) {return user ? {id:user.id,username:user.username,joinedAt:user.joinedAt} : null;}
 function respond(res,status,body,headers={}) {
@@ -111,7 +151,36 @@ async function handleAPI(req,res,url) {
   const user=account(req);
   const pathname=url.pathname;
   if(req.method==='GET' && pathname==='/api/me') return respond(res,200,{user:publicAccount(user),stats:{members:db.users.length,drops:db.drops.length,messages:db.messages.length}});
-  if(req.method==='GET' && pathname==='/api/ai/status') return respond(res,200,{configured:Boolean(process.env.OPENAI_API_KEY),model:process.env.OPENAI_MODEL||'gpt-4.1-mini'});
+  if(req.method==='GET' && pathname==='/api/ai/status') return respond(res,200,{
+    configured:Boolean(process.env.OPENAI_API_KEY||process.env.NVIDIA_API_KEY),
+    provider:process.env.OPENAI_API_KEY?'OpenAI':process.env.NVIDIA_API_KEY?'NVIDIA':null,
+    model:process.env.OPENAI_API_KEY?(process.env.OPENAI_MODEL||'gpt-4.1-mini'):(process.env.NVIDIA_MODEL||TEXT_MODEL)
+  });
+  if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),authenticated:Boolean(user)});
+
+  if(req.method==='GET' && pathname==='/api/dms'){
+    if(!user)return fail(res,401,'Sign in to view direct messages');
+    const people=db.users.filter(other=>other.id!==user.id);
+    const threads=people.map(other=>{
+      const messages=db.dms.filter(row=>(row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id));
+      const last=messages.at(-1);
+      return last?{user:{id:other.id,username:other.username},last:{id:last.id,text:last.text,createdAt:last.createdAt},count:messages.length}:null;
+    }).filter(Boolean).sort((a,b)=>b.last.createdAt.localeCompare(a.last.createdAt)).slice(0,60);
+    return respond(res,200,{threads});
+  }
+  const directTarget=pathname.match(/^\/api\/dms\/([a-f0-9]{24})$/);
+  if(req.method==='GET'&&directTarget){
+    if(!user)return fail(res,401,'Sign in to view direct messages');
+    const other=db.users.find(member=>member.id===directTarget[1]&&member.id!==user.id);
+    if(!other)return fail(res,404,'Member not found');
+    const messages=db.dms.filter(row=>(row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id)).slice(-150);
+    return respond(res,200,{user:{id:other.id,username:other.username},messages:messages.map(row=>({
+      id:row.id,from:row.from,to:row.to,text:row.text,createdAt:row.createdAt,
+      author:row.from===user.id?user.username:other.username
+    }))});
+  }
+
+
   if(req.method==='GET' && pathname==='/api/events') {
     res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});
     res.write(': connected\n\n'); listeners.add(res);
@@ -165,8 +234,23 @@ async function handleAPI(req,res,url) {
     await persist();return respond(res,200,{ok:true});
   }
   if(!user)return fail(res,401,'Sign in to use this feature');
+  if(pathname.startsWith('/api/dms/')&&req.method==='POST'){
+    const match=pathname.match(/^\/api\/dms\/([a-f0-9]{24})$/);
+    if(!match)return fail(res,404,'Member not found');
+    const other=db.users.find(member=>member.id===match[1]&&member.id!==user.id);
+    if(!other)return fail(res,404,'Member not found');
+    if(limited(req,'dm:'+user.id,28,60000))return fail(res,429,'Too many messages. Try again shortly.');
+    const text=cleanLine(body.text,1000);
+    if(!text)return fail(res,400,'Write a message first');
+    const row={id:id(),from:user.id,to:other.id,text,createdAt:new Date().toISOString()};
+    db.dms.push(row);
+    db.dms=db.dms.slice(-5000);
+    await persist();
+    notify('dm');
+    return respond(res,201,{message:{...row,author:user.username}});
+  }
   if(pathname==='/api/ai' && req.method==='POST'){
-    if(!process.env.OPENAI_API_KEY)return fail(res,503,'AI is not configured on this server');
+    if(!process.env.OPENAI_API_KEY&&!process.env.NVIDIA_API_KEY)return fail(res,503,'AI is not configured on this server');
     if(limited(req,'ai:'+user.id,16,3600000))return fail(res,429,'Too many AI requests. Try again later.');
     if(!Array.isArray(body.messages)||body.messages.length<1||body.messages.length>14) return fail(res,400,'Send between 1 and 14 messages');
     const messages=[];
@@ -176,6 +260,17 @@ async function handleAPI(req,res,url) {
     }
     if(messages.at(-1).role!=='user'||messages.reduce((total,m)=>total+m.content.length,0)>12000)return fail(res,400,'Invalid conversation');
     try {
+      if(!process.env.OPENAI_API_KEY&&process.env.NVIDIA_API_KEY){
+        const answer=await completeAi({
+          apiKey:process.env.NVIDIA_API_KEY,
+          model:usableModel(process.env.NVIDIA_MODEL,TEXT_MODEL),
+          messages:[{role:'system',content:'You are Celestial AI, an attentive assistant in a workspace for games, browsing and community chat. Provide concrete and grounded help. Never invent browsing results.'},...messages],
+          stream:false,
+          signal:AbortSignal.timeout(40000),
+          maxTokens:950
+        });
+        return respond(res,200,{text:answer.reply.slice(0,10000),provider:'NVIDIA'});
+      }
       const upstream=await fetch('https://api.openai.com/v1/responses',{
         method:'POST',
         headers:{Authorization:'Bearer '+process.env.OPENAI_API_KEY,'Content-Type':'application/json'},
@@ -235,7 +330,7 @@ async function handleAPI(req,res,url) {
   }
   return fail(res,404,'API route not found');
 }
-const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
+const types={'.json':'application/json; charset=utf-8','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
 async function staticFile(req,res,url) {
   if(req.method!=='GET' && req.method!=='HEAD')return fail(res,405,'Method not allowed');
   let filename;
@@ -247,16 +342,41 @@ async function staticFile(req,res,url) {
   try {
     const info=await stat(filepath);if(!info.isFile())throw Error('Not a file');
     const content=await readFile(filepath);
-    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",'Cache-Control':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
+    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com; connect-src 'self' https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",'Cache-Control':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
     return res.end(req.method==='HEAD'?undefined:content);
   }catch{return fail(res,404,'File not found');}
 }
-export function createServer(){return http.createServer(async(req,res)=>{
-  try {const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
-    if(url.pathname.startsWith('/api/'))await handleAPI(req,res,url);
-    else await staticFile(req,res,url);
-  } catch(error) {console.error('Request error:',error.message);if(!res.headersSent)fail(res,error.message==='Request is too large'?413:400,error.message||'Request failed');else res.end();}
-});}
+export function createServer(){
+  const server=http.createServer(async(req,res)=>{
+    try {const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
+      if(url.pathname.startsWith('/api/'))return await handleAPI(req,res,url);
+      // All Scramjet bootstrap, service worker and rewritten pages are
+      // session protected, just like the original Bolt implementation.
+      if(proxyBackend&&liveIdentity(req.headers)&&proxyBackend.routeRequest(req,res))return;
+      return await staticFile(req,res,url);
+    }catch(error){
+      console.error('Request error:',error.message);
+      if(!res.headersSent)fail(res,error.message==='Request is too large'?413:400,error.message||'Request failed');
+      else res.end();
+    }
+  });
+  if(proxyBackend)server.on('upgrade',(req,socket,head)=>{
+    if(req.url?.startsWith('/live'))return;
+    if(!liveIdentity(req.headers)){
+      socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+      socket.destroy();return;
+    }
+    try{proxyBackend.routeUpgrade(req,socket,head);}
+    catch(error){console.warn('Browser transport failed:',error.message);socket.destroy();}
+  });
+  // Bridge Celestial's existing accounts to Bolt's proven multiplayer
+  // server; old user IDs remain stable, preserving community identity.
+  attachLightningLive({
+    server,sessionFromHeaders:liveIdentity,dataDir:DATA_DIR,
+    getDisplayName:(_id,username)=>username,getRole:()=> 'user'
+  });
+  return server;
+}
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   createServer().listen(PORT,()=>console.log(`✦ Celestial running at http://localhost:${PORT}`));
 }

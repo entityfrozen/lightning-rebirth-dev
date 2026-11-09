@@ -1,0 +1,497 @@
+/* CELESTIAL / FOREST GLASS — original environment-first interface.
+   No dashboard backgrounds. The landscape is the canvas; tools float above it. */
+:root {
+  --bg: #07140f; --deep:#06110d;
+  --panel:rgba(6,25,17,.58); --panel-bright:rgba(9,35,23,.72);
+  --stroke:rgba(175,241,199,.19);--strong-stroke:rgba(167,255,199,.37);
+  --text:#f0f9f1;--muted:#b5cabd;--quiet:#809b8d;
+  --cyan:#94dfb7;--violet:#a8e8bb;--gold:#b8efa8;--mint:#90e9ba;
+  --glow:rgba(118,225,152,.21);--shade:rgba(0,0,0,.3);
+  --forest-glass:rgba(7,30,20,.58);--forest-border:rgba(181,255,205,.23);
+  --forest-mint:#93edc0;--forest-light:#c4f6d2;
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  color-scheme:dark;
+  --bg:#0d1a15;--deep:#091711;--panel:rgba(17,43,29,.66);--panel-bright:rgba(22,53,35,.76);
+  --stroke:rgba(185,246,210,.24);--strong-stroke:rgba(190,255,220,.47);
+  --text:#fbfff8;--muted:#d3e6d7;--quiet:#adcab9;
+  --cyan:#b7fcd2;--violet:#d6fac5;--gold:#fcf1b2;--mint:#b2f2c5;
+  --glow:rgba(168,244,191,.27);--shade:rgba(0,0,0,.3);
+}
+html,body,#app {height:100%;width:100%;overflow:hidden}
+body {background:#05130d;color:var(--text);font-family:"Instrument Sans",Inter,ui-sans-serif,system-ui,sans-serif}
+body::selection{background:var(--forest-mint);color:#062218}
+#app{isolation:isolate}
+.forest-backdrop{position:fixed;inset:-2%;z-index:0;pointer-events:none;overflow:hidden;
+  background-image:linear-gradient(180deg,rgba(2,11,7,.37),rgba(0,14,7,.33) 46%,rgba(0,8,6,.62)),
+    url("https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=2500&q=85");
+  background-size:cover;background-position:center center;filter:saturate(1.04) contrast(1.14);
+  transform:scale(1.04);animation:forest-breathe 34s ease-in-out infinite alternate}
+.forest-backdrop::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 67% 60% at 50% 40%,transparent 24%,rgba(0,7,3,.18) 68%,rgba(0,4,3,.74)),linear-gradient(90deg,#030c0a75,transparent 30%,transparent 70%,#010a0677);z-index:1}
+.forest-backdrop::after{content:"";position:absolute;inset:0;z-index:2;opacity:.19;mix-blend-mode:screen;background-image:
+radial-gradient(circle at 15% 25%,#8effa9 0 1px,transparent 3px),
+radial-gradient(circle at 32% 63%,#85ffa4 0 1px,transparent 3px),
+radial-gradient(circle at 62% 38%,#82f4a1 0 1px,transparent 3px),
+radial-gradient(circle at 78% 72%,#88e9a9 0 1px,transparent 3px);
+background-size:230px 290px,310px 210px,410px 390px,580px 300px}
+.forest-light{position:absolute;inset:0;background:radial-gradient(ellipse 55% 49% at 55% 36%,#2b723d1c,transparent 76%)}
+.forest-fireflies{position:absolute;inset:0;background-image:
+radial-gradient(circle,#b4ffbc 1px,transparent 2.5px),
+radial-gradient(circle,#93ffaa 1px,transparent 2px),
+radial-gradient(circle,#a2ffc7 .8px,transparent 2px);
+background-position:17% 38%, 63% 75%, 87% 24%;background-size:311px 281px,439px 369px,529px 389px;
+opacity:.27;animation:forest-fireflies 13s ease-in-out infinite alternate}
+@keyframes forest-breathe{from{transform:scale(1.04)}to{transform:scale(1.09) translate3d(-.3%,.2%,0)}}
+@keyframes forest-fireflies{from{opacity:.12;transform:translateY(6px)}to{opacity:.40;transform:translateY(-9px)}}
+.workspace-shell{position:relative;z-index:1;display:block;height:100dvh;max-height:100dvh;padding:0}
+.glass{background:var(--forest-glass);border:1px solid var(--forest-border);box-shadow:inset 0 1px 0 #ffffff15,0 13px 43px #00000032;backdrop-filter:blur(20px) saturate(1.35);-webkit-backdrop-filter:blur(20px) saturate(1.35)}
+.launcher{position:fixed;z-index:31;top:50%;left:10px;transform:translateY(-50%);width:50px;min-height:auto;padding:9px 5px;gap:11px;border-radius:17px;display:flex;flex-direction:column;align-items:center;
+background:rgba(6,27,17,.72);border-color:rgba(172,238,185,.16);box-shadow:0 20px 53px #0008}
+.launcher .brand-mark{display:none}
+.launcher .launcher-rule{display:none}
+.launcher-nav{display:flex;flex-direction:column;gap:5px;width:100%;align-items:center}
+.launcher-link{width:39px;min-height:43px;height:43px;flex-shrink:0;border-radius:12px;gap:0;padding:0;background:transparent;color:#b8d8c1}
+.launcher-link span{display:none}
+.launcher-link svg{width:18px;height:18px}
+.launcher-link:hover{transform:translateX(1px);color:#f0fff4;background:#8affae1b}
+.launcher-link.active{background:#98ffc51a;border:1px solid #c0ffdf30;color:var(--forest-mint);box-shadow:0 0 19px #6eeaac1b}
+.launcher-link.active::before{display:none}
+.launcher-link.active svg{color:var(--forest-mint);filter:drop-shadow(0 0 7px #77ffad83)}
+.launcher-bottom{display:none}
+.main-shell{position:absolute;inset:0;min-width:0;background:transparent!important;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;display:block;overflow:visible}
+.app-topbar{position:absolute;top:12px;right:13px;left:13px;z-index:21;display:flex;justify-content:space-between;align-items:flex-start;padding:0;background:transparent;border:0;pointer-events:none;height:auto}
+.app-topbar>*{pointer-events:auto}
+.top-identity{padding:7px 10px;border-radius:11px;display:none}
+.top-identity-icon{display:none}
+.top-identity small{font-size:8px}
+.top-identity strong{font-size:10px}
+.topbar-actions{margin-left:auto;gap:8px;display:flex;align-items:center}
+.online-pill{position:fixed;top:12px;left:12px;display:inline-flex!important;gap:6px;height:30px;align-items:center;padding:6px 10px;background:#082016b8;border:1px solid #c0f7ca16;box-shadow:0 4px 22px #0006;color:#efffef;font:700 11px/1 ui-sans-serif,sans-serif;letter-spacing:0;text-transform:lowercase;border-radius:8px}
+.online-pill i{width:6px;height:6px;background:var(--forest-mint);box-shadow:0 0 8px #8effb3}
+.online-pill strong{color:var(--forest-mint);font-weight:800}
+.icon-button{width:34px;height:34px;border-radius:10px;background:rgba(11,38,24,.68);border:1px solid #cdf8d22f;backdrop-filter:blur(18px);font-size:15px}
+.icon-button:hover{background:#2b6d4b8a}
+.profile-menu{height:35px;padding:4px 10px 4px 5px;gap:7px;border-radius:10px;background:#0b2b1cae;border:1px solid #e0ffde2a;backdrop-filter:blur(18px);font-size:11px;color:#edfff4}
+.avatar{width:26px;height:26px;border-radius:7px;color:#092319;background:linear-gradient(125deg,#b5f5c9,#79cda8)}
+.content-shell{position:absolute;inset:0;min-height:0;overflow:auto;padding:0;background:transparent;scrollbar-width:thin;scrollbar-color:#c2e9c158 transparent}
+.app-status{position:absolute;bottom:11px;right:12px;left:auto;z-index:17;width:auto;min-height:25px;height:auto;padding:4px 9px;border:0;border-radius:9px;background:rgba(7,25,15,.58);color:#c5e1cc8c;backdrop-filter:blur(13px);font:700 9px/1.4 ui-sans-serif,sans-serif;gap:15px}
+.app-status span:first-child{display:none}
+.app-status b{color:var(--forest-mint)}
+.screen,.forest-app{color:var(--text)}
+.forest-app{position:relative;min-height:100%;padding:72px clamp(32px,5vw,80px) 52px 82px;max-width:1740px;margin:auto;display:flex;flex-direction:column}
+.forest-app-head{position:relative;display:flex;flex-direction:column;align-items:flex-start;margin:0 0 26px;max-width:800px}
+.forest-app-head .eyebrow{color:var(--forest-mint);letter-spacing:.18em;font-size:10px;font-weight:850}
+.forest-app-head h1{font-size:clamp(36px,4vw,57px);line-height:1.04;font-weight:760;letter-spacing:-.072em;margin:11px 0 10px;text-shadow:0 4px 27px #000e}
+.forest-app-head h1 em{font-family:Georgia,serif;font-style:italic;font-weight:400;color:#9dedd0}
+.forest-app-head>p{font-size:12px;color:#d5efdbc9;margin:0;text-shadow:0 1px 8px #000a}
+.forest-app-head .forest-chat-presence{position:absolute;right:0;bottom:6px;border:1px solid #b3ebc43e;background:#1130219a;padding:9px 12px;border-radius:12px;font-size:10px;color:#e4fbe8}
+.forest-chat-presence i{display:inline-block;width:6px;height:6px;background:#8cffaf;border-radius:50%;box-shadow:0 0 8px #8cffaf;margin-right:7px}
+.forest-app button{transition:background .18s,border-color .18s,box-shadow .18s,transform .18s}
+.forest-app button:hover:not(:disabled){border-color:#b6ffce75}
+.forest-app .forest-game-stage,.forest-chat-layout,.ai-panel,.ai-side{background:rgba(5,22,15,.79)!important;border:1px solid rgba(190,250,210,.19);box-shadow:0 24px 65px #0008,inset 0 1px 0 #fff1;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:19px}
+.forest-app button.primary-btn,.primary-btn,.forest-app .forest-game-controls button:first-child{background:linear-gradient(120deg,#b1efca,#8bd9b4);color:#0b281a;border:1px solid #e0ffde60;font-weight:850;box-shadow:0 8px 26px #8cffb01d}
+.forest-app button.primary-btn:hover,.primary-btn:hover{box-shadow:0 9px 28px #98ffc744}
+button,textarea,input{accent-color:#a7efc4}
+
+/* New-tab browser: the forest stays visible around a single piece of glass. */
+.forest-browser{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;color:#f5fff7}
+.forest-browser-stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.forest-browser-home{width:min(100%,540px);padding:22px 15px 40px;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:translateY(-5%);position:relative;z-index:2}
+.forest-wordmark{font-size:clamp(38px,4.4vw,61px);font-weight:800;letter-spacing:-.068em;line-height:1;white-space:nowrap;color:white;text-shadow:0 3px 25px #000d;margin-bottom:26px}
+.forest-wordmark span{color:#9becb8}
+.forest-wordmark sup{font-size:16px;vertical-align:super;color:#a4ffc3;margin-left:7px;text-shadow:0 0 20px #b0ffca}
+.forest-main-search{height:48px;width:min(100%,490px);display:flex;align-items:center;gap:12px;border:1px solid #c7ffd14d;border-radius:50px;padding:5px 6px 5px 16px;background:linear-gradient(105deg,rgba(14,47,30,.91),rgba(49,91,54,.63));box-shadow:0 0 0 2px #040f0770,0 13px 43px #0008,inset 0 1px 0 #d1ffe33b;backdrop-filter:blur(18px)}
+.forest-main-search>svg{color:#91eaba;flex-shrink:0}
+.forest-main-search input{border:0;outline:0;background:transparent;color:#f4fff7;min-width:0;width:100%;flex:1;font-size:13px;letter-spacing:-.02em}
+.forest-main-search input::placeholder{color:#e6f2e8cf}
+.forest-main-search button{height:34px;width:34px;flex-shrink:0;display:grid;place-items:center;border:0;border-radius:50%;background:#96e5bb;color:#143024;box-shadow:0 0 15px #9affbf3c}
+.forest-main-search button:hover{transform:scale(1.05);background:#c1f6d5}
+.forest-shortcuts,.forest-bookmarks{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:15px}
+.forest-shortcuts button,.forest-bookmarks button{border:1px solid #cef8d841;border-radius:30px;background:rgba(22,53,35,.63);box-shadow:inset 0 1px 0 #ffffff10;backdrop-filter:blur(13px);color:#f0fff2;font-size:11px;padding:8px 13px;line-height:1}
+.forest-shortcuts button::before{content:"✧";font-size:12px;color:#a1f4c1;margin-right:7px}
+.forest-shortcuts button:hover,.forest-bookmarks button:hover{background:#2c73527a;transform:translateY(-1px)}
+.forest-bookmarks{margin-top:15px;opacity:.85}
+.forest-bookmarks button{background:#071b1480;border-color:#e5ffe127;font-size:10px}
+.forest-browser-tip{margin-top:27px;color:#d1f1dc9e;background:none;border:0;font-size:10px;text-shadow:0 2px 9px #000b}
+.forest-browser-tip:hover{color:#fff}
+.forest-browser.is-browsing{background:rgba(5,14,10,.3)}
+.forest-browser-chrome{position:relative;margin:48px 17px 0 76px;z-index:5;border-radius:15px 15px 0 0;border:1px solid #adf5c23c;background:#0c2119d9;backdrop-filter:blur(24px);box-shadow:0 8px 40px #0008}
+.forest-tabs{height:40px;display:flex;align-items:end;gap:2px;padding:4px 8px 0;overflow-x:auto;scrollbar-width:none}
+.forest-tab{min-width:100px;max-width:180px;display:flex;align-items:center;height:33px;border-radius:9px 9px 0 0;border:1px solid transparent;overflow:hidden}
+.forest-tab.active{background:#3f604f73;border-color:#d2ffe73e}
+.forest-tab>button:first-child{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:9px 8px;color:#ebfff0;border:0;background:transparent;font-size:10px;text-align:left}
+.forest-tab-close,.forest-add-tab{flex-shrink:0;border:0;background:transparent;color:#def9e3;font-size:16px;padding:5px 8px}
+.forest-tab-close:hover,.forest-add-tab:hover{background:#ffffff17}
+.forest-toolbar{height:48px;display:flex;align-items:center;gap:6px;padding:5px 11px;border-top:1px solid #d2ffe519}
+.forest-toolbar>button,.forest-toolbar>a{height:32px;width:32px;flex-shrink:0;display:grid;place-items:center;text-decoration:none;border-radius:8px;border:1px solid transparent;background:transparent;color:#d7ebdb}
+.forest-toolbar>button:hover,.forest-toolbar>a:hover{background:#ffffff14}
+.forest-toolbar>button:disabled{opacity:.35}
+.forest-toolbar>button.favorite{color:#a6ffd6}
+.forest-toolbar form{height:35px;display:flex;align-items:center;gap:9px;padding:0 10px;flex:1;min-width:0;background:#04180ece;border:1px solid #d6fede37;border-radius:11px}
+.forest-toolbar form input{flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font-size:12px}
+.forest-toolbar form button{border:0;background:transparent;color:#a6f8c5;font-size:20px}
+.forest-browser.is-browsing .forest-browser-stage{margin:0 17px 30px 76px;border-radius:0 0 13px 13px;background:#06120d;border:1px solid #d2ffdf37;border-top:0;overflow:hidden;box-shadow:0 15px 40px #000a}
+.browser-frame{display:none;position:absolute;inset:0;background:white}
+.browser-frame.active{display:block}
+.portal-iframe{width:100%;height:100%;border:0;background:#fff}
+.browser-embed-warning{position:absolute;left:50%;top:14px;transform:translateX(-50%);max-width:90%;color:#effff4;background:#09271de8;border:1px solid #bdf4c87a;border-radius:10px;padding:9px 13px;font-size:11px;z-index:5;box-shadow:0 8px 28px #000a}
+.browser-embed-warning a{color:#98f7c0;margin-left:8px}
+.forest-browser-toast{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);background:#0c2b1aee;color:white;padding:10px 16px;border-radius:10px}
+/* Game selection: photoreal world first, compact playable windows second. */
+.forest-arcade .forest-app-head{margin-bottom:32px}
+.forest-game-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;max-width:1160px}
+.forest-game-card{position:relative;min-height:224px;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;isolation:isolate;padding:20px;text-align:left;border-radius:19px;border:1px solid #d1ffe439;background:linear-gradient(145deg,#162e21e3,#0a1f15ed);color:#fff;box-shadow:0 15px 40px #0007,inset 0 1px 0 #ffffff1c;backdrop-filter:blur(20px)}
+.forest-game-card::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 76% 28%,#9ceaaf41,transparent 55%),linear-gradient(155deg,transparent 40%,#0a1711 85%)}
+.forest-game-chess::before{background:radial-gradient(circle at 78% 22%,#dae6ad56,transparent 55%),linear-gradient(155deg,transparent 40%,#071810 85%)}
+.forest-game-rps::before{background:radial-gradient(circle at 76% 26%,#ecc7a651,transparent 55%),linear-gradient(155deg,transparent 40%,#091810 85%)}
+.forest-game-puzzle::before{background:radial-gradient(circle at 77% 20%,#96dace52,transparent 55%),linear-gradient(155deg,transparent 40%,#091810 85%)}
+.forest-game-uma::before{background:radial-gradient(circle at 79% 18%,#df8cae4f,transparent 55%),linear-gradient(155deg,transparent 40%,#071810 85%)}
+.forest-card-number{position:absolute;left:20px;top:17px;color:#dbf8e3b6;font-size:9px;letter-spacing:.1em;font-weight:790}
+.forest-card-symbol{position:absolute;right:22px;top:40px;font:500 75px/1 Georgia,serif;color:#c6ffddaa;text-shadow:0 0 43px #adffcb8a}
+.forest-game-card strong{font-size:21px;letter-spacing:-.055em;font-weight:760;margin-bottom:7px;max-width:70%}
+.forest-game-card small{font-size:11px;color:#b4d9c6;max-width:80%;line-height:1.55}
+.forest-card-play{margin-top:18px;border-top:1px solid #ffffff2f;padding-top:11px;width:100%;display:flex;justify-content:space-between;color:#b3f8cf;font-size:10px;font-weight:800;letter-spacing:.13em}
+.forest-card-play b{font-size:16px}
+.forest-game-card:hover{transform:translateY(-5px);box-shadow:0 23px 54px #0009,0 0 30px #79e3a521;border-color:#a4fbc48e}
+.forest-game-card:hover .forest-card-symbol{transform:scale(1.05)}
+.forest-active-game{width:min(1100px,100%);display:flex;flex-direction:column;gap:13px}
+.forest-return{align-self:flex-start;color:#c9f5d6;font-size:10px;letter-spacing:.15em;border:0;padding:9px 0;background:transparent}
+.forest-game-login{margin:0;background:#09281de3;padding:10px 14px;border:1px solid #d8fbd94a;border-radius:10px;font-size:11px;color:#e2f9e7}
+.forest-game-login button{color:#93e8b7;border:0;background:transparent}
+.forest-game-stage{padding:23px;min-height:400px;display:flex;flex-direction:column;gap:17px}
+.forest-game-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #d0f8dc27;padding-bottom:12px}
+.forest-game-heading h2{font-size:28px;letter-spacing:-.055em;margin:0}
+.forest-game-heading>span{color:#a9ecbf;font-size:11px;letter-spacing:.11em;font-weight:780}
+.forest-game-stage>p{font-size:12px;line-height:1.7;color:#c4e6d3c8;margin:0}
+.forest-game-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.forest-game-controls button,.forest-chess-layout aside button,.forest-world-layout aside button{border:1px solid #d0f8db46;color:#e0ffea;background:#3f694b60;padding:11px 15px;border-radius:11px;font-size:11px;font-weight:750}
+.forest-game-controls button:hover,.forest-chess-layout aside button:hover{background:#59896372}
+.forest-game-controls button:first-child{color:#10311d!important}
+.forest-game-symbol{font-size:78px;color:#b9ffca;text-shadow:0 0 34px #8defaf7c;margin:15px 0}
+.forest-2048-board{width:min(360px,100%);aspect-ratio:1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#1738249e;border:1px solid #adf2bb51;border-radius:15px;padding:8px}
+.forest-2048-tile{display:grid;place-items:center;border-radius:9px;background:#03170b9e;color:#dcf4e3;font-size:25px;font-weight:800;font-variant-numeric:tabular-nums}
+.forest-2048-tile[data-value="2"],.forest-2048-tile[data-value="4"]{background:#567b5a}
+.forest-2048-tile[data-value="8"],.forest-2048-tile[data-value="16"]{background:#639c69}
+.forest-2048-tile[data-value="32"],.forest-2048-tile[data-value="64"]{background:#528c6f}
+.forest-2048-tile[data-value="128"],.forest-2048-tile[data-value="256"],.forest-2048-tile[data-value="512"],.forest-2048-tile[data-value="1024"],.forest-2048-tile[data-value="2048"]{background:#b4dfae;color:#10321d;font-size:20px}
+.forest-mines-board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;width:min(420px,100%);aspect-ratio:1}
+.forest-mine{display:grid;place-items:center;border:1px solid #9ae5ad55;border-radius:6px;background:#194732cc;color:#e2ffe7;font-weight:800;font-size:15px}
+.forest-mine.revealed{background:#789e82a0;color:#f7fff7}
+.forest-mine.danger{background:#9c4848}
+.forest-chess-layout,.forest-world-layout{display:grid;grid-template-columns:minmax(260px,485px) minmax(190px,1fr);gap:24px;align-items:start}
+.forest-chess-board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;overflow:hidden;border:1px solid #f2ffee3c;border-radius:10px;box-shadow:0 11px 38px #0007}
+.forest-chess-square{border:0;border-radius:0;display:grid;place-items:center;font-size:clamp(22px,3vw,36px);padding:0;aspect-ratio:1;color:#ecfff0}
+.forest-chess-square.dark{background:#2d593b}.forest-chess-square.light{background:#789a71}
+.forest-chess-square.selected{box-shadow:inset 0 0 0 4px #b7f4b7;background:#447e4a}
+.forest-chess-square.target{background:#94ba6a}
+.forest-chess-layout aside{display:flex;flex-direction:column;gap:12px}
+.forest-chess-layout aside h3{font-size:29px;margin:0}
+.forest-chess-layout aside p{font-size:12px;color:#cae9d1;line-height:1.7}
+.forest-chess-layout aside small{color:#a5d2b5}
+.forest-rps .forest-rps-scores{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;width:min(560px,100%)}
+.forest-rps-scores>div{display:grid;place-items:center;gap:8px;padding:12px;border:1px solid #b2e8b747;border-radius:14px;background:#2047317d}
+.forest-rps-scores>div strong{font-size:60px}
+.forest-rps-scores>div span,.forest-rps-scores>div small{font-size:10px;color:#c7e8d1}
+.forest-rps-scores>b{color:#a6f7c4}
+.forest-rps-choices{display:flex;flex-wrap:wrap;gap:11px}
+.forest-rps-choices button{display:flex;flex-direction:column;align-items:center;gap:5px;background:#355b4082;border:1px solid #a9e7bd54;border-radius:13px;font-size:43px;padding:15px;min-width:116px}
+.forest-rps-choices small{font-size:11px;color:#d0f5d8}
+.forest-world-layout canvas{width:100%;image-rendering:pixelated;border-radius:10px;background:#071b20;border:1px solid #b4f2ba47;cursor:crosshair}
+.forest-world-layout aside{display:flex;flex-direction:column;gap:11px}
+.forest-world-layout aside h3{font-size:24px;margin:0}
+.forest-world-layout aside p{font-size:11px;color:#c4e6d0;line-height:1.65}
+.forest-world-stats{font-size:11px;color:#aeeabe}
+.forest-world-notice{color:#fff3bd}
+.forest-uma iframe{width:100%;min-height:420px;flex:1;border:1px solid #d7f6d73b;border-radius:11px;background:#101d16}
+.forest-uma a{color:#b5ffd3}
+
+/* Community — genuine Bolt server channels in a planted-glass conversation view. */
+.forest-chat{padding-right:35px;padding-bottom:26px}
+.forest-chat-layout{display:grid;grid-template-columns:66px 218px minmax(0,1fr) 188px;min-height:480px;height:min(720px,calc(100dvh - 223px));max-width:1480px;background:rgba(4,22,12,.80);border:1px solid #beffd036;border-radius:18px;overflow:hidden;box-shadow:0 22px 63px #000a;backdrop-filter:blur(28px) saturate(1.35)}
+.chat-group-label{font-size:9px;font-weight:850;letter-spacing:.13em;color:#a0c9ad;display:flex;align-items:center;justify-content:space-between;white-space:nowrap}
+.chat-group-label button{border:0;background:none;color:#baffce;font-size:18px}
+.forest-chat-servers{background:#091d14b5;border-right:1px solid #c5ffcd24;display:flex;flex-direction:column;align-items:center;gap:11px;padding:16px 8px}
+.forest-chat-servers .chat-group-label{font-size:8px}
+.forest-server-icon,.forest-server-add{flex-shrink:0;width:43px;height:43px;display:grid;place-items:center;background:#4b7d5954;border:1px solid #a6f1b342;border-radius:13px;color:#d3ffe0;font-size:22px}
+.forest-server-icon.active{border-radius:14px 7px 14px 7px;background:#98e9b7ae;color:#0b2113;box-shadow:0 0 22px #a6ffc33b}
+.forest-server-add{border-style:dashed;background:transparent;font-size:24px;color:#a2e8b7}
+.forest-chat-channels{display:flex;flex-direction:column;padding:18px 12px;background:#0d2b1b91;border-right:1px solid #b4ffc421;min-width:0}
+.forest-chat-server-title{display:flex;flex-direction:column;gap:3px;padding:0 9px 20px;margin-bottom:18px;border-bottom:1px solid #aafcb828}
+.forest-chat-server-title span{font-size:15px;font-weight:820;letter-spacing:-.035em}
+.forest-chat-server-title small{font-size:10px;color:#b5d5c0}
+.forest-channel-list{display:flex;flex-direction:column;gap:3px;overflow:auto;margin:9px 0 0}
+.forest-channel-link{width:100%;display:flex;align-items:center;gap:10px;border:1px solid transparent;border-radius:8px;background:none;color:#b8d1c0;padding:10px 12px;text-align:left;font-size:12px;min-width:0}
+.forest-channel-link span{font-size:19px;color:#91bf9e}
+.forest-channel-link.active{background:#a3f8bd24;color:#fff;border-color:#b4ffca32}
+.forest-channel-link:hover{background:#8edbab18}
+.forest-channel-link small{margin-left:auto;color:#cffad6}
+.forest-join-server{margin-top:16px;border:1px solid #ceffce61;background:#5f9b6d56;border-radius:8px;padding:9px;font-size:11px}
+.forest-chat-channel-footer{margin-top:auto;padding:12px 10px;border-top:1px solid #b8f7c32e;color:#d5fce0;font-size:11px;display:flex;align-items:center;gap:9px}
+.forest-chat-channel-footer:first-letter{color:#afffc0}
+.forest-chat-main{display:flex;min-width:0;min-height:0;flex-direction:column;background:#071c129c}
+.forest-chat-titlebar{height:58px;border-bottom:1px solid #c9ffce24;display:flex;align-items:center;gap:12px;padding:0 19px}
+.forest-chat-titlebar>span{font-size:23px;color:#a7eab7}
+.forest-chat-titlebar strong{font-size:14px}
+.forest-chat-titlebar small{font-size:10px;color:#a8c5b2}
+.forest-chat-titlebar b{margin-left:auto;color:#a8f2b8;font-size:9px;letter-spacing:.1em}
+.forest-chat-feed{flex:1;overflow:auto;min-height:0;display:flex;flex-direction:column;gap:18px;padding:22px 18px;scrollbar-color:#a8dab17b transparent}
+.forest-chat-empty{margin:auto;text-align:center;max-width:360px;color:#c3dec8;font-size:12px;line-height:1.6}
+.forest-chat-empty span{font-size:50px;color:#b6f8cb}
+.forest-chat-empty h2{margin:5px 0;font-size:22px}
+.forest-chat-empty p{margin:0}
+.forest-message{display:flex;align-items:flex-start;gap:10px;position:relative}
+.forest-message-avatar{flex:0 0 33px;width:33px;height:33px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(140deg,#82b59a,#325543);color:#f1fff4;border:1px solid #c3ffcf36;font-weight:830;font-size:13px}
+.forest-message.own .forest-message-avatar{background:linear-gradient(130deg,#a5eabc,#447f62)}
+.forest-message-body{flex:1;min-width:0}
+.forest-message-meta{display:flex;align-items:baseline;gap:10px}
+.forest-message-meta strong{font-size:12px;color:#f4fff3}
+.forest-message-meta time,.forest-message-meta small{color:#8eae97;font-size:9px}
+.forest-message-body>p{margin:5px 0 0;color:#ebf8ed;font-size:12px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.forest-message-reply{color:#a0dbb0;font-size:9px;margin-top:3px}
+.forest-message-reactions{display:flex;gap:5px;margin-top:7px}
+.forest-message-reactions button{border-radius:7px;padding:4px 8px;border:1px solid #b2e9bb42;background:#6cb88321;color:#e6ffea;font-size:11px}
+.forest-message-actions{visibility:hidden;display:flex;align-items:center;position:absolute;right:0;top:-12px;border:1px solid #c3ffd34e;border-radius:9px;background:#1e4b2fe9;box-shadow:0 8px 19px #0007;z-index:3}
+.forest-message:hover .forest-message-actions,.forest-message:focus-within .forest-message-actions{visibility:visible}
+.forest-message-actions button{background:none;border:0;border-radius:6px;padding:7px;color:#dcffe4;font-size:12px}
+.forest-message-actions button:hover{background:#a1f6bc36}
+.forest-reply-strip,.forest-chat-error{padding:9px 16px;font-size:10px;background:#214a329e;border-top:1px solid #c0ffd02c;color:#e5ffed}
+.forest-reply-strip button{border:0;background:transparent;color:#cbf5d6;margin-left:10px}
+.forest-chat-error{color:#ffd4bd;background:#68452d9c}
+.forest-chat-compose{padding:11px 14px;display:flex;align-items:center;gap:10px;border-top:1px solid #c8ffca2c}
+.forest-chat-compose>span{font-size:22px;color:#a5f9bc}
+.forest-chat-compose input{height:43px;flex:1;min-width:0;border:1px solid #c9ffcc36;border-radius:10px;padding:0 12px;color:#fafff8;outline:none;background:#1a3b2b8c;font-size:12px}
+.forest-chat-compose input:focus{border-color:#a9ffc1a6}
+.forest-chat-compose input::placeholder{color:#b1cbb6}
+.forest-chat-compose button{height:38px;width:38px;display:grid;place-items:center;border-radius:10px;background:#a4eebb;border:0;color:#112b1b}
+.forest-chat-members{border-left:1px solid #c2ffd42c;padding:19px 14px;overflow:auto;background:#0a291a9a;display:flex;flex-direction:column;gap:12px}
+.forest-online-member{display:flex;align-items:center;gap:9px;font-size:11px;color:#e6ffeb}
+.forest-member-avatar{width:29px;height:29px;border:1px solid #bfffc739;border-radius:9px;background:#46765683;display:grid;place-items:center;font-weight:800}
+.forest-online-member strong{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.forest-online-member i{width:6px;height:6px;border-radius:50%;background:#8ff5ad;margin-left:auto;box-shadow:0 0 7px #a0f2b1}
+.forest-chat-about{margin-top:auto;padding:13px;border-top:1px solid #b2f9c12d}
+.forest-chat-about span{font-size:24px;color:#aaf9c0}
+.forest-chat-about p{font-size:10px;line-height:1.7;color:#a6bcae}
+.forest-auth-invitation{align-self:center;margin:auto;display:flex;align-items:center;flex-direction:column;gap:13px;max-width:385px;text-align:center;padding:33px;border-radius:20px;border:1px solid #b8eec34e;background:#103322b8;backdrop-filter:blur(25px);box-shadow:0 15px 58px #0009}
+.forest-auth-invitation>span{font-size:75px;color:#bbffd4;text-shadow:0 0 35px #a5fac55c}
+.forest-auth-invitation h2{margin:0;font-size:27px}
+.forest-auth-invitation p{color:#c4e1cb;font-size:12px;line-height:1.7}
+.forest-auth-invitation button{display:flex;align-items:center;gap:8px;border:1px solid #c4ffd65a;border-radius:10px;background:#9de7b7;color:#103320;font-size:12px;font-weight:800;padding:12px 17px}
+/* AI — longform, grounded, with a luminous but quiet entry state. */
+.ai-screen{position:relative;max-width:none;margin:0;min-height:100%;padding:72px clamp(33px,5vw,80px) 40px 82px;gap:24px}
+.ai-screen .screen-head{max-width:1440px;width:100%;align-self:center}
+.ai-screen .screen-head h1{font-size:clamp(38px,4.2vw,57px);color:#fff;letter-spacing:-.06em;text-shadow:0 3px 30px #000c}
+.ai-screen .screen-head h1 em{color:#a0e9c0}
+.ai-screen .screen-head .eyebrow{color:#a9f6c4}
+.ai-screen .screen-head p{color:#d5e8dd}
+.ai-screen .head-side{background:#123d2baf;border:1px solid #bdfcd438;color:#e2ffe9}
+.ai-layout{width:100%;max-width:1440px;align-self:center;min-height:520px;height:min(720px,calc(100dvh - 215px));grid-template-columns:235px minmax(0,1fr);gap:16px}
+.ai-side{padding:21px 16px}
+.ai-panel{overflow:hidden;display:flex;flex-direction:column}
+.ai-side .secondary-btn{border:1px solid #b5f4ca58;background:#4d8a6445;color:#eaffef;font-size:11px}
+.ai-side-separator{background:#c6f7d132}
+.ai-side .micro{color:#b3ecc4}
+.ai-side .starter{background:#5eab7824;border:1px solid #c1f5ca32;border-radius:10px;color:#d2e6d7}
+.ai-side .starter:hover{background:#7ace9554}
+.ai-side-foot{background:#32774a38;border:1px solid #c9f4cc33}
+.ai-side-foot>span{color:#aff7c7}
+.ai-side-foot p{color:#b8d1c0}
+.ai-panel-top{height:65px;display:flex;align-items:center;border-bottom:1px solid #b4f2bd33}
+.ai-panel-top strong{font-size:13px;color:#e8ffed}
+.ai-panel-top strong span{color:#9dedb7}
+.ai-panel-top>span{color:#b7debe}
+.ai-message-list{flex:1;min-height:0;overflow-y:auto}
+.ai-welcome{text-align:center}
+.ai-core{color:#a8f9c3;background:radial-gradient(circle,#7feba944,#1656323a 65%,transparent);text-shadow:0 0 40px #9affbe84}
+.ai-orbit{border-color:#c2ffd15c}
+.ai-welcome .micro{color:#9feaaf}
+.ai-welcome h2{color:#fff}
+.ai-welcome h2 em{color:#b1f2c9}
+.ai-welcome p{color:#c1d7c7}
+.provider-warning{background:#395f3c36;border:1px solid #d0f3ae35;color:#d4e6d2}
+.provider-warning code{color:#b8ffd1}
+.ai-message.user{background:#a0edb821;border-color:#ceffd14d}
+.ai-message.assistant .ai-message-star{color:#a8f7c7;background:#86d9a12c;border-color:#bafed34a}
+.ai-composer{background:#0c291dc2;border-color:#b2eec73d}
+.ai-composer textarea{color:#f6fff7}
+.ai-composer textarea::placeholder{color:#c2d9c8}
+.ai-composer button.primary-btn{background:#a4eac0;color:#163220}
+.ai-disclaimer{color:#abc7b3}
+.ai-error{color:#ffe4c7}
+.auth-sheet,.profile-sheet{background:#092519ef;color:#f3fff4;border-color:#b9f9cb42}
+.auth-art{background:radial-gradient(circle at 65% 32%,#5a9b6661,transparent 64%),linear-gradient(130deg,#133b25,#082116)}
+.auth-art h2 em{color:#b6fbd0}
+.auth-halo{color:#baffce}
+.auth-fields>h2{color:#f1fff5}
+.auth-fields>p{color:#c5dbce}
+.auth-fields input{color:#fff!important;background:#345a3e69!important}
+.auth-swap{color:#9af2bc}
+.auth-guest{color:#bfd8c6}
+.profile-big-avatar{background:linear-gradient(140deg,#d8fad8,#85d5a1);color:#1b3d27}
+.toast{background:#092d1ced;border-color:#c8ffd353;color:#f3fff4}
+
+/* Overlays collapse gracefully on touch screens. The forest stays the backdrop. */
+@media(max-width:1300px){
+ .forest-chat-layout{grid-template-columns:58px 190px minmax(0,1fr) 157px}
+ .forest-chat-members{padding:15px 9px}
+ .forest-app{padding-right:32px}
+}
+@media(max-width:1080px){
+ .forest-chat-layout{grid-template-columns:53px 175px minmax(0,1fr)}
+ .forest-chat-members{display:none}
+ .forest-game-gallery{grid-template-columns:repeat(2,minmax(0,1fr));max-width:850px}
+ .forest-app-head h1{font-size:45px}
+ .forest-app-head .forest-chat-presence{position:static;margin-top:12px}
+}
+@media(max-width:800px){
+ .launcher{left:6px;width:42px;padding:7px 3px;border-radius:14px}
+ .launcher-link{width:35px;height:39px;min-height:39px}
+ .forest-app{padding:66px 16px 50px 60px}
+ .ai-screen{padding:66px 16px 50px 60px}
+ .forest-chat{padding-right:12px}
+ .forest-chat-layout{height:min(720px,calc(100dvh - 199px));grid-template-columns:47px 158px minmax(0,1fr)}
+ .forest-chat-channels{padding:14px 7px}
+ .forest-chat-servers{padding:11px 4px}
+ .forest-server-icon,.forest-server-add{width:35px;height:35px}
+ .forest-chat-server-title{padding:0 4px 15px}
+ .forest-channel-link{padding:9px 6px;font-size:11px}
+ .forest-chat-titlebar{padding:0 12px}
+ .forest-chat-titlebar small{display:none}
+ .forest-chat-feed{padding:16px 11px}
+ .forest-chat-main{min-width:0}
+ .forest-browser-chrome{margin-left:56px;margin-top:53px}
+ .forest-browser.is-browsing .forest-browser-stage{margin-left:56px}
+ .ai-layout{grid-template-columns:1fr}
+ .ai-side{display:none}
+ .app-topbar .topbar-actions{gap:5px}
+ .online-pill{top:8px;left:8px}
+}
+@media(max-width:580px){
+ .forest-backdrop{background-position:center;animation:none}
+ .forest-backdrop::before{background:radial-gradient(ellipse at center,transparent 22%,#00100873 91%),linear-gradient(#04120925,#03110a75)}
+ .workspace-shell{padding:0;display:block}
+ .launcher{top:auto;bottom:8px;left:50%;transform:translateX(-50%);width:min(290px,calc(100vw - 20px));min-height:55px;height:55px;flex-direction:row;border-radius:16px;padding:4px 7px}
+ .launcher-nav{display:flex;flex-direction:row;justify-content:space-around;gap:4px}
+ .launcher-link{width:54px;height:42px;min-height:42px;display:flex;flex-direction:column;gap:3px}
+ .launcher-link span{display:block;font-size:9px;font-weight:700}
+ .launcher-link svg{height:17px;width:17px}
+ .main-shell{inset:0}
+ .app-topbar{top:8px;left:8px;right:8px}
+ .profile-menu{height:32px}
+ .profile-menu>span:last-child{display:none}
+ .icon-button{width:31px;height:31px}
+ .online-pill{font-size:10px;height:27px}
+ .app-status{display:none}
+ .forest-browser-home{width:min(450px,100%);padding:20px;transform:translateY(-17%);margin-bottom:0}
+ .forest-wordmark{font-size:47px}
+ .forest-main-search{height:46px}
+ .forest-shortcuts{gap:5px}
+ .forest-shortcuts button{font-size:10px;padding:8px 10px}
+ .forest-bookmarks{margin-top:11px}
+ .forest-browser.is-browsing .forest-browser-chrome{margin:47px 7px 0;border-radius:12px 12px 0 0}
+ .forest-browser.is-browsing .forest-browser-stage{margin:0 7px 70px;border-radius:0 0 10px 10px}
+ .forest-toolbar{padding:5px;gap:1px}
+ .forest-toolbar>button,.forest-toolbar>a{width:27px;height:29px}
+ .forest-toolbar form{min-width:0}
+ .forest-browser-tip{font-size:9px}
+ .forest-app,.ai-screen{padding:62px 12px 85px;min-height:100%;overflow-x:hidden}
+ .forest-app-head{margin-bottom:17px}
+ .forest-app-head h1{font-size:38px}
+ .forest-app-head p{font-size:11px}
+ .forest-game-gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .forest-game-card{min-height:180px;padding:14px;border-radius:13px}
+ .forest-card-number{font-size:7px;left:14px;top:12px}
+ .forest-card-symbol{font-size:55px;right:14px;top:40px}
+ .forest-game-card strong{font-size:16px;max-width:95%}
+ .forest-game-card small{font-size:9px;max-width:95%}
+ .forest-card-play{font-size:9px;margin-top:11px}
+ .forest-game-stage{padding:14px;gap:12px;min-height:340px}
+ .forest-game-heading h2{font-size:22px}
+ .forest-game-heading span{font-size:9px}
+ .forest-chess-layout,.forest-world-layout{grid-template-columns:1fr;gap:16px}
+ .forest-chess-board{max-width:100%}
+ .forest-chess-square{font-size:26px}
+ .forest-rps-choices button{min-width:85px;font-size:29px}
+ .forest-world-layout canvas{width:100%}
+ .forest-chat{padding-bottom:80px}
+ .forest-chat-layout{height:min(720px,calc(100dvh - 197px));min-height:420px;display:grid;grid-template-columns:40px minmax(0,1fr);grid-template-rows:52px minmax(0,1fr);border-radius:13px}
+ .forest-chat-servers{grid-column:1;grid-row:1/3;padding:7px 3px;gap:7px}
+ .forest-chat-servers .chat-group-label{display:none}
+ .forest-server-icon,.forest-server-add{width:31px;height:31px;font-size:15px}
+ .forest-chat-channels{grid-column:2;grid-row:1;display:flex;flex-direction:row;align-items:center;gap:5px;overflow-x:auto;border-right:0;border-bottom:1px solid #b1ffcb36;padding:5px}
+ .forest-chat-server-title,.forest-chat-channels>.chat-group-label,.forest-chat-channel-footer,.forest-join-server{display:none}
+ .forest-channel-list{flex:1;margin:0;display:flex;flex-direction:row;gap:3px;overflow-x:auto}
+ .forest-channel-link{flex:0 0 auto;width:auto;padding:8px;font-size:10px;white-space:nowrap}
+ .forest-chat-main{grid-row:2;grid-column:2}
+ .forest-chat-titlebar{height:44px}
+ .forest-chat-titlebar b{font-size:8px}
+ .forest-message-actions{right:-3px;top:-25px}
+ .forest-message-actions button{padding:5px}
+ .forest-message-meta{gap:6px}
+ .forest-message-body p{font-size:11px}
+ .forest-chat-compose{padding:6px;gap:4px}
+ .forest-chat-compose input{height:38px;font-size:11px}
+ .forest-chat-compose button{height:34px;width:34px}
+ .forest-auth-invitation{padding:22px}
+ .ai-layout{height:min(740px,calc(100dvh - 182px));min-height:400px}
+ .ai-message-list{padding:17px 13px}
+ .ai-welcome h2{font-size:28px}
+ .ai-core{width:80px;height:80px;font-size:67px}
+ .ai-message{font-size:12px;max-width:90%}
+ .ai-composer{margin:0 9px 11px}
+ .auth-sheet{max-width:450px}
+}
+@media(prefers-reduced-motion:reduce){
+ .forest-backdrop,.forest-fireflies{animation:none!important}
+ .forest-app *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+/* Saved AI conversations and quick-start prompts. */
+.forest-ai-chat-list{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#9dddac55 transparent}
+.forest-ai-chat{display:flex;align-items:center;gap:3px;border:1px solid transparent;border-radius:10px;color:#c5e6ce}
+.forest-ai-chat.active{background:#93e8a626;border-color:#b3f9c53f}
+.forest-ai-chat>button:first-child{display:flex;align-items:center;gap:9px;min-width:0;flex:1;text-align:left;background:transparent;border:0;padding:10px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:inherit}
+.forest-ai-chat>button:first-child span{font-size:19px;color:#aefad1}
+.forest-ai-chat>button:not(:first-child){border:0;background:none;color:#bdd9c1;opacity:0;font-size:14px;padding:6px}
+.forest-ai-chat:hover>button:not(:first-child),.forest-ai-chat:focus-within>button:not(:first-child){opacity:1}
+.forest-ai-chat>button:not(:first-child):hover{color:#fff}
+.forest-ai-starters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:23px auto 0;width:min(600px,100%)}
+.forest-ai-starters button{border:1px solid #c0f8d047;border-radius:11px;background:#22543b69;display:flex;flex-direction:column;align-items:flex-start;gap:7px;text-align:left;position:relative;padding:15px;color:#f0fff3}
+.forest-ai-starters button:hover{background:#4e916773;transform:translateY(-2px)}
+.forest-ai-starters button small{font-size:8px;font-weight:800;color:#9be8b6;letter-spacing:.15em}
+.forest-ai-starters button span{font-size:11px;max-width:90%;line-height:1.5}
+.forest-ai-starters button b{position:absolute;right:13px;bottom:10px;color:#aef3c0}
+@media(max-width:580px){
+ .forest-ai-starters{gap:6px}
+ .forest-ai-starters button{padding:11px}
+ .forest-ai-starters button span{font-size:10px}
+}
+/* Fallback if an image service, background blur, or WebGL is unavailable. */
+@supports not (backdrop-filter:blur(1px)){
+ .launcher,.forest-chat-layout,.ai-panel,.ai-side,.forest-game-stage,.forest-browser-chrome{background:#0a2518ef}
+ .forest-main-search{background:#183d29f2}
+}
+
+.forest-particles{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.7;mix-blend-mode:screen}
+.forest-particles canvas{display:block}
+.workspace-shell{z-index:2}
+:root[data-theme="light"] .forest-particles{opacity:.5}
+
+/* Direct-message threads stay inside Chat, not a fifth app. */
+.forest-dm-block{display:flex;flex-direction:column;gap:4px;margin-top:18px;padding-top:16px;border-top:1px solid #b9ffd035;min-height:55px}
+.forest-dm-block .chat-group-label{margin:0 9px 7px}
+.forest-dm-link{display:flex;align-items:center;gap:9px;background:transparent;border:1px solid transparent;border-radius:9px;padding:9px 11px;text-align:left;color:#c4dec9;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.forest-dm-link span{color:#8fe6b0;font-size:13px}
+.forest-dm-link:hover{background:#79d69a20}
+.forest-dm-link.active{background:#9bebba2d;border-color:#c6ffd33b;color:#fff}
+.forest-chat-members .forest-online-member{border:1px solid transparent;width:100%;text-align:left;background:transparent;padding:3px 2px;border-radius:9px;cursor:pointer}
+.forest-chat-members .forest-online-member:hover{background:#a4ffc517}
+.forest-chat-members .forest-online-member:disabled{opacity:.7;cursor:default}
+.forest-dm-back{border:1px solid #aef2c83a;background:#45855b50;color:#cbffe0;border-radius:8px;font-size:10px;padding:6px 10px;margin-left:auto}
+.forest-chat-titlebar:has(.forest-dm-back)>b{margin-left:0}
+@media(max-width:580px){
+  .forest-dm-block{margin-top:0;padding-top:0;border:0;flex-direction:row;align-items:center;gap:4px;max-width:260px}
+  .forest-dm-block .chat-group-label{display:none}
+  .forest-dm-link{padding:6px;font-size:9px}
+  .forest-dm-back{font-size:8px;padding:5px}
+}

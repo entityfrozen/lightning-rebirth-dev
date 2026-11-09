@@ -1,0 +1,927 @@
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import {WebSocketServer, WebSocket} from "ws";
+import {Chess} from "chess.js";
+import {CHESS_LEVELS,chooseChessMove} from "./chess-ai.js";
+import {createCommunityStore} from "./community-v2.js";
+import {hasPermission} from "./staff-roles.js";
+
+const CHANNELS=["general","games","suggestions","support"];
+const LIMIT=1100;
+const uid=()=>crypto.randomBytes(7).toString("hex");
+const nameOf=user=>String(user?.username||"guest").slice(0,32);
+const trimText=(value,n=LIMIT)=>String(value||"").trim().slice(0,n);
+const safeSend=(ws,data)=>{if(ws?.readyState===WebSocket.OPEN)ws.send(JSON.stringify(data));};
+// Land comes from Natural Earth's 1:110m vector coastline, rasterized to a global 360×180 grid.
+const atlas=JSON.parse(fs.readFileSync(new URL("./public/assets/world-land.json",import.meta.url),"utf8"));
+const WORLD_W=atlas.width,WORLD_H=atlas.height;
+const landMask=Buffer.from(atlas.mask,"base64");
+const isLand=i=>i>=0&&i<WORLD_W*WORLD_H&&!!(landMask[i>>3]&(1<<(i&7)));
+const at=(x,y)=>Number.isInteger(x)&&Number.isInteger(y)&&x>=0&&x<WORLD_W&&y>=0&&y<WORLD_H?x+y*WORLD_W:-1;
+const adj=(a,b)=>Math.abs(a%WORLD_W-b%WORLD_W)+Math.abs(Math.floor(a/WORLD_W)-Math.floor(b/WORLD_W))===1;
+const neighbor=i=>[i%WORLD_W?i-1:-1,i%WORLD_W<WORLD_W-1?i+1:-1,i>=WORLD_W?i-WORLD_W:-1,i<WORLD_W*(WORLD_H-1)?i+WORLD_W:-1].filter(n=>n>=0);
+const coast=new Uint8Array(WORLD_W*WORLD_H),region=new Int32Array(WORLD_W*WORLD_H).fill(-1);
+const landIndices=[];
+const regionSizes=[];
+for(let i=0;i<WORLD_W*WORLD_H;i++)if(isLand(i)){
+ landIndices.push(i);
+ if(neighbor(i).some(n=>!isLand(n)))coast[i]=1;
+}
+let componentCount=0;
+for(const seed of landIndices){
+ if(region[seed]!==-1)continue;
+ const pending=[seed];region[seed]=componentCount;
+ for(let head=0;head<pending.length;head++)for(const next of neighbor(pending[head]))if(isLand(next)&&region[next]===-1){region[next]=componentCount;pending.push(next)}
+ regionSizes.push(pending.length);
+ componentCount++;
+}
+const makeMap=()=>Array.from({length:WORLD_W*WORLD_H},(_,i)=>isLand(i)?{owner:null,def:4+(i*17%5),kind:"",fort:0}:{owner:"sea"});
+const colors=["#f0bd67","#72b9c1","#f08381","#9c91d3","#89c574","#d9a0da","#d5c777","#87a5de","#c28d78","#9bc4a6"];
+const channelsFileName="lightning-social.json";
+export function attachLightningLive({server,sessionFromHeaders,dataDir,getDisplayName=(_id,username)=>username,getRole=()=>null,notifyMentions=()=>{}}){
+ // An isolated game engine per HTTP server: tests and previews must never
+ // receive WebSocket state from other Lightning instances in the process.
+ const clients=new Map(),queues={chess:[],rps:[]},chessGames=new Map(),rpsGames=new Map(),tournaments=new Map();
+ const invitations=new Map(),inviteRate=new Map();
+ const INVITE_TTL=90000;
+ const usersOnline=()=>[...new Set([...clients.values()].map(u=>u.id))];
+ const world={cells:makeMap(),players:{},attacks:[],tick:0,winner:null,phase:"waiting",matchId:null,start:0};
+ let worldQueue=[],worldQueueTimer=null;
+ const file=path.join(dataDir,channelsFileName);
+ let history={};
+ try{history=JSON.parse(fs.readFileSync(file,"utf8"))}catch{}
+ for(const c of CHANNELS){
+  if(!Array.isArray(history[c]))history[c]=[];
+  history[c]=history[c].filter(entry=>entry&&!entry.deleted);
+ }
+ let saveQueued=false;
+ const save=()=>{
+  if(saveQueued)return;saveQueued=true;
+  setTimeout(()=>{
+   saveQueued=false;
+   try{const tmp=file+".tmp";fs.writeFileSync(tmp,JSON.stringify(history));fs.renameSync(tmp,file)}
+   catch(err){console.warn("Social history save error:",err.message)}
+  },500);
+ };
+ const sendAll=(evt)=>{for(const ws of clients.keys())safeSend(ws,evt)};
+ const clientOf=id=>[...clients.entries()].filter(([,u])=>u.id===id);
+ const sendUser=(id,evt)=>{for(const [socket] of clientOf(id))safeSend(socket,evt)};
+ const summary=()=>({users:usersOnline().length,queue:{chess:queues.chess.length,rps:queues.rps.length,world:worldQueue.length},tournaments:[...tournaments.values()].filter(t=>!t.done).map(t=>({id:t.id,players:t.ids.length,max:4,status:t.status})),games:{chess:chessGames.size,rps:rpsGames.size}});
+ const presence=()=>sendAll({type:"presence",...summary(),online:usersOnline().map(id=>({id,name:clientOf(id)[0]?.[1]?.name||id,username:clientOf(id)[0]?.[1]?.username||""}))});
+ const communities=createCommunityStore({dataDir,sendToUser:sendUser,sendAll,getRole,notifyMentions});
+ const validateSend=(ws,msg)=>{
+  const u=clients.get(ws);
+  if(!u)return false;
+  if(Date.now()-u.last<130){safeSend(ws,{type:"error",message:"You're sending commands too quickly."});return false}
+  u.last=Date.now();return true;
+ };
+ function worldSnapshot(){
+  const players=Object.values(world.players),territories={};
+  for(const p of players)territories[p.id]=0;
+  for(const c of world.cells)if(c.owner&&c.owner!=="sea")territories[c.owner]=(territories[c.owner]||0)+1;
+  return {type:"world",width:WORLD_W,height:WORLD_H,matchId:world.matchId,phase:world.phase,queued:worldQueue.length,
+   cells:world.cells.map(c=>c.owner==="sea"?-1:c.owner||""),
+   structures:world.cells.map((c,i)=>c.kind?{i,kind:c.kind}:null).filter(Boolean),
+   players:players.map(p=>({id:p.id,name:p.name,color:p.color,bot:!!p.bot,troops:Math.floor(p.troops),gold:Math.floor(p.gold),land:territories[p.id]||0,allies:p.allies})),
+   tick:world.tick||0,winner:world.winner,landTotal:landIndices.length,
+   attacks:world.attacks.map(a=>({id:a.id,by:a.by,target:a.target,route:a.route,captured:a.captured,limit:a.limit,committed:a.initial,remaining:Math.floor(a.remaining)}))};
+ }
+ function sendWorld(){const snap=worldSnapshot();for(const [ws,u] of clients)if(u.world)safeSend(ws,snap)}
+ function owned(p){let n=0;for(const c of world.cells)if(c.owner===p.id)n++;return n}
+ const botNames=["Ash Dominion","Iron Coast","Cobalt Union","Ember Pact","Verdant Order","Crimson Crown","Polar Legion","Violet Realm","Solar Republic","Obsidian Guard","Azure Empire","Silver League"];
+ function spawnNation(id,name,bot=false){
+  if(world.players[id])return world.players[id];
+  const taken=Object.keys(world.players).length;
+  if(taken>=24)return null;
+  let spawn=-1;
+  for(let attempts=0;attempts<450;attempts++){
+   const next=landIndices[Math.floor(Math.random()*landIndices.length)];
+   if(world.cells[next].owner!==null||regionSizes[region[next]]<110)continue;
+   if(Object.values(world.players).some(p=>Math.abs(p.spawn%WORLD_W-next%WORLD_W)+Math.abs(Math.floor(p.spawn/WORLD_W)-Math.floor(next/WORLD_W))<14))continue;
+   if(neighbor(next).filter(n=>isLand(n)).length>=3){spawn=next;break}
+  }
+  if(spawn<0)spawn=landIndices.find(i=>world.cells[i].owner===null);
+  if(spawn===undefined)return null;
+  const p={id,name:trimText(name,32),bot,spawn,color:colors[taken%colors.length]||"hsl("+((taken*79)%360)+" 56% 65%)",
+   gold:390,troops:1800,allies:[],lastAttack:0};
+  world.players[id]=p;
+  // A nation starts as one point, not a pre-painted rectangular chunk.
+  world.cells[spawn].owner=id;
+  return p;
+ }
+ function startWorld(){
+  if(world.phase==="playing")return;
+  if(worldQueueTimer){clearTimeout(worldQueueTimer);worldQueueTimer=null}
+  const people=worldQueue.filter(id=>clientOf(id).length).slice(0,12);
+  worldQueue=[];
+  if(!people.length){presence();return}
+  world.cells=makeMap();world.players={};world.attacks=[];world.winner=null;world.tick=0;
+  world.phase="playing";world.matchId=uid();world.start=Date.now();
+  for(const id of people)spawnNation(id,clientOf(id)[0][1].name);
+  for(let b=0;b<Math.max(7,12-people.length);b++)spawnNation("npc:"+b,botNames[b%botNames.length],true);
+  for(const [ws,u] of clients)if(people.includes(u.id)){u.world=true;safeSend(ws,{type:"worldMatch",matchId:world.matchId})}
+  sendWorld();presence();
+ }
+ function worldQueueJoin(u,instant=false){
+  if(world.phase==="playing"&&world.players[u.id]){
+   u.world=true;safeSend(u.ws,{type:"worldMatch",matchId:world.matchId});safeSend(u.ws,worldSnapshot());return;
+  }
+  if(world.phase==="playing"&&!world.winner){
+   const p=spawnNation(u.id,u.name);
+   if(p){u.world=true;safeSend(u.ws,{type:"worldMatch",matchId:world.matchId});sendWorld();return}
+  }
+  if(!worldQueue.includes(u.id))worldQueue.push(u.id);
+  u.world=true;
+  sendUser(u.id,{type:"worldQueued",position:worldQueue.indexOf(u.id)+1,players:worldQueue.length});
+  safeSend(u.ws,worldSnapshot());presence();
+  if(instant&&world.phase==="waiting")startWorld();
+  else if(world.phase==="waiting"&&worldQueue.length>=2)startWorld();
+  else if(!worldQueueTimer&&world.phase==="waiting"){worldQueueTimer=setTimeout(startWorld,6500);worldQueueTimer.unref()}
+ }
+ function worldCancel(u){
+  worldQueue=worldQueue.filter(id=>id!==u.id);
+  if(worldQueue.length===0&&worldQueueTimer){clearTimeout(worldQueueTimer);worldQueueTimer=null}
+  u.world=false;sendUser(u.id,{type:"worldQueueCancelled"});presence();
+ }
+ function worldSync(u){
+  if(world.phase==="playing"&&world.players[u.id]){
+   u.world=true;
+   safeSend(u.ws,{type:"worldMatch",matchId:world.matchId});
+  }else if(worldQueue.includes(u.id)){
+   u.world=true;
+   safeSend(u.ws,{type:"worldQueued",position:worldQueue.indexOf(u.id)+1,players:worldQueue.length});
+  }
+  safeSend(u.ws,worldSnapshot());
+ }
+ // Across continuous landmasses, expeditions may target distant land. Crossing
+ // open ocean requires owning a coastal tile and landing on a coastal tile.
+ function travel(p,i){
+  const regions=new Set(),ownsCoast=world.cells.some((c,j)=>{
+   if(c.owner!==p.id)return false;
+   regions.add(region[j]);return !!coast[j];
+  });
+  // some() short-circuits on a coast tile; collect all landmasses separately.
+  for(const q of world.cells.keys())if(world.cells[q].owner===p.id)regions.add(region[q]);
+  if(regions.has(region[i]))return "land";
+  return ownsCoast&&!!coast[i]?"naval":null;
+ }
+ function attackDistance(a,b){
+  // Wrapping the international date line is useful when choosing a front.
+  const dx=Math.abs(a%WORLD_W-b%WORLD_W),dy=Math.abs(Math.floor(a/WORLD_W)-Math.floor(b/WORLD_W));
+  return Math.min(dx,WORLD_W-dx)+dy;
+ }
+ function launchCampaign(p,target,ratio){
+  const tile=world.cells[target];
+  if(!tile||tile.owner==="sea"||tile.owner===p.id)return {error:"Choose neutral or enemy land."};
+  if(tile.owner&&p.allies.includes(tile.owner))return {error:"You cannot attack an ally."};
+  const route=travel(p,target);
+  if(!route)return {error:"No land route. To cross the ocean you need an owned coastline and a coastal landing tile."};
+  if(world.attacks.filter(a=>a.by===p.id).length>=3)return {error:"Three campaigns are active. Let one finish before launching another."};
+  if(p.troops<70)return {error:"Not enough troops for an expedition."};
+  const committed=Math.floor(p.troops*ratio);
+  if(committed<35)return {error:"Commit more troops to this campaign."};
+  let first=target;
+  if(route==="land"){
+   // Distant clicks pick the nearest REAL border. Never teleport the army
+   // directly to the target. Every following tile is captured through that front.
+   let best=Infinity;
+   for(let i=0;i<world.cells.length;i++){
+    if(world.cells[i].owner!==p.id)continue;
+    for(const n of neighbor(i)){
+     const t=world.cells[n];
+     if(t.owner==="sea"||t.owner===p.id||t.owner&&p.allies.includes(t.owner)||region[n]!==region[target])continue;
+     const distance=attackDistance(n,target);
+     if(distance<best){best=distance;first=n;}
+    }
+   }
+   if(best===Infinity)return {error:"No reachable border. Obtain a coast before invading this landmass."};
+  }
+  p.troops-=committed;
+  const limit=Math.min(200,Math.max(2,Math.floor(committed/19)));
+  const attack={id:uid(),by:p.id,target,route,region:region[first],initial:committed,remaining:committed,
+   limit,captured:0,progress:0,frontier:[first],seen:new Set([first])};
+  world.attacks.push(attack);
+  return {success:true,route,limit,attack};
+ }
+ function finishCampaign(attack){
+  const owner=world.players[attack.by];
+  if(owner)owner.troops=Math.min(90000,owner.troops+Math.floor(attack.remaining));
+  world.attacks=world.attacks.filter(a=>a.id!==attack.id);
+ }
+ function stepCampaign(attack){
+  const owner=world.players[attack.by];
+  if(!owner||owned(owner)===0){finishCampaign(attack);return true}
+  if(!attack.frontier.length||attack.captured>=attack.limit||attack.remaining<12){
+   finishCampaign(attack);return true;
+  }
+  // Troops control both campaign reach and speed. Losses gradually slow the front.
+  const strength=Math.max(0.18,attack.remaining/attack.initial);
+  attack.progress+=Math.min(4.2,(.25+Math.sqrt(attack.remaining)/25)*(.55+.45*strength));
+  let dirty=false;
+  for(let n=0;n<6&&attack.progress>=1&&attack.frontier.length&&attack.captured<attack.limit;n++){
+   attack.frontier.sort((a,b)=>attackDistance(a,attack.target)-attackDistance(b,attack.target));
+   const idx=attack.frontier.shift(),cell=world.cells[idx];
+   if(!cell||cell.owner==="sea"||cell.owner===owner.id||
+      cell.owner&&owner.allies.includes(cell.owner))continue;
+   // Every land step connects to the attacking empire. Naval starts on a coast.
+   if(attack.captured>0||attack.route==="land"){
+    if(!neighbor(idx).some(i=>world.cells[i].owner===owner.id))continue;
+   }
+   const rival=world.players[cell.owner];
+   const defense=rival?Math.min(80,Math.floor(rival.troops/Math.max(6,owned(rival))*.22)):0;
+   const expense=Math.ceil(8+cell.def*1.5+cell.fort*8+defense+(attack.route==="naval"&&attack.captured===0?18:0));
+   if(attack.remaining<expense){attack.remaining=0;break}
+   attack.remaining-=expense;
+   if(rival)rival.troops=Math.max(0,rival.troops-Math.floor(expense*.35));
+   cell.owner=owner.id;cell.kind="";cell.fort=0;
+   attack.captured++;dirty=true;
+   attack.progress-=Math.max(.85,cell.def/5.5);
+   for(const next of neighbor(idx)){
+    if(region[next]!==attack.region||attack.seen.has(next))continue;
+    attack.seen.add(next);
+    if(world.cells[next].owner!=="sea"&&world.cells[next].owner!==owner.id){
+     attack.frontier.push(next);
+    }
+   }
+  }
+  if(!attack.frontier.length||attack.captured>=attack.limit||attack.remaining<12)finishCampaign(attack);
+  return dirty;
+}
+
+ function checkWorldWin(){
+  const winner=Object.values(world.players).find(p=>owned(p)/landIndices.length>=.8);
+  if(!winner||world.winner)return;
+  world.winner=winner.name;
+  sendAll({type:"worldInfo",text:winner.name+" has conquered 80% of the world!"});sendWorld();
+  const timer=setTimeout(()=>{
+   world.phase="waiting";world.cells=makeMap();world.players={};world.attacks=[];world.winner=null;
+   world.matchId=null;world.tick=0;for(const u of clients.values())u.world=false;
+   sendAll({type:"worldEnded"});presence();
+  },15000);timer.unref();
+ }
+ function worldAction(u,data){
+  const p=world.players[u.id];
+  if(!p||world.phase!=="playing")return safeSend(u.ws,{type:"error",message:"Join a WorldPvP match first."});
+  if(world.winner)return;
+  const index=at(data.x,data.y),tile=world.cells[index];
+  if(index<0||!tile||tile.owner==="sea")return safeSend(u.ws,{type:"error",message:"Select land, not ocean."});
+  const amount=Math.min(.9,Math.max(.1,Number(data.ratio)||.35));
+  if(data.action==="attack"){
+   if(Date.now()-p.lastAttack<900)return;
+   p.lastAttack=Date.now();
+   const result=launchCampaign(p,index,amount);
+   safeSend(u.ws,{type:"worldInfo",text:result.success?
+    (result.route==="naval"?"Landing fleet dispatched.":"Ground campaign launched.")+" Up to "+result.limit+" tiles; troops advance over time.":result.error});
+  }else if(data.action==="build"){
+   if(tile.owner!==p.id)return safeSend(u.ws,{type:"error",message:"Build on your own land."});
+   if(tile.kind)return safeSend(u.ws,{type:"error",message:"This region already has a building."});
+   const type=String(data.kind||""),costs={city:170,factory:230,port:160,fort:130};
+   if(!costs[type])return;
+   if(p.gold<costs[type])return safeSend(u.ws,{type:"error",message:"Not enough gold."});
+   if(type==="port"&&!coast[index])return safeSend(u.ws,{type:"error",message:"Ports must be built on the coast."});
+   p.gold-=costs[type];tile.kind=type;tile.fort=type==="fort"?3:0;
+  }else if(data.action==="alliance"){
+   const other=world.players[trimText(data.target,70)];
+   if(!other||other.id===p.id)return;
+   if(p.allies.includes(other.id)){p.allies=p.allies.filter(id=>id!==other.id);other.allies=other.allies.filter(id=>id!==p.id)}
+   else{p.allies.push(other.id);other.allies.push(p.id)}
+  }else if(data.action==="nuke"){
+   if(tile.owner===p.id||p.gold<1800)return safeSend(u.ws,{type:"error",message:"A nuclear strike costs 1,800 gold."});
+   p.gold-=1800;
+   for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){
+    if(dx*dx+dy*dy>10)continue;
+    const i=at(data.x+dx,data.y+dy),c=world.cells[i];
+    if(c&&c.owner!=="sea"&&c.owner!==p.id){c.owner=null;c.kind="";c.fort=0}
+   }
+  }else return;
+  checkWorldWin();sendWorld();
+ }
+ function chessLegal(engine){
+  return engine.moves({verbose:true}).map(move=>({
+   from:move.from,to:move.to,promotion:move.promotion||""
+  }));
+ }
+ const chessPlayers=game=>game.ids.map(id=>id==="npc:chess"?"Celestial Bot":
+  clientOf(id)[0]?.[1]?.name||id);
+ function chessSnapshot(game,userId,type="chessState"){
+  const turn=game.engine.turn();
+  return {
+   type,id:game.id,color:game.ids.indexOf(userId)===0?"w":"b",
+   players:chessPlayers(game),fen:game.engine.fen(),turn,
+   over:game.over,bot:game.bot,difficulty:game.difficulty,
+   autoplay:game.autoPlayers.has(userId),autoAllowed:true,
+   legal:game.over?[]:chessLegal(game.engine),
+   last:game.engine.history().at(-1)||"",
+   history:game.engine.history(),
+   result:game.result||""
+  };
+ }
+ function sendChessState(game,type="chessState"){
+  for(const id of game.ids)if(id!=="npc:chess")
+   sendUser(id,chessSnapshot(game,id,type));
+ }
+ function cleanChess(game){
+  clearTimeout(game.pendingTimer);
+  const timer=setTimeout(()=>{
+   if(chessGames.get(game.id)===game)chessGames.delete(game.id);
+   presence();
+  },60000);
+  timer.unref?.();
+ }
+ function newChess(ids,difficulty="normal"){
+  // No duplicate live games or stale matchmaking entries.
+  for(const kind of ["chess","rps"])
+   queues[kind]=queues[kind].filter(id=>!ids.includes(id));
+  const game={
+   id:uid(),ids,engine:new Chess(),created:Date.now(),over:false,bot:ids.includes("npc:chess"),
+   difficulty:CHESS_LEVELS.includes(difficulty)?difficulty:"normal",
+   autoPlayers:new Set(),pendingTimer:null,result:""
+  };
+  chessGames.set(game.id,game);
+  sendChessState(game,"chessStart");
+  presence();
+  return game;
+ }
+ function chessMoveNow(game,move,by){
+  game.over=game.engine.isGameOver();
+  game.result=game.engine.isCheckmate()?"Checkmate · "+by+" wins":
+   game.engine.isDraw()?"Draw":"";
+  sendChessState(game);
+  if(game.over)cleanChess(game);
+  else scheduleChessAI(game);
+ }
+ function scheduleChessAI(game){
+  if(game.over||game.pendingTimer)return;
+  const turn=game.engine.turn(),seat=turn==="w"?0:1;
+  const player=game.ids[seat];
+  if(player!=="npc:chess"&&!game.autoPlayers.has(player))return;
+  // A timer avoids blocking the live socket during the user's own move.
+  const position=game.engine.fen();
+  game.pendingTimer=setTimeout(()=>{
+   game.pendingTimer=null;
+   if(chessGames.get(game.id)!==game||game.over||game.engine.fen()!==position)return;
+   if(player!=="npc:chess"&&!game.autoPlayers.has(player))return;
+   const move=chooseChessMove(game.engine,player==="npc:chess"?game.difficulty:"expert");
+   if(!move)return;
+   try{
+    const applied=game.engine.move({from:move.from,to:move.to,promotion:move.promotion||"q"});
+    if(applied)chessMoveNow(game,applied,player==="npc:chess"?"Celestial Bot":
+     clientOf(player)[0]?.[1]?.name||"Ghost Pilot");
+   }catch(error){console.warn("Chess AI move rejected:",error?.message||error);}
+  },player==="npc:chess"?570:430);
+  game.pendingTimer.unref?.();
+ }
+ function chessMove(u,data){
+  const game=chessGames.get(String(data.id||""));
+  if(!game||game.over||!game.ids.includes(u.id))
+   return safeSend(u.ws,{type:"error",message:"Chess match unavailable. Refresh or start a new game."});
+  const turn=game.ids[0]===u.id?"w":"b";
+  if(game.engine.turn()!==turn)
+   return safeSend(u.ws,{type:"error",message:"It's not your turn."});
+  if(game.autoPlayers.has(u.id))
+   return safeSend(u.ws,{type:"error",message:"Disable Ghost Pilot before playing a move yourself."});
+  const from=String(data.from||""),to=String(data.to||"");
+  if(!/^[a-h][1-8]$/.test(from)||!/^[a-h][1-8]$/.test(to))
+   return safeSend(u.ws,{type:"error",message:"Choose a legal square."});
+  let move=null;
+  try{
+   const piece=game.engine.get(from),promotion=piece?.type==="p"&&["1","8"].includes(to[1]);
+   move=game.engine.move(promotion?{from,to,promotion:data.promotion||"q"}:{from,to});
+  }catch{}
+  if(!move)return safeSend(u.ws,{type:"error",message:"Illegal move. Select a highlighted square."});
+  chessMoveNow(game,move,u.name);
+ }
+ function chessAutoplay(u,data){
+  const game=chessGames.get(String(data.id||""));
+  if(!game||game.over||!game.ids.includes(u.id))
+   return safeSend(u.ws,{type:"error",message:"That chess match is no longer active."});
+  if(data.enabled===true)game.autoPlayers.add(u.id);
+  else if(data.enabled===false)game.autoPlayers.delete(u.id);
+  else return safeSend(u.ws,{type:"error",message:"Invalid Ghost Pilot setting."});
+  sendUser(u.id,{type:"chessAutoStatus",id:game.id,enabled:game.autoPlayers.has(u.id)});
+  if(game.autoPlayers.has(u.id))scheduleChessAI(game);
+ }
+ function chessResign(u,data){
+  const game=chessGames.get(String(data.id||""));
+  if(!game||game.over||!game.ids.includes(u.id))
+   return safeSend(u.ws,{type:"error",message:"Chess match is no longer active."});
+  game.over=true;
+  const other=game.ids.find(id=>id!==u.id);
+  const victor=other==="npc:chess"?"Celestial Bot":clientOf(other)[0]?.[1]?.name||"Opponent";
+  game.result=u.name+" resigned · "+victor+" wins";
+  sendChessState(game);
+  cleanChess(game);
+ }
+ function chessCancelQueue(u){
+  const before=queues.chess.length;
+  queues.chess=queues.chess.filter(id=>id!==u.id);
+  safeSend(u.ws,{type:"chessQueueCancelled",removed:before!==queues.chess.length});
+  presence();
+ }
+ function chessSync(u,data){
+  const game=(data.id?chessGames.get(String(data.id)):null)||
+   [...chessGames.values()].find(item=>item.ids.includes(u.id)&&!item.over);
+  if(!game||!game.ids.includes(u.id)){
+   return safeSend(u.ws,{type:"error",message:"That chess match is no longer active. Start a new game."});
+  }
+  sendUser(u.id,chessSnapshot(game,u.id,"chessStart"));
+  if(!game.over)scheduleChessAI(game);
+ }
+
+ // Best-of-five matches, first to three wins. A tournament bracket uses one
+ // decisive round per pairing so tournaments don't take twenty minutes.
+ const RPS_MOVES=["rock","paper","scissors"];
+ const RPS_ROUND_MS=45000;
+ const RPS_REVEAL_MS=2500;
+ const RPS_TARGET=3;
+ const rpsName=id=>id==="npc:rps"?"Celestial Bot":clientOf(id)[0]?.[1]?.name||id;
+ const rpsScore=g=>({...g.score});
+ function rpsView(g,userId){
+  const other=g.ids.find(id=>id!==userId);
+  return {
+   id:g.id,ids:g.ids,players:g.players,tournament:g.tournament,bot:g.bot,
+   round:g.round,winsTo:g.winsTo,stage:g.stage,score:rpsScore(g),
+   phase:g.phase,over:g.over,waiting:!!g.choices[userId],
+   opponentReady:!!g.choices[other],result:g.lastResult,
+   rematchPending:g.rematch?.has(userId)||false,
+   rematchOffered:g.rematch?.has(other)||false
+  };
+ }
+ function rpsSend(g,type,more={}){
+  for(const id of g.ids)if(id!=="npc:rps")
+   sendUser(id,{type,...rpsView(g,id),...more});
+ }
+ function rpsBotMove(){return RPS_MOVES[crypto.randomInt(RPS_MOVES.length)];}
+ function newRPS(ids,tournament=null){
+  // A private match always removes its players from public matchmaking queues.
+  for(const kind of ["chess","rps"])queues[kind]=queues[kind].filter(id=>!ids.includes(id));
+  const g={
+   id:uid(),ids:[...ids],players:ids.map(rpsName),tournament,bot:ids.includes("npc:rps"),
+   round:1,winsTo:tournament?1:RPS_TARGET,stage:tournament?(tournaments.get(tournament)?.status||"semifinal"):null,
+   score:Object.fromEntries(ids.map(id=>[id,0])),
+   choices:{},phase:"choosing",over:false,lastResult:null,rematch:new Set(),timer:null
+  };
+  if(g.bot)g.choices["npc:rps"]=rpsBotMove();
+  rpsGames.set(g.id,g);
+  rpsSend(g,"rpsStart");
+  rpsArmTimer(g);
+  presence();
+  return g;
+ }
+ function rpsArmTimer(g){
+  clearTimeout(g.timer);
+  g.timer=setTimeout(()=>{
+   if(g.over||g.phase!=="choosing")return;
+   const selected=g.ids.filter(id=>g.choices[id]);
+   const winner=selected.length===1?selected[0]:null;
+   rpsFinish(g,winner,"timeout");
+  },RPS_ROUND_MS);
+  g.timer.unref?.();
+ }
+ function rpsCleanup(g){
+  clearTimeout(g.timer);
+  g.timer=setTimeout(()=>{
+   if(rpsGames.get(g.id)!==g)return;
+   if(g.rematch.size)rpsSend(g,"rpsRematchDeclined",{reason:"expired"});
+   rpsGames.delete(g.id);presence();
+  },120000);
+  g.timer.unref?.();
+ }
+ function advanceTournament(g,winner){
+  if(!g.tournament)return;
+  const t=tournaments.get(g.tournament);
+  if(!t||t.done)return;
+  if(!winner){
+   t.done=true;t.status="cancelled";
+   for(const id of t.ids)sendUser(id,{type:"tournamentCancelled",id:t.id});
+   presence();return;
+  }
+  if(t.status==="semifinal"){
+   if(!t.winners.includes(winner))t.winners.push(winner);
+   if(t.winners.length===2){
+    const finalists=[...t.winners];t.status="final";t.winners=[];
+    newRPS(finalists,t.id);
+   }
+  }else if(t.status==="final"){
+   t.done=true;t.status="finished";
+   sendAll({type:"tournamentWinner",id:t.id,winner});
+   presence();
+  }
+ }
+ function rpsFinish(g,winner,reason=""){
+  if(g.over)return;
+  clearTimeout(g.timer);
+  g.over=true;g.phase="finished";
+  const result={
+   type:"rpsResult",id:g.id,round:g.round,winner,tie:!winner,
+   choices:{...g.choices},score:rpsScore(g),over:true,
+   winsTo:g.winsTo,reason
+  };
+  g.lastResult=result;
+  rpsSend(g,"rpsResult",result);
+  advanceTournament(g,winner);
+  rpsCleanup(g);
+  presence();
+ }
+ function rpsBeginRound(g){
+  if(g.over||g.phase!=="reveal")return;
+  g.round++;
+  g.choices={};
+  if(g.bot)g.choices["npc:rps"]=rpsBotMove();
+  g.lastResult=null;g.phase="choosing";
+  rpsSend(g,"rpsRoundStart");
+  rpsArmTimer(g);
+ }
+ function rpsChoice(u,data){
+  const g=rpsGames.get(String(data.id||""));
+  if(!g||!g.ids.includes(u.id))
+   return safeSend(u.ws,{type:"error",message:"That match is no longer available."});
+  if(g.over||g.phase!=="choosing"||g.choices[u.id])return;
+  const pick=data.choice;
+  if(!RPS_MOVES.includes(pick))
+   return safeSend(u.ws,{type:"error",message:"Pick rock, paper, or scissors."});
+  g.choices[u.id]=pick;
+  sendUser(u.id,{type:"rpsWaiting",id:g.id,round:g.round});
+  const opponent=g.ids.find(id=>id!==u.id);
+  if(opponent!=="npc:rps")sendUser(opponent,{
+   type:"rpsOpponentReady",id:g.id,round:g.round
+  });
+  if(!g.ids.every(id=>g.choices[id]))return;
+  clearTimeout(g.timer);
+  const [a,b]=g.ids,ca=g.choices[a],cb=g.choices[b];
+  const tie=ca===cb;
+  const winner=tie?null:
+   (ca==="rock"&&cb==="scissors")||(ca==="paper"&&cb==="rock")||(ca==="scissors"&&cb==="paper")?a:b;
+  if(winner)g.score[winner]++;
+  const over=!!winner&&g.score[winner]>=g.winsTo;
+  const result={
+   type:"rpsResult",id:g.id,round:g.round,choices:{...g.choices},
+   winner,tie,score:rpsScore(g),over,winsTo:g.winsTo
+  };
+  g.lastResult=result;g.phase=over?"finished":"reveal";g.over=over;
+  rpsSend(g,"rpsResult",result);
+  if(over){
+   advanceTournament(g,winner);rpsCleanup(g);presence();
+  }else{
+   g.timer=setTimeout(()=>rpsBeginRound(g),RPS_REVEAL_MS);
+   g.timer.unref?.();
+  }
+ }
+ function rpsSync(u,data){
+  const game=data?.id?rpsGames.get(String(data.id)):
+   [...rpsGames.values()].reverse().find(g=>g.ids.includes(u.id)&&!g.over);
+  if(!game||!game.ids.includes(u.id)){
+   return safeSend(u.ws,{type:"rpsNotFound",message:"That match has ended."});
+  }
+  safeSend(u.ws,{type:"rpsStart",...rpsView(game,u.id)});
+ }
+ function rpsRematch(u,data){
+  const g=rpsGames.get(String(data.id||""));
+  if(!g||!g.ids.includes(u.id)||!g.over||g.tournament)
+   return safeSend(u.ws,{type:"error",message:"This match isn't available for a rematch."});
+  if(g.bot){
+   rpsGames.delete(g.id);clearTimeout(g.timer);newRPS([u.id,"npc:rps"]);return;
+  }
+  const other=g.ids.find(id=>id!==u.id);
+  if(playing(u.id)||playing(other))
+   return safeSend(u.ws,{type:"error",message:"Finish the current match before requesting a rematch."});
+  if(!clientOf(other).length)
+   return safeSend(u.ws,{type:"error",message:"Your opponent is offline."});
+  g.rematch.add(u.id);
+  if(g.rematch.size===2){
+   clearTimeout(g.timer);rpsGames.delete(g.id);
+   newRPS(g.ids);return;
+  }
+  sendUser(u.id,{type:"rpsRematchWaiting",id:g.id});
+  sendUser(other,{type:"rpsRematchOffer",id:g.id,fromName:rpsName(u.id)});
+ }
+ function rpsRematchDecline(u,data){
+  const g=rpsGames.get(String(data.id||""));
+  if(!g||!g.ids.includes(u.id)||!g.over||g.tournament)return;
+  g.rematch.clear();
+  rpsSend(g,"rpsRematchDeclined");
+ }
+ function rpsLeave(u,data){
+  const g=rpsGames.get(String(data.id||""));
+  if(!g||!g.ids.includes(u.id))return;
+  if(g.over)return;
+  const other=g.ids.find(id=>id!==u.id);
+  rpsFinish(g,other==="npc:rps"?null:other,"left");
+ }
+ function rpsCancelQueue(u){
+  const before=queues.rps.length;
+  queues.rps=queues.rps.filter(id=>id!==u.id);
+  safeSend(u.ws,{type:"rpsQueueCancelled",removed:before!==queues.rps.length});
+  presence();
+ }
+ const playing=id=>[...chessGames.values()].some(g=>!g.over&&g.ids.includes(id))||
+  [...rpsGames.values()].some(g=>!g.over&&g.ids.includes(id))||
+  [...tournaments.values()].some(t=>!t.done&&((t.status==="waiting"&&t.ids.includes(id))||t.winners.includes(id)));
+ const invitePayload=invite=>({
+  type:"gameInvite",id:invite.id,game:invite.game,createdAt:invite.createdAt,
+  expiresAt:invite.expiresAt,from:{
+   id:invite.from,name:invite.fromName,username:invite.fromUsername
+  }
+ });
+ function endInvite(invite,status){
+  if(!invitations.has(invite.id))return;
+  invitations.delete(invite.id);
+  const info={type:"gameInviteResult",id:invite.id,game:invite.game,status,
+   from:invite.from,to:invite.to,fromName:invite.fromName,toName:invite.toName};
+  sendUser(invite.from,info);sendUser(invite.to,info);
+ }
+ function sendInvite(u,data){
+  const game=trimText(data.game,10),target=trimText(data.target,80);
+  if(!["chess","rps"].includes(game))
+   return safeSend(u.ws,{type:"error",message:"Choose Chess or Rock Paper Scissors."});
+  if(!target||target===u.id)
+   return safeSend(u.ws,{type:"error",message:"Choose another online player."});
+  const receiver=clientOf(target)[0]?.[1];
+  if(!receiver)return safeSend(u.ws,{type:"error",message:"That player is offline. Choose someone online."});
+  if(playing(u.id)||playing(target))
+   return safeSend(u.ws,{type:"error",message:"One of you is already in a match."});
+  const now=Date.now(),recent=(inviteRate.get(u.id)||[]).filter(at=>now-at<60000);
+  if(recent.length>=5)return safeSend(u.ws,{type:"error",message:"Too many invites. Try again shortly."});
+  if([...invitations.values()].some(x=>x.from===u.id&&x.to===target&&x.game===game))
+   return safeSend(u.ws,{type:"error",message:"You already invited this player."});
+  if([...invitations.values()].filter(x=>x.to===target).length>=4)
+   return safeSend(u.ws,{type:"error",message:"This player has too many pending invites."});
+  inviteRate.set(u.id,[...recent,now]);
+  const invite={id:uid(),game,from:u.id,fromName:u.name,fromUsername:u.username,
+   to:target,toName:receiver.name,createdAt:now,expiresAt:now+INVITE_TTL};
+  invitations.set(invite.id,invite);
+  sendUser(target,invitePayload(invite));
+  sendUser(u.id,{type:"gameInviteSent",id:invite.id,game,to:target,
+   name:receiver.name,expiresAt:invite.expiresAt});
+ }
+ function respondInvite(u,data){
+  const invite=invitations.get(trimText(data.id,36));
+  if(!invite)return safeSend(u.ws,{type:"error",message:"That invitation has expired or was already answered."});
+  const action=data.action;
+  if(action==="cancel"){
+   if(invite.from!==u.id)return safeSend(u.ws,{type:"error",message:"You cannot cancel this invitation."});
+   endInvite(invite,"cancelled");return;
+  }
+  if(invite.to!==u.id||!["accept","decline"].includes(action))
+   return safeSend(u.ws,{type:"error",message:"You cannot respond to this invitation."});
+  if(invite.expiresAt<=Date.now()){endInvite(invite,"expired");return;}
+  if(action==="decline"){endInvite(invite,"declined");return;}
+  if(!clientOf(invite.from).length||!clientOf(invite.to).length){
+   endInvite(invite,"unavailable");return;
+  }
+  if(playing(invite.from)||playing(invite.to)){
+   endInvite(invite,"busy");return;
+  }
+  // Consent has been checked server-side. Only now can the game start.
+  for(const kind of ["chess","rps"])
+   queues[kind]=queues[kind].filter(id=>id!==invite.from&&id!==invite.to);
+  endInvite(invite,"accepted");
+  for(const other of [...invitations.values()]){
+   if([invite.from,invite.to].some(id=>other.from===id||other.to===id))endInvite(other,"busy");
+  }
+  if(invite.game==="chess")newChess([invite.from,invite.to]);
+  else newRPS([invite.from,invite.to]);
+  presence();
+ }
+ const inviteClock=setInterval(()=>{
+  const now=Date.now();
+  for(const invite of invitations.values())if(invite.expiresAt<=now)endInvite(invite,"expired");
+  for(const [id,times] of inviteRate){
+   const recent=times.filter(at=>now-at<60000);
+   if(recent.length)inviteRate.set(id,recent);
+   else inviteRate.delete(id);
+  }
+ },1000);
+ inviteClock.unref();
+
+ function queue(u,kind){
+  if(!["chess","rps"].includes(kind))return;
+  if(playing(u.id))return safeSend(u.ws,{type:"error",message:"Finish your current game first."});
+  for(const k of ["chess","rps"])queues[k]=queues[k].filter(id=>id!==u.id);
+  const line=queues[kind];
+  let opponent=line.shift();
+  while(opponent&&!clientOf(opponent).length)opponent=line.shift();
+  if(opponent&&opponent!==u.id){kind==="chess"?newChess([opponent,u.id]):newRPS([opponent,u.id])}
+  else {queues[kind].push(u.id);safeSend(u.ws,{type:"queued",game:kind});}
+  presence();
+ }
+ function tournamentJoin(u){
+  if(playing(u.id))return safeSend(u.ws,{type:"error",message:"Finish your match before joining a tournament."});
+  if(queues.chess.includes(u.id)||queues.rps.includes(u.id))
+   return safeSend(u.ws,{type:"error",message:"Cancel matchmaking before joining a tournament."});
+  if([...tournaments.values()].some(t=>!t.done&&t.ids.includes(u.id)))
+   return safeSend(u.ws,{type:"error",message:"You're already in a tournament."});
+  let t=[...tournaments.values()].find(x=>!x.done&&x.status==="waiting"&&x.ids.length<4);
+  if(!t){t={id:uid(),ids:[],winners:[],status:"waiting",done:false};tournaments.set(t.id,t)}
+  t.ids.push(u.id);
+  for(const id of t.ids)sendUser(id,{type:"tournamentJoined",id:t.id,players:t.ids.length});
+  if(t.ids.length===4){
+   t.status="semifinal";newRPS(t.ids.slice(0,2),t.id);newRPS(t.ids.slice(2,4),t.id);
+   sendAll({type:"tournamentStarted",id:t.id,players:t.ids});
+  }
+  presence();
+ }
+ function tournamentLeave(u){
+  const t=[...tournaments.values()].find(t=>!t.done&&t.status==="waiting"&&t.ids.includes(u.id));
+  if(!t)return safeSend(u.ws,{type:"error",message:"You are not waiting for a tournament."});
+  t.ids=t.ids.filter(id=>id!==u.id);
+  sendUser(u.id,{type:"tournamentLeft",id:t.id});
+  for(const id of t.ids)sendUser(id,{type:"tournamentJoined",id:t.id,players:t.ids.length});
+  if(!t.ids.length)tournaments.delete(t.id);
+  presence();
+ }
+ const wss=new WebSocketServer({noServer:true,maxPayload:8192,perMessageDeflate:false});
+ server.on("upgrade",(req,socket,head)=>{
+  if(!req.url?.startsWith("/live"))return;
+  const origin=req.headers.origin;
+  let expected="";
+  try{expected=new URL(origin).host}catch{}
+  if(origin&&expected!==req.headers.host){socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");socket.destroy();return}
+  const auth=sessionFromHeaders(req.headers);
+  if(!auth){socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");socket.destroy();return}
+  wss.handleUpgrade(req,socket,head,ws=>wss.emit("connection",ws,auth,req));
+ });
+ wss.on("connection",(ws,auth,req)=>{
+  const id=auth.identity.id,u={ws,id,name:getDisplayName(id,nameOf(auth.identity)),username:nameOf(auth.identity),role:auth.identity.role,last:0,world:false};
+  clients.set(ws,u);
+  safeSend(ws,{type:"hello",id,name:u.name,username:u.username,role:u.role,channels:CHANNELS,history,online:usersOnline().map(id=>({id,name:clientOf(id)[0]?.[1]?.name||id,username:clientOf(id)[0]?.[1]?.username||""})),summary:summary()});
+  safeSend(ws,{type:"v2State",...communities.snapshot(u)});
+  // Restore active RPS matches after hello so the client knows its account ID.
+  for(const g of rpsGames.values())if(!g.over&&g.ids.includes(u.id))
+   safeSend(ws,{type:"rpsStart",...rpsView(g,u.id)});
+  for(const invite of invitations.values()){
+   if(invite.to===u.id&&invite.expiresAt>Date.now())safeSend(ws,invitePayload(invite));
+  }
+  presence();
+  ws.on("message",raw=>{
+   const current=sessionFromHeaders(req.headers);
+   if(!current||current.identity.id!==u.id){
+     ws.close(4003,"Session expired");return;
+   }
+   u.role=current.identity.role;
+   u.name=getDisplayName(u.id,nameOf(current.identity));u.username=nameOf(current.identity);
+   let data;try{data=JSON.parse(raw.toString())}catch{return}
+   if(!data||typeof data!=="object")return;
+   if(!validateSend(ws,data))return;
+   if(typeof data.type==="string"&&data.type.startsWith("v2")){communities.handle(u,data);return;}
+   if(data.type==="chat"){
+    const channel=trimText(data.channel,25),message=trimText(data.message,1000);
+    if(!CHANNELS.includes(channel)||!message)return;
+    const parentId=trimText(data.replyTo,32);
+    const parent=parentId?history[channel].find(entry=>entry.id===parentId&&!entry.deleted):null;
+    const entry={id:uid(),by:u.name,username:u.username,userId:u.id,channel,message,at:Date.now(),
+      replyTo:parent?.id||null,reactions:{}};
+    history[channel].push(entry);history[channel]=history[channel].slice(-120);save();
+    notifyMentions({text:message,authorId:u.id,authorName:u.name,channel,
+      replyToId:parent?.userId||null});
+    sendAll({type:"chat",entry});return;
+   }
+   if(data.type==="typing"){
+    const channel=trimText(data.channel,25);
+    if(CHANNELS.includes(channel))sendAll({type:"chatTyping",channel,by:u.name,userId:u.id});
+    return;
+   }
+   if(["chatEdit","chatDelete","chatReact"].includes(data.type)){
+    const channel=trimText(data.channel,25),messageId=trimText(data.id,32);
+    if(!CHANNELS.includes(channel)||!messageId)return;
+    const entry=history[channel].find(row=>row.id===messageId);
+    if(!entry||entry.deleted)return;
+    if(data.type==="chatEdit"){
+      if(entry.userId!==u.id||Date.now()-entry.at>900000)
+        return safeSend(ws,{type:"error",message:"You can only edit your own recent messages."});
+      const next=trimText(data.message,1000);
+      if(!next)return;
+      entry.message=next;entry.editedAt=Date.now();
+    }else if(data.type==="chatDelete"){
+      if(entry.userId!==u.id&&!hasPermission(u.role,"community.moderate"))
+        return safeSend(ws,{type:"error",message:"You cannot delete that message."});
+      history[channel].splice(history[channel].indexOf(entry),1);
+      save();sendAll({type:"chatDeleted",channel,id:messageId});return;
+    }else{
+      const emoji=trimText(data.emoji,8);
+      if(!["👍","👎","❤️","😂","🤣","🔥","💀","😭","🥹","😍","😎","👀","🙏","✨","🎉","💯","👏","🤝","😮","😢","😡","🤔","🤯","😴","✅","❌","🚀","⚡","🫶","💜","🤍","💚","😅","😬","👋","😏"].includes(emoji))return;
+      entry.reactions ||= {};
+      const users=Array.isArray(entry.reactions[emoji])?entry.reactions[emoji]:[];
+      entry.reactions[emoji]=users.includes(u.id)?users.filter(id=>id!==u.id):[...users.slice(-119),u.id];
+    }
+    save();sendAll({type:"chatUpdate",channel,entry});return;
+   }
+   if(data.type==="chessResign")return chessResign(u,data);
+   if(data.type==="chessCancelQueue")return chessCancelQueue(u);
+   if(data.type==="chessSync")return chessSync(u,data);
+   if(data.type==="worldSync")return worldSync(u);
+   if(data.type==="worldPractice")return worldQueueJoin(u,true);
+   if(data.type==="worldLeave")return worldCancel(u);
+   if(data.type==="queue")return queue(u,data.game);
+   if(data.type==="gameInvite"||data.type==="duel")return sendInvite(u,data);
+   if(data.type==="gameInviteRespond")return respondInvite(u,data);
+   if(data.type==="chessMove")return chessMove(u,data);
+   if(data.type==="chessAutoplay")return chessAutoplay(u,data);
+   if(data.type==="rpsChoice")return rpsChoice(u,data);
+   if(data.type==="rpsSync")return rpsSync(u,data);
+   if(data.type==="rpsRematch")return rpsRematch(u,data);
+   if(data.type==="rpsRematchDecline")return rpsRematchDecline(u,data);
+   if(data.type==="rpsLeave")return rpsLeave(u,data);
+   if(data.type==="rpsCancelQueue")return rpsCancelQueue(u);
+   if(data.type==="tournamentJoin")return tournamentJoin(u);
+   if(data.type==="tournamentLeave")return tournamentLeave(u);
+   if(data.type==="worldQueue"||data.type==="worldJoin")return worldQueueJoin(u);
+   if(data.type==="worldCancel")return worldCancel(u);
+   if(data.type==="chessBot"){
+    if(playing(u.id))return safeSend(u.ws,{type:"error",message:"Finish your current game first."});
+    if(data.difficulty!==undefined&&!CHESS_LEVELS.includes(data.difficulty))
+     return safeSend(u.ws,{type:"error",message:"Choose Easy, Normal, Hard, or Expert."});
+    return newChess([u.id,"npc:chess"],data.difficulty||"normal");
+   }
+    if(data.type==="rpsBot"){
+    if(playing(u.id))return safeSend(u.ws,{type:"error",message:"Finish your current match first."});
+    return newRPS([u.id,"npc:rps"]);
+   }
+   if(data.type==="worldAction")return worldAction(u,data);
+  });
+  ws.on("close",()=>{
+   clients.delete(ws);
+   if(!clientOf(u.id).length){
+    for(const kind of ["chess","rps"])queues[kind]=queues[kind].filter(id=>id!==u.id);
+    worldQueue=worldQueue.filter(id=>id!==u.id);
+    for(const t of tournaments.values()){
+     if(t.status!=="waiting"||!t.ids.includes(u.id))continue;
+     t.ids=t.ids.filter(id=>id!==u.id);
+     for(const id of t.ids)sendUser(id,{type:"tournamentJoined",id:t.id,players:t.ids.length});
+     if(!t.ids.length)tournaments.delete(t.id);
+    }
+   }
+   presence();
+  });
+ });
+ // Advance live fronts frequently, but broadcast at a lower rate than rendering.
+ let lastFrontBroadcast=0;
+ const frontTicker=setInterval(()=>{
+  if(world.phase!=="playing"||world.winner||!world.attacks.length)return;
+  let changed=false;
+  for(const attack of [...world.attacks])changed=stepCampaign(attack)||changed;
+  if(Date.now()-lastFrontBroadcast>=750){
+   lastFrontBroadcast=Date.now();
+   if(changed||world.attacks.length)sendWorld();
+  }
+  if(changed)checkWorldWin();
+ },350);
+ frontTicker.unref();
+ const ticker=setInterval(()=>{
+  if(!wss.clients.size)return;
+  if(world.phase!=="playing"||world.winner)return;
+  world.tick++;
+  const ownedBy=new Map();
+  for(let i=0;i<world.cells.length;i++){
+   const owner=world.cells[i].owner;
+   if(owner&&owner!=="sea"){
+    let arr=ownedBy.get(owner);
+    if(!arr){arr=[];ownedBy.set(owner,arr)}
+    arr.push(i);
+   }
+  }
+  for(const p of Object.values(world.players)){
+   const territory=ownedBy.get(p.id)||[];
+   if(!territory.length)continue;
+   let cities=0,factories=0,ports=0;
+   for(const i of territory){const kind=world.cells[i].kind;if(kind==="city")cities++;else if(kind==="factory")factories++;else if(kind==="port")ports++}
+   p.troops=Math.min(90000,p.troops+Math.min(280,territory.length*.4+18+cities*7));
+   p.gold=Math.min(30000,p.gold+Math.min(120,territory.length*.24+9+factories*8+ports*3));
+   if(!p.bot||p.troops<150||world.attacks.some(a=>a.by===p.id))continue;
+   // NPC armies build a real economy and strategically expand along the front.
+   if(p.gold>=230&&world.tick%6===0){
+    const site=territory.find(i=>!world.cells[i].kind);
+    if(site!==undefined){world.cells[site].kind="factory";p.gold-=230}
+   }else if(p.gold>=170&&world.tick%8===0){
+    const site=territory.find(i=>!world.cells[i].kind);
+    if(site!==undefined){world.cells[site].kind="city";p.gold-=170}
+   }else if(p.gold>=160&&world.tick%10===0){
+    const site=territory.find(i=>coast[i]&&!world.cells[i].kind);
+    if(site!==undefined){world.cells[site].kind="port";p.gold-=160}
+   }
+   // Bot generals expand from real front lines, or launch coastal invasions.
+   let target=-1;
+   for(let attempt=0;attempt<45;attempt++){
+    const origin=territory[Math.floor(Math.random()*territory.length)];
+    const options=neighbor(origin).filter(i=>isLand(i)&&world.cells[i].owner!==p.id);
+    if(!options.length)continue;
+    options.sort((a,b)=>(world.cells[a].owner?1:0)-(world.cells[b].owner?1:0));
+    target=options[0];break;
+   }
+   // When land frontiers are exhausted, a coastal empire can invade another shore.
+   if(target<0&&territory.some(i=>coast[i])){
+    for(let tries=0;tries<45;tries++){
+     const next=landIndices[Math.floor(Math.random()*landIndices.length)];
+     if(coast[next]&&world.cells[next].owner!==p.id){target=next;break}
+    }
+   }
+   if(target>=0)launchCampaign(p,target,.35+Math.random()*.35);
+  }
+  checkWorldWin();
+  if(world.tick%2===0)sendWorld();
+ },3000);
+ ticker.unref();
+ console.log("Lightning Live: WebSocket social + games ready");
+ return {wss,sendToUser:sendUser};
+}

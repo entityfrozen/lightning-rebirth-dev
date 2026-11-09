@@ -5,20 +5,24 @@ import { Stars } from '@react-three/drei';
 import { DialRoot } from 'dialkit';
 import 'dialkit/styles.css';
 import './styles.css';
-import { Arcade } from './Arcade.jsx';
-import { Browser } from './Browser.jsx';
-import { Chat } from './Chat.jsx';
-import { AI } from './AI.jsx';
+import './forest.css';
+import {useBoltLive} from './useBoltLive.js';
+const Arcade=React.lazy(()=>import('./Arcade.jsx').then(m=>({default:m.Arcade})));
+const Browser=React.lazy(()=>import('./Browser.jsx').then(m=>({default:m.Browser})));
+const Chat=React.lazy(()=>import('./Chat.jsx').then(m=>({default:m.Chat})));
+const AI=React.lazy(()=>import('./AI.jsx').then(m=>({default:m.AI})));
+const ForestParticles=React.lazy(()=>import('./ForestParticles.jsx').then(m=>({default:m.ForestParticles})));
 import { api, navigation, readLocal, saveLocal } from './constants.js';
 import { Icon } from './icons.jsx';
 import { SceneBoundary } from './SceneBoundary.jsx';
+
 
 const allowed=new Set(['arcade','browser','chat','ai']);
 const fromHash=()=>{
   const route=location.hash.replace(/^#/,'').split('/')[0];
   if(route==='community')return 'chat';
-  if(route==='home')return 'arcade';
-  return allowed.has(route)?route:'arcade';
+  if(route==='home')return 'browser';
+  return allowed.has(route)?route:'browser';
 };
 function StarDrift({reduced}){
   const ref=useRef();
@@ -87,12 +91,13 @@ function App(){
   const [theme,setTheme]=useState(()=>readLocal('theme','dark'));
   const [reduced,setReduced]=useState(()=>readLocal('reduce-motion',false));
   const [user,setUser]=useState(null);
+  const live=useBoltLive(user);
   const [loading,setLoading]=useState(true);
   const [modal,setModal]=useState(null);
   const [signal,setSignal]=useState(0);
   const [toast,setToast]=useState('');
   const name=navigation.find(i=>i.id===view);
-  const model=useRef(null);
+
   useEffect(()=>{
     document.documentElement.dataset.theme=theme;
     saveLocal('theme',theme);
@@ -130,10 +135,11 @@ function App(){
   const actor=user?.username||'Guest';
   const effectiveReduced=reduced||(typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   return <>
-    <SceneBoundary><Atmosphere reduced={effectiveReduced}/></SceneBoundary>
+    <div className="forest-backdrop" aria-hidden="true"><span className="forest-light"/><span className="forest-fireflies"/></div>
+    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced}/></Suspense></SceneBoundary>
     <div className="workspace-shell">
       <aside className="launcher glass">
-        <button className="brand-mark" onClick={()=>navigate('arcade')} aria-label="Celestial Arcade"><img src="/assets/celestial-star.svg" alt=""/></button>
+        <button className="brand-mark" onClick={()=>navigate('browser')} aria-label="Celestial Browser"><img src="/assets/celestial-star.svg" alt=""/></button>
         <div className="launcher-rule"/>
         <nav className="launcher-nav" aria-label="Main navigation">
           {navigation.map(item=><button key={item.id} className={'launcher-link '+(view===item.id?'active':'')} onClick={()=>navigate(item.id)} aria-current={view===item.id?'page':undefined}>
@@ -146,16 +152,18 @@ function App(){
         <header className="app-topbar">
           <div className="top-identity"><span className="top-identity-icon"><Icon name={view} size={19}/></span><span><small>CELESTIAL / {name.detail}</small><strong>{name.label}</strong></span></div>
           <div className="topbar-actions">
-            <span className="online-pill"><i/> SYSTEM ONLINE</span>
+            <span className="online-pill"><i/> online users: <strong>{live.online.length}</strong></span>
             <button className="icon-button" title={theme==='dark'?'Switch to light':'Switch to dark'} aria-label="Toggle light mode" onClick={()=>setTheme(v=>v==='dark'?'light':'dark')}><Icon name={theme==='dark'?'sun':'moon'} size={17}/></button>
             <button className="icon-button" title={reduced?'Enable motion':'Reduce motion'} aria-label="Toggle motion" aria-pressed={reduced} onClick={()=>setReduced(v=>!v)}>◉</button>
             <button className="profile-menu" onClick={()=>user?setModal('profile'):setModal('login')}><span className="avatar">{actor[0]?.toUpperCase()}</span><span>{actor}</span></button>
           </div>
         </header>
         <main className="content-shell" id="main-content">
-          {view==='arcade'?<Arcade reduced={effectiveReduced}/>:view==='browser'?<Browser/>:view==='chat'?<Chat user={user} onAuth={setModal} signal={signal}/>:<AI user={user} onAuth={setModal}/>}
+          <Suspense fallback={<div className="forest-loading">✦ <span>Opening {name.label.toLowerCase()}…</span></div>}>
+            {view==='arcade'?<Arcade user={user} onAuth={setModal} live={live}/>:view==='browser'?<Browser user={user} onAuth={setModal}/>:view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:<AI user={user} onAuth={setModal}/>}
+          </Suspense>
         </main>
-        <footer className="app-status"><span><i/> {loading?'CONNECTING':'ALL SYSTEMS READY'}</span><span>CELESTIAL / 8.0 <b>•</b> {name.label.toUpperCase()}</span></footer>
+        <footer className="app-status"><span><i/> {loading?'CONNECTING':live.connected?'COMMUNITY CONNECTED':'CELESTIAL READY'}</span><span>CELESTIAL / 8.1 <b>•</b> {name.label.toUpperCase()}</span></footer>
       </div>
     </div>
     {modal==='login'||modal==='register'?<AuthSheet mode={modal} close={()=>setModal(null)} onLoggedIn={person=>{setUser(person);setToast('Welcome, '+person.username+'!');}}/>:null}

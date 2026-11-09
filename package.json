@@ -1,9 +1,9 @@
 {
   "name": "celestial",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "private": true,
   "type": "module",
-  "description": "Celestial — four-app creative workspace with R3F, physical glass and community chat",
+  "description": "Celestial — immersive forest glass hub with Bolt multiplayer, proxy browser, chat and AI",
   "scripts": {
     "start": "node server.js",
     "dev": "npm run build && node server.js",
@@ -13,6 +13,9 @@
     "check": "node --check server.js && node --test tests/*.test.js"
   },
   "dependencies": {
+    "@mercuryworkshop/proxy-bootstrap": "^0.0.5",
+    "chess.js": "^1.4.0",
+    "ws": "^8.18.3",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "dialkit": "^2.1.0",
