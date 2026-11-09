@@ -131,13 +131,11 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
     return next.id;
   },[]);
   const closeTab=useCallback(id=>{
-    setTabs(all=>{
-      const rest=all.filter(tab=>tab.id!==id);
-      if(rest.length===0){const newTab=blank();setActiveId(newTab.id);return [newTab];}
-      if(id===currentId)setActiveId(rest[rest.length-1].id);
-      return rest;
-    });
-  },[currentId]);
+    const remaining=tabs.filter(tab=>tab.id!==id);
+    const next=remaining.length?remaining:[blank()];
+    setTabs(next);
+    if(id===currentId)setActiveId(next[next.length-1].id);
+  },[tabs,currentId]);
   const navigate=useCallback((raw,id=currentId)=>{
     const url=browserAddress(raw,prefs.searchEngine);
     if(!url||!id)return;
@@ -172,16 +170,13 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
   },[launch?.id,addTab]);
   useEffect(()=>{
     const onKey=event=>{
-      if(event.target instanceof HTMLInputElement||event.target instanceof HTMLTextAreaElement){
-        if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='l'){
-          event.preventDefault();box.current?.focus();box.current?.select();
-        }
-        return;
-      }
       const ctrl=event.metaKey||event.ctrlKey;
-      if(ctrl&&event.key.toLowerCase()==='l'){event.preventDefault();box.current?.focus();box.current?.select();}
-      if(ctrl&&event.key.toLowerCase()==='t'){event.preventDefault();addTab();}
-      if(ctrl&&event.key.toLowerCase()==='w'&&!homeMode){event.preventDefault();closeTab(currentId);}
+      const key=event.key.toLowerCase();
+      const editing=event.target instanceof HTMLInputElement||
+        event.target instanceof HTMLTextAreaElement||event.target?.isContentEditable;
+      if(ctrl&&key==='l'){event.preventDefault();box.current?.focus();box.current?.select();return;}
+      if(ctrl&&key==='t'){event.preventDefault();addTab();return;}
+      if(!editing&&ctrl&&key==='w'&&!homeMode){event.preventDefault();closeTab(currentId);}
     };
     window.addEventListener('keydown',onKey);
     return()=>window.removeEventListener('keydown',onKey);
