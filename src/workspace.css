@@ -1,0 +1,332 @@
+/*
+  Celestial / focused workspace
+  Keep the landscape on the homepage; browsing and playing need a quiet,
+  readable work surface. The live chat rail never unmounts the active app.
+*/
+:root{
+  --workspace-chat-width:clamp(310px,27vw,380px);
+  --workspace-ink:#dff3f7;
+  --workspace-subtle:#92b0bc;
+  --workspace-line:rgba(176,220,225,.16);
+  --workspace-background:#07151e;
+}
+.celestial-stage{overflow:hidden!important}
+.celestial-activity-layout{
+  display:grid;grid-template-columns:minmax(0,1fr);
+  position:relative;width:100%;height:100%;min-width:0;min-height:0;
+}
+.celestial-activity-layout.with-chat{grid-template-columns:minmax(0,1fr) var(--workspace-chat-width)}
+.celestial-activity-main{position:relative;min-height:0;min-width:0;overflow:hidden}
+.celestial-activity-chat{
+  position:relative;min-width:0;min-height:0;z-index:8;
+  border-left:1px solid var(--workspace-line);
+  background:rgba(7,20,29,.96);
+  box-shadow:-17px 0 45px rgba(0,5,14,.34);
+}
+.celestial-chat-toggle{
+  position:absolute;top:15px;right:16px;z-index:18;
+  display:inline-flex;align-items:center;gap:9px;
+  height:35px;padding:0 13px;
+  border:1px solid var(--workspace-line);border-radius:10px;
+  background:rgba(9,26,37,.87);color:#e4f5f7;
+  backdrop-filter:blur(13px);
+  box-shadow:0 5px 20px rgba(0,7,17,.22);
+  font-size:11px;font-weight:730;cursor:pointer;
+  transition:border-color .2s,background .2s,transform .2s;
+}
+.celestial-chat-toggle svg{width:17px;height:17px;color:var(--accent)}
+.celestial-chat-toggle i{
+  display:grid;place-items:center;min-width:17px;height:17px;
+  border-radius:6px;padding:0 3px;background:var(--accent-soft);
+  color:var(--accent);font:750 10px/1 system-ui,sans-serif;
+}
+.celestial-chat-toggle:hover,.celestial-chat-toggle.is-open{
+  background:rgba(28,57,65,.9);border-color:var(--accent);
+}
+.celestial-chat-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.celestial-chat-toggle.beside-ai{right:calc(var(--celestial-sidebar-width) + 15px)}
+.celestial-workspace:has(.celestial-activity-layout.with-chat) .celestial-corner-actions{
+  right:calc(var(--workspace-chat-width) + 11px);
+}
+.celestial-workspace:has(.celestial-activity-layout.with-chat) .celestial-online{
+  left:12px;
+}
+
+/* Companion Chat — deliberately restrained, no giant overlapping cards. */
+.celestial-companion-chat{
+  display:flex;flex-direction:column;width:100%;height:100%;min-height:0;
+  color:var(--workspace-ink);font-family:"Segoe UI",system-ui,sans-serif;
+}
+.celestial-companion-heading{
+  min-height:73px;display:flex;align-items:center;gap:10px;
+  padding:15px 12px 15px 16px;
+  border-bottom:1px solid var(--workspace-line);
+}
+.celestial-companion-brand{
+  display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;
+  border:1px solid rgba(140,235,220,.31);border-radius:10px;
+  background:rgba(65,175,168,.13);color:#9af7e7;font-size:23px;
+}
+.celestial-companion-heading>div{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+.celestial-companion-heading strong{font-size:13px;letter-spacing:-.01em;font-weight:780}
+.celestial-companion-heading small{color:var(--workspace-subtle);font-size:10px}
+.celestial-companion-heading small i,.celestial-companion-members i{
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+  margin-right:4px;background:#7b91a0;
+}
+.celestial-companion-heading small i.online,.celestial-companion-members i.online{
+  background:#65dea3;box-shadow:0 0 8px rgba(113,245,174,.42);
+}
+.celestial-companion-heading>button{
+  display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;
+  border:1px solid transparent;border-radius:8px;background:transparent;
+  color:#acc6cd;font-size:19px;cursor:pointer;
+}
+.celestial-companion-heading>button:hover{color:#edfffd;border-color:var(--workspace-line);background:rgba(136,210,203,.09)}
+.celestial-companion-rooms{
+  display:flex;align-items:center;gap:8px;padding:12px 14px;
+  border-bottom:1px solid var(--workspace-line);
+}
+.celestial-companion-rooms select{
+  width:100%;min-width:0;flex:1;
+  padding:9px 7px;border:1px solid var(--workspace-line);border-radius:9px;
+  outline:0;background:#102b37;color:#e9f7fc;font:700 11px system-ui;
+}
+.celestial-companion-rooms option{background:#102b37}
+.celestial-companion-rooms>button{
+  display:flex;align-items:center;gap:5px;
+  padding:9px 10px;border:1px solid var(--workspace-line);border-radius:9px;
+  background:transparent;color:#b9d4da;font-size:10px;font-weight:720;
+  cursor:pointer;
+}
+.celestial-companion-rooms>button.selected,.celestial-companion-rooms>button:hover{
+  color:var(--accent);border-color:var(--accent);background:var(--accent-soft);
+}
+.celestial-companion-rooms>button span{color:var(--accent)}
+.celestial-companion-channels{
+  display:flex;gap:6px;padding:0 14px 11px;overflow-x:auto;
+  border-bottom:1px solid var(--workspace-line);
+  scrollbar-width:none;
+}
+.celestial-companion-channels button{
+  flex:0 0 auto;display:flex;align-items:center;gap:4px;
+  border:1px solid transparent;border-radius:7px;
+  padding:7px 9px;background:transparent;color:#91aeb8;
+  font-size:11px;font-weight:650;cursor:pointer;
+}
+.celestial-companion-channels button span{opacity:.67}
+.celestial-companion-channels button:hover,.celestial-companion-channels button.selected{
+  color:#d7f8f4;background:var(--accent-soft);border-color:rgba(160,238,228,.18)
+}
+.celestial-companion-feed{
+  display:flex;flex:1;flex-direction:column;gap:14px;min-height:0;
+  overflow-y:auto;padding:20px 14px;
+  scrollbar-width:thin;scrollbar-color:rgba(145,201,205,.3) transparent;
+}
+.celestial-companion-empty{
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  flex:1;gap:9px;text-align:center;min-height:135px;
+}
+.celestial-companion-empty span{font-size:38px;color:var(--accent)}
+.celestial-companion-empty strong{font-size:15px;font-weight:760}
+.celestial-companion-empty small{font-size:11px;color:var(--workspace-subtle)}
+.celestial-companion-message{max-width:100%;overflow-wrap:anywhere}
+.celestial-companion-message.mine{padding:10px 12px;border-radius:12px 12px 4px 12px;
+  background:rgba(130,221,216,.10);border:1px solid rgba(167,236,229,.16)}
+.celestial-companion-message-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:5px}
+.celestial-companion-message-meta strong{font-size:11px;font-weight:800}
+.celestial-companion-message-meta .celestial-role-badge{font-size:8px}
+.celestial-companion-message-meta time{margin-left:auto;font:550 9px system-ui;color:#718d9b}
+.celestial-companion-message p{font:400 12px/1.6 "Segoe UI",system-ui;margin:0;white-space:pre-wrap;color:#dbebef}
+.celestial-companion-compose{
+  display:flex;gap:7px;align-items:center;
+  margin:10px 13px 15px;padding:7px;border:1px solid rgba(151,216,215,.28);
+  border-radius:13px;background:rgba(13,39,50,.91);
+}
+.celestial-companion-compose:focus-within{border-color:var(--accent)}
+.celestial-companion-compose input{
+  flex:1;min-width:0;padding:6px 7px;border:0;outline:0;
+  color:#e7f9fa;background:transparent;font-size:11px;
+}
+.celestial-companion-compose input::placeholder{color:#83a7b2}
+.celestial-companion-compose button{
+  display:grid;place-items:center;width:31px;height:31px;flex:0 0 31px;
+  border:0;border-radius:9px;background:var(--accent);color:var(--accent-ink);
+  font-size:18px;cursor:pointer;
+}
+.celestial-companion-compose button:disabled{opacity:.43;cursor:default}
+.celestial-companion-error{
+  margin:0 13px;padding:8px 10px;font-size:11px;
+  color:#fdd1cb;border-radius:8px;background:rgba(150,67,63,.14);
+}
+.celestial-companion-members{flex:1;overflow-y:auto;padding:12px 11px}
+.celestial-companion-section-label{display:block;padding:0 5px 8px;
+  font-size:9px;font-weight:800;letter-spacing:.16em;color:#8eaeb8}
+.celestial-companion-members>button{
+  display:flex;align-items:center;gap:8px;width:100%;padding:7px;
+  border:1px solid transparent;border-radius:9px;background:transparent;
+  text-align:left;color:#d4eaf0;cursor:pointer;
+}
+.celestial-companion-members>button:hover{border-color:var(--workspace-line);background:var(--accent-soft)}
+.celestial-companion-members>button:disabled{opacity:.6;cursor:default}
+.celestial-companion-avatar{
+  display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;
+  border-radius:9px;background:#204b58;color:#bfe9ea;font-size:11px;font-weight:800;
+}
+.celestial-companion-member-name{display:flex;flex:1;min-width:0;align-items:center;gap:6px;flex-wrap:wrap}
+.celestial-companion-member-name strong{font-size:11px}
+.celestial-companion-members>button>i{flex:0 0 7px;width:7px;height:7px;margin-right:3px}
+.celestial-companion-members>p{color:#a1b9c2;font-size:11px}
+.celestial-companion-dm-back{
+  padding:10px 14px;border:0;border-bottom:1px solid var(--workspace-line);
+  background:var(--accent-soft);color:#bee9e7;text-align:left;font-size:10px;cursor:pointer;
+}
+.celestial-chat-loading{display:grid;place-items:center;height:100%;font-size:11px;color:var(--workspace-subtle)}
+
+/* The browser is the canvas, not another dashboard. */
+.forest-browser{
+  display:flex!important;flex-direction:column;position:absolute;inset:0;
+  min-width:0;min-height:0;background:transparent!important;
+}
+.forest-browser.has-tabs .forest-browser-chrome{
+  margin:61px 15px 0 69px!important;
+  z-index:3;border:1px solid rgba(157,201,214,.18);
+  border-bottom:0;border-radius:13px 13px 0 0;
+  background:rgba(12,26,36,.97);backdrop-filter:none;
+  box-shadow:0 12px 40px rgba(0,5,14,.32);
+}
+.forest-browser.has-tabs .forest-browser-stage{
+  margin:0 15px 16px 69px!important;
+  min-width:0;min-height:0;flex:1;
+  border:1px solid rgba(151,192,203,.22);border-top:0;
+  border-radius:0 0 12px 12px;background:#fff;
+  overflow:hidden;box-shadow:0 12px 40px rgba(0,5,14,.38);
+}
+.forest-browser.has-tabs .forest-tabs{
+  display:flex;align-items:center;gap:3px;height:41px;
+  padding:6px 9px 0;overflow-x:auto;scrollbar-width:none;
+  background:rgba(8,21,30,.91);
+}
+.forest-browser.has-tabs .forest-tab{
+  height:33px;min-width:104px;max-width:190px;
+  display:flex;align-items:center;
+  border:1px solid transparent;border-bottom:0;
+  border-radius:9px 9px 0 0;background:transparent;
+  transition:background .16s,border-color .16s;
+}
+.forest-browser.has-tabs .forest-tab.active{
+  background:#193543;border-color:rgba(179,222,225,.15);
+}
+.forest-browser.has-tabs .forest-tab>button:first-child{
+  padding:0 8px;font-size:11px;min-width:0;flex:1;
+  color:#b5cbd4;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.forest-browser.has-tabs .forest-tab.active>button:first-child{color:#edffff}
+.forest-browser.has-tabs .forest-tab-close{color:#759aa7}
+.forest-browser.has-tabs .forest-tab-close:hover{color:#fff}
+.forest-browser.has-tabs .forest-add-tab{
+  display:grid;place-items:center;height:28px;width:31px;
+  border:0;border-radius:8px;background:transparent;color:#d1e6ed;font-size:18px;
+}
+.forest-browser.has-tabs .forest-add-tab:hover{background:rgba(161,220,220,.12)}
+.forest-browser.has-tabs .forest-toolbar{
+  height:47px;flex:0 0 47px;gap:5px;
+  background:rgba(20,43,55,.99);border-color:rgba(175,222,221,.1);
+}
+.forest-browser.has-tabs .forest-toolbar>button,.forest-browser.has-tabs .forest-toolbar>a{
+  width:30px;height:30px;color:#c0d7e1;
+}
+.forest-browser.has-tabs .forest-toolbar>button:hover,.forest-browser.has-tabs .forest-toolbar>a:hover{
+  background:rgba(170,226,220,.13);color:#f2ffff;
+}
+.forest-browser.has-tabs .forest-toolbar form{
+  height:33px;background:#0b202c;border:1px solid rgba(176,217,217,.22);border-radius:9px;
+}
+.forest-browser.has-tabs .forest-toolbar form:focus-within{border-color:var(--accent)}
+.forest-browser.has-tabs .forest-toolbar form input{font-size:11px;color:#effdff}
+.forest-browser.has-tabs .forest-toolbar form button{color:var(--accent)}
+.forest-browser.has-tabs .forest-browser-home{width:min(470px,100%)}
+.forest-browser.has-tabs .forest-browser-stage .browser-frame{display:none}
+.forest-browser.has-tabs .forest-browser-stage .browser-frame.active{display:block}
+.browser-frame{background:#fff!important}
+.portal-iframe{display:block;width:100%;height:100%;border:0}
+.celestial-browser-loading,.celestial-browser-failure{
+  background:#0a1924ee;z-index:5;color:#e6f6f6;
+}
+.celestial-browser-loading{font-size:12px}
+.celestial-browser-failure{gap:15px}
+.celestial-browser-failure h2{font-size:23px}
+.celestial-browser-failure p{color:#a9bdc9}
+.celestial-browser-failure-icon{border-radius:16px}
+
+/* A game runs as a focused app. The old oversized launch cards are gone. */
+.celestial-apps-page{padding-top:88px}
+.celestial-apps-group{margin-top:34px}
+.celestial-apps-grid{gap:11px}
+.celestial-app-tile{min-height:92px;padding:14px;border-radius:13px;box-shadow:0 8px 25px #0003}
+.celestial-app-tile-symbol{flex:0 0 47px;width:47px;height:47px;border-radius:12px}
+.celestial-app-tile-symbol svg{width:23px;height:23px}
+.celestial-tool-shell:has(.celestial-embedded-game){
+  width:min(1180px,100%);min-height:400px;padding:0;
+  overflow:hidden;background:rgba(8,22,31,.94);border-color:var(--workspace-line);
+}
+.celestial-embedded-game{width:100%;min-height:400px}
+.celestial-embedded-game .forest-game-stage{
+  width:100%;min-height:430px;margin:0;
+  padding:clamp(16px,3vw,30px);
+  background:transparent!important;border:0!important;border-radius:0;
+  box-shadow:none!important;backdrop-filter:none!important;
+}
+.celestial-embedded-game .forest-game-stage h2{color:#ecf9fa}
+.celestial-embedded-game .forest-game-stage p{color:#a9c4cc}
+.celestial-embedded-game .forest-game-controls button{
+  border-color:rgba(160,213,209,.27);border-radius:9px;
+  background:rgba(31,67,76,.66);color:#dcf4f5;
+}
+.celestial-embedded-game .forest-game-controls button:first-child{
+  color:#092c32;background:var(--accent)!important;font-weight:750;
+}
+.celestial-embedded-game .forest-2048-board{
+  box-shadow:0 10px 35px #0005;border:1px solid rgba(154,219,211,.2)
+}
+.celestial-embedded-game .forest-chess-board{box-shadow:0 9px 29px #0005}
+.celestial-embedded-game .forest-uma iframe{min-height:520px;max-height:70dvh}
+
+/* Avoid clipping essential controls when chat is open at mid-size widths. */
+@media(max-width:1220px){
+  :root{--workspace-chat-width:324px}
+  .celestial-activity-layout.with-chat .celestial-apps-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:950px){
+  .celestial-activity-layout.with-chat{grid-template-columns:minmax(0,1fr)}
+  .celestial-activity-chat{
+    position:absolute;top:0;right:0;bottom:0;
+    width:min(390px,85vw);z-index:30;border-left:1px solid var(--workspace-line);
+    box-shadow:-22px 0 65px #0008;
+  }
+  .celestial-workspace:has(.celestial-activity-layout.with-chat) .celestial-corner-actions{right:12px}
+  .celestial-activity-layout.with-chat .celestial-apps-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:740px){
+  .celestial-chat-toggle{top:45px;right:10px;height:32px;padding:0 8px}
+  .celestial-chat-toggle.beside-ai{right:10px}
+  .celestial-chat-toggle>span{font-size:10px}
+  .celestial-chat-toggle i{min-width:15px}
+  .forest-browser.has-tabs .forest-browser-chrome{margin:79px 8px 0 57px!important}
+  .forest-browser.has-tabs .forest-browser-stage{margin:0 8px 14px 57px!important}
+  .forest-browser.has-tabs .forest-toolbar{gap:2px;padding:4px 6px}
+  .forest-browser.has-tabs .forest-toolbar>button,.forest-browser.has-tabs .forest-toolbar>a{width:27px}
+  .celestial-activity-layout.with-chat .celestial-apps-grid{grid-template-columns:1fr}
+}
+@media(max-width:460px){
+  .celestial-chat-toggle span{display:none}
+  .celestial-chat-toggle{width:57px;justify-content:center}
+  .celestial-activity-chat{width:min(95vw,370px)}
+  .forest-browser.has-tabs .forest-browser-chrome{margin:83px 5px 0 45px!important}
+  .forest-browser.has-tabs .forest-browser-stage{margin:0 5px 11px 45px!important}
+  .forest-browser.has-tabs .forest-toolbar>button:nth-of-type(2){display:none}
+  .celestial-apps-page{padding-top:80px}
+}
+@media(prefers-reduced-motion:reduce){
+  .celestial-chat-toggle,.celestial-app-tile,.forest-browser.has-tabs .forest-tab{transition:none!important}
+}
