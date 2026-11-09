@@ -17,6 +17,11 @@ const DATA_DIR=path.resolve(ROOT,process.env.BOLT_DATA_DIR||
   (process.env.LIGHTNING_DATA_FILE?path.dirname(process.env.LIGHTNING_DATA_FILE):path.join(ROOT,'data')));
 const STORE_FILE=process.env.LIGHTNING_DATA_FILE||path.join(DATA_DIR,'store.json');
 const PORT=Number(process.env.PORT||3080);
+const hadStore=existsSync(STORE_FILE);
+if(process.env.RAILWAY_VOLUME_MOUNT_PATH &&
+  DATA_DIR!==path.resolve(ROOT,process.env.RAILWAY_VOLUME_MOUNT_PATH)){
+  throw Error('Storage path does not match the attached Railway volume; refusing to use an ephemeral database');
+}
 mkdirSync(DATA_DIR,{recursive:true});
 // The Bolt-era backend provides real browser proxying and multiplayer.
 // Missing proxy downloads must never block the rest of the platform.
@@ -77,6 +82,9 @@ function persist() {
 }
 const legacyBackup=await backupBoltData(DATA_DIR);
 const legacyImport=await importBoltData(db,DATA_DIR);
+if(process.env.RAILWAY_VOLUME_MOUNT_PATH&&!hadStore&&!legacyImport.legacyFound){
+  throw Error('No account database found on the mounted Railway volume; refusing to start with empty accounts');
+}
 const adminCreated=bootstrapAdministrator(db);
 if(legacyImport.accountsImported||legacyImport.conversationsImported||adminCreated)await persist();
 console.log('Celestial data ready',JSON.stringify({
