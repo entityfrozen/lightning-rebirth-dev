@@ -180,7 +180,10 @@ function App() {
     saveLocal('celestial-palette',palette);
     saveLocal('celestial-backdrop',backdrop);
   },[palette,backdrop]);
-  useEffect(()=>saveLocal('reduce-motion',reduced),[reduced]);
+  useEffect(()=>{
+    saveLocal('reduce-motion',reduced);
+    document.documentElement.dataset.motion=reduced?'reduced':'full';
+  },[reduced]);
   useEffect(()=>saveLocal('dock-open',dockOpen),[dockOpen]);
   useEffect(()=>{
     let mounted=true;
