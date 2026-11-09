@@ -1,0 +1,406 @@
+/* Main page | Celestial AI
+ * Keep the existing scenic homepage. The assistant sits in a permanent
+ * right-hand glass sidebar instead of replacing the page.
+ */
+:root {
+  --celestial-sidebar-width: clamp(350px, 30vw, 440px);
+}
+.celestial-home-split {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--celestial-sidebar-width);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  isolation: isolate;
+  overflow: hidden;
+}
+.celestial-home-main {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+.celestial-home-main .forest-browser {
+  position: absolute;
+  inset: 0;
+}
+.celestial-home-main .forest-browser-home {
+  max-width: 460px;
+}
+.celestial-home-rail {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--glass-line);
+  background:
+    linear-gradient(165deg, rgba(7, 24, 35, .77), rgba(6, 17, 30, .91)),
+    var(--glass-panel);
+  box-shadow: -15px 0 44px rgba(0, 5, 16, .19), inset 1px 0 rgba(255, 255, 255, .045);
+  backdrop-filter: blur(28px) saturate(1.22);
+  -webkit-backdrop-filter: blur(28px) saturate(1.22);
+}
+:root[data-palette="jade"] .celestial-home-rail {
+  background: linear-gradient(160deg, rgba(7, 30, 20, .81), rgba(5, 19, 14, .92));
+}
+:root[data-palette="amethyst"] .celestial-home-rail {
+  background: linear-gradient(160deg, rgba(25, 17, 45, .82), rgba(14, 10, 28, .93));
+}
+.celestial-ai-sidebar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--text);
+}
+.celestial-ai-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 77px;
+  padding: 17px 16px 15px 20px;
+  border-bottom: 1px solid var(--glass-line);
+}
+.celestial-ai-sidebar-symbol {
+  display: grid;
+  flex: 0 0 35px;
+  width: 35px;
+  height: 35px;
+  place-items: center;
+  border: 1px solid var(--glass-line);
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 26px;
+  line-height: 1;
+  text-shadow: 0 0 20px var(--glow);
+}
+.celestial-ai-sidebar-heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.celestial-ai-sidebar-heading strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 760;
+  letter-spacing: -.025em;
+}
+.celestial-ai-sidebar-heading small {
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.celestial-ai-sidebar-icon {
+  flex: 0 0 31px;
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 1px solid var(--glass-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .035);
+  color: var(--text);
+  font-size: 19px;
+  cursor: pointer;
+}
+.celestial-ai-sidebar-icon:hover,
+.celestial-ai-sidebar-icon.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.celestial-ai-sidebar-history {
+  position: absolute;
+  z-index: 8;
+  top: 72px;
+  right: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  max-height: min(56vh, 440px);
+  padding: 13px 8px 9px;
+  border: 1px solid var(--glass-line);
+  border-radius: 14px;
+  background: var(--dock-panel);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, .48);
+  backdrop-filter: blur(25px);
+}
+.celestial-ai-history-title {
+  padding: 0 10px 11px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .15em;
+}
+.celestial-ai-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
+}
+.celestial-ai-history-row {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 9px;
+}
+.celestial-ai-history-row.active {
+  border-color: var(--glass-line);
+  background: var(--accent-soft);
+}
+.celestial-ai-history-row button {
+  flex: 0 0 auto;
+  padding: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+}
+.celestial-ai-history-row .celestial-ai-history-open {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 9px;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.celestial-ai-history-row button:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.celestial-ai-sidebar-feed {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 17px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-line) transparent;
+}
+.celestial-ai-sidebar-welcome {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  max-width: 360px;
+  margin: 0 auto;
+  text-align: left;
+}
+.celestial-ai-welcome-star {
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-size: 48px;
+  line-height: 1;
+  text-shadow: 0 0 29px var(--glow);
+}
+.celestial-ai-sidebar-welcome h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(25px, 2.4vw, 33px);
+  font-weight: 770;
+  letter-spacing: -.067em;
+  line-height: 1.15;
+}
+.celestial-ai-sidebar-welcome h2 em {
+  color: var(--accent);
+  font-family: Georgia, serif;
+  font-weight: 400;
+}
+.celestial-ai-sidebar-welcome p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+.celestial-ai-sidebar-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.celestial-ai-sidebar-prompts button {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid var(--glass-line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .035);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: left;
+}
+.celestial-ai-sidebar-prompts button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.celestial-ai-sidebar-prompts button b {
+  color: var(--accent);
+  font-size: 15px;
+}
+.celestial-ai-sidebar-feed .ai-message {
+  max-width: 94%;
+  font-size: 12px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.celestial-ai-sidebar-feed .ai-message.user {
+  align-self: flex-end;
+  margin-left: auto;
+  padding: 11px 14px;
+  border: 1px solid var(--glass-line);
+  border-radius: 15px 15px 4px 15px;
+  background: var(--accent-soft);
+}
+.celestial-ai-sidebar-feed .ai-message.assistant {
+  display: flex;
+  align-self: flex-start;
+  align-items: flex-start;
+  gap: 9px;
+}
+.celestial-ai-sidebar-feed .ai-message.assistant .ai-message-star {
+  flex: 0 0 27px;
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
+  font-size: 20px;
+}
+.celestial-ai-sidebar-thinking {
+  color: var(--muted);
+  font-size: 12px;
+}
+.celestial-ai-sidebar-error {
+  margin: 0 15px 10px;
+  padding: 9px 12px;
+  border: 1px solid rgba(252, 188, 178, .36);
+  border-radius: 9px;
+  background: rgba(97, 31, 34, .3);
+  color: #ffd4ce;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.celestial-ai-sidebar-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 0 14px 18px;
+  padding: 7px;
+  border: 1px solid var(--glass-line);
+  border-radius: 14px;
+  background: rgba(13, 36, 49, .69);
+}
+:root[data-palette="jade"] .celestial-ai-sidebar-composer {
+  background: rgba(10, 39, 25, .73);
+}
+:root[data-palette="amethyst"] .celestial-ai-sidebar-composer {
+  background: rgba(38, 25, 54, .69);
+}
+.celestial-ai-sidebar-composer:focus-within {
+  border-color: var(--accent);
+}
+.celestial-ai-sidebar-composer textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  max-height: 150px;
+  padding: 7px 8px;
+  resize: vertical;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.celestial-ai-sidebar-composer textarea::placeholder {
+  color: var(--muted);
+}
+.celestial-ai-sidebar-composer>button {
+  flex: 0 0 35px;
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.celestial-ai-sidebar-composer>button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+/* The original bottom-right actions remain over the main page, not chat input. */
+.celestial-workspace:has(.celestial-home-split) .celestial-corner-actions {
+  right: calc(var(--celestial-sidebar-width) + 10px);
+}
+@media(max-width: 1000px) {
+  :root {--celestial-sidebar-width: 345px;}
+  .celestial-home-main .forest-browser-home {
+    width: min(100%, 410px);
+  }
+}
+@media(max-width: 760px) {
+  .celestial-home-split {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(315px, 43dvh) minmax(425px, 57dvh);
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .celestial-home-rail {
+    border-left: 0;
+    border-top: 1px solid var(--glass-line);
+    min-height: 425px;
+  }
+  .celestial-home-main .forest-browser-home {
+    width: min(100%, 470px);
+  }
+  .celestial-workspace:has(.celestial-home-split) .celestial-corner-actions {
+    right: 8px;
+    top: 8px;
+    bottom: auto;
+  }
+}
+@media(max-width: 470px) {
+  .celestial-home-split {
+    grid-template-rows: minmax(315px, 43dvh) minmax(430px, 65dvh);
+  }
+  .celestial-home-rail {
+    padding-bottom: 35px;
+  }
+  .celestial-ai-sidebar-header {
+    min-height: 64px;
+    padding: 11px 12px;
+  }
+  .celestial-ai-sidebar-feed {
+    padding: 14px 13px 20px;
+  }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .celestial-home-rail {
+    background: var(--dock-panel);
+  }
+}
