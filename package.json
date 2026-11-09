@@ -1,9 +1,9 @@
 {
   "name": "celestial",
-  "version": "8.1.0",
+  "version": "8.2.0",
   "private": true,
   "type": "module",
-  "description": "Celestial — immersive forest glass hub with Bolt multiplayer, proxy browser, chat and AI",
+  "description": "Celestial — Xylora-faithful browser shell, aurora theme and Bolt-powered games/chat/AI/browser",
   "scripts": {
     "start": "node server.js",
     "dev": "npm run build && node server.js",
@@ -23,7 +23,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "three": "^0.180.0",
-    "vite": "^7.0.0"
+    "vite": "^7.0.0",
+    "@fluentui/react-icons": "^2.0.341"
   },
   "engines": {
     "node": ">=20.19.0"
