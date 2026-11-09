@@ -1,14 +1,16 @@
 # Celestial — Aurora Edition
 
-Celestial now opens straight into **Celestial AI** after sign-in, while
-Browser, Arcade and Chat remain accessible in the navigation. The workspace
-requires a Celestial account: signed-out visitors see only the sign-in or
-registration screen.
+Celestial opens into a **split homepage** after sign-in: the original
+main page and browser search remain on the left, while a compact, fully
+functional **Celestial AI sidebar** stays visible on the right. The Browser,
+Arcade, Chat and full AI workspaces remain accessible in the navigation.
+A Celestial account is required before the workspace can be opened.
 
 The interface mirrors the supplied Xylora shell rather than a card dashboard:
 a 44px edge-mounted dock with scalloped corners and a hide tab, compact filled
-Fluent icons, a centered Celestial wordmark and a natural-language conversation
-input. The default backdrop is a pine forest under violet-blue northern lights,
+Fluent icons and a centered Celestial wordmark/search field on the left. The
+assistant lives in its own glass side panel, not over the scenery. The default
+backdrop is a pine forest under violet-blue northern lights,
 with icy teal glass controls.
 
 The dock has a few shortcuts for convenience. Games opens Arcade; Cloud opens
@@ -84,8 +86,11 @@ staff-moderation tools are not yet ported into the new UI.**
 
 ### AI
 
-- **Homepage-first:** the center search field is a Celestial conversation input
-  rather than a URL bar; replies and follow-ups appear on the homepage
+- **Right-side assistant:** the main page remains a working browser/search
+  homepage, while Celestial AI handles real conversation threads on the right
+- The sidebar includes new chats, a compact conversation history, starter
+  prompts, follow-up messages and a persistent composer; it stacks below
+  the main page on narrow screens
 - **Mandatory sign-in:** guests cannot open the workspace or call the AI API
 - The server does not reveal provider names or model identifiers in AI status
   responses, and the UI does not display setup/readiness labels
@@ -140,13 +145,14 @@ user data or live sessions.
 
 ## File map
 
-- `src/main.jsx`: login gate, AI-first home, dock, settings and account
-- `src/xylora.css`: Celestial palette, background, AI home and faithful edge dock
+- `src/main.jsx`: login gate, split homepage, dock, settings and account
+- `src/xylora.css`: Celestial palette, background and faithful edge dock
+- `src/home-split.css`: responsive main page + glass AI sidebar
 - `src/forest.css`: forest design, game/gallery and responsive layouts
 - `src/Browser.jsx`, `src/BoltProxy.js`: browser UI and proxy adapter
 - `src/Arcade.jsx`: six playable games
 - `src/Chat.jsx`, `src/useBoltLive.js`: community UI and WebSocket state
-- `src/AI.jsx`: homepage chat, full chat history and authenticated server requests
+- `src/AI.jsx`: compact AI sidebar, full chat history and authenticated requests
 - `server.js`: Celestial accounts, API, proxy, AI and real-time hooks
 - `live.js`, `community-v2.js`, `chess-ai.js`: Bolt-origin game/social engine
 - `ai-provider.js`, `ai-stream.js`: Bolt-origin NVIDIA completion engine
