@@ -8,7 +8,7 @@ const sites=[
   {name:'Three.js',url:'https://threejs.org/'},
   {name:'OpenAI',url:'https://openai.com/'}
 ];
-let nextId=1;
+let nextId=Date.now();
 const newTab=()=>({id:++nextId,entry:'',history:[],cursor:-1});
 
 export function Browser(){
