@@ -10,12 +10,12 @@ const vertex=String.raw`
   uniform float uDrift;
   varying float vStrength;
   void main(){
-    float sway=sin(uTime*uDrift+aPhase*6.283)*.12*uMotion;
-    vec3 p=position+vec3(sway,cos(uTime*.22+aPhase*4.0)*.13*uMotion,0.0);
+    float sway=sin(uTime*uDrift+aPhase*6.283)*.34*uMotion;
+    vec3 p=position+vec3(sway,(cos(uTime*.48+aPhase*4.0)*.24+sin(uTime*.23+aPhase*9.0)*.16)*uMotion,0.0);
     vec4 clip=projectionMatrix*modelViewMatrix*vec4(p,1.0);
     gl_Position=clip;
-    gl_PointSize=clamp((5.0+aPhase*3.0)*(6.0/max(1.0,-clip.z)),2.0,11.0);
-    vStrength=.25+.75*pow(.5+.5*sin(uTime*.7+aPhase*16.0),2.0);
+    gl_PointSize=clamp((6.0+aPhase*4.4)*(6.0/max(1.0,-clip.z)),2.0,13.0);
+    vStrength=.32+.68*pow(.5+.5*sin(uTime*.55+aPhase*16.0),2.0);
   }`;
 const fragment=String.raw`
   precision mediump float;
@@ -28,15 +28,15 @@ const fragment=String.raw`
   }`;
 function Fireflies({reduced}){
   const tuning=useDialKit('Celestial • Fireflies',{
-    brightness:[.72,.1,1.4],
-    drift:[.31,0,1.1]
+    brightness:[1.12,.1,2.0],
+    drift:[.66,0,1.5]
   });
   const shader=useRef();
   const geometry=useMemo(()=>{
-    const count=94,positions=new Float32Array(count*3),phases=new Float32Array(count);
+    const count=172,positions=new Float32Array(count*3),phases=new Float32Array(count);
     for(let i=0;i<count;i++){
       // Stable deterministic positions so WebGL context resets do not jump.
-      const x=((i*73+17)%99)/99,y=((i*37+51)%97)/97;
+      const x=((i*73+17)%179)/179,y=((i*37+51)%173)/173;
       positions.set([(x-.5)*13,(y-.5)*8,-1-(i%9)*.24],i*3);
       phases[i]=((i*59)%101)/101;
     }
@@ -54,7 +54,7 @@ function Fireflies({reduced}){
   return <points geometry={geometry} frustumCulled={false}>
     <shaderMaterial ref={shader} transparent blending={THREE.AdditiveBlending} depthWrite={false}
       vertexShader={vertex} fragmentShader={fragment}
-      uniforms={{uTime:{value:0},uMotion:{value:reduced?0:1},uDrift:{value:.31},uBrightness:{value:.72}}}/>
+      uniforms={{uTime:{value:0},uMotion:{value:reduced?0:1},uDrift:{value:.66},uBrightness:{value:1.12}}}/>
   </points>;
 }
 export function ForestParticles({reduced}){
