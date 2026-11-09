@@ -3,7 +3,7 @@ import http from 'node:http';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { bootstrap } from '@mercuryworkshop/proxy-bootstrap';
 import { attachLightningLive } from './live.js';
-import {importBoltData,bootstrapAdministrator} from './legacy-data.js';
+import {importBoltData,bootstrapAdministrator,backupBoltData} from './legacy-data.js';
 import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
 import { readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
 import { randomBytes, createHash, scryptSync, timingSafeEqual } from 'node:crypto';
@@ -75,11 +75,13 @@ function persist() {
   });
   return writeChain;
 }
+const legacyBackup=await backupBoltData(DATA_DIR);
 const legacyImport=await importBoltData(db,DATA_DIR);
 const adminCreated=bootstrapAdministrator(db);
 if(legacyImport.accountsImported||legacyImport.conversationsImported||adminCreated)await persist();
 console.log('Celestial data ready',JSON.stringify({
   directory:DATA_DIR,legacyFound:legacyImport.legacyFound,
+  originalFilesBackedUp:legacyBackup.files,
   accountsImported:legacyImport.accountsImported,
   directMessagesImported:legacyImport.conversationsImported,
   skippedConflicts:legacyImport.skippedConflicts,
