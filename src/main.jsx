@@ -23,7 +23,7 @@ const Chat=React.lazy(()=>import('./Chat.jsx').then(mod=>({default:mod.Chat})));
 const AI=React.lazy(()=>import('./AI.jsx').then(mod=>({default:mod.AI})));
 const ForestParticles=React.lazy(()=>import('./ForestParticles.jsx').then(mod=>({default:mod.ForestParticles})));
 
-const sections=new Set(['browser','arcade','chat','ai']);
+const sections=new Set(['home','browser','arcade','chat','ai']);
 const dockItems=[
   {id:'home',label:'Home',icon:Home24Filled},
   {id:'study',label:'Games',icon:Games24Filled},
@@ -41,10 +41,10 @@ const appItems=[
 ];
 const routeFromHash=()=>{
   const route=location.hash.replace(/^#/,'').split('/')[0];
-  return sections.has(route)?route:route==='community'?'chat':'browser';
+  return sections.has(route)?route:route==='community'?'chat':'home';
 };
 
-function AuthSheet({mode,close,onLoggedIn}){
+function AuthSheet({mode,close,onLoggedIn,locked=false}){
   const [method,setMethod]=useState(mode);
   const [error,setError]=useState('');
   const [busy,setBusy]=useState(false);
@@ -60,7 +60,9 @@ function AuthSheet({mode,close,onLoggedIn}){
     }catch(err){setError(err.message);}
     finally{setBusy(false);}
   }
-  return <div className="overlay" onMouseDown={e=>{if(e.target===e.currentTarget)close();}}>
+  return <div className={'overlay '+(locked?'auth-locked':'')} onMouseDown={e=>{
+    if(!locked&&e.target===e.currentTarget)close();
+  }}>
     <section className="auth-sheet glass" role="dialog" aria-modal="true" aria-label="Celestial account">
       <div className="auth-art"><img src="/assets/celestial-star.svg" alt=""/>
         <span className="micro">THE CELESTIAL NETWORK</span>
@@ -69,7 +71,7 @@ function AuthSheet({mode,close,onLoggedIn}){
         <div className="auth-halo">✧</div>
       </div>
       <div className="auth-fields">
-        <button className="auth-close" onClick={close} aria-label="Close account dialog">×</button>
+        {!locked&&<button className="auth-close" onClick={close} aria-label="Close account dialog">×</button>}
         <span className="eyebrow">CELESTIAL / ACCOUNT</span>
         <h2>{method==='register'?'Join the network.':'Welcome back.'}</h2>
         <p>{method==='register'?'Create an account to participate in Chat and AI.':'Sign in to continue your conversation.'}</p>
@@ -82,7 +84,7 @@ function AuthSheet({mode,close,onLoggedIn}){
         <button className="auth-swap" onClick={()=>{setMethod(method==='register'?'login':'register');setError('');}}>
           {method==='register'?'Already have an account? Sign in':'New to Celestial? Create an account'}
         </button>
-        <button className="auth-guest" onClick={close}>Continue exploring as guest ↗</button>
+
       </div>
     </section>
   </div>;
@@ -140,7 +142,10 @@ function Appearance({palette,setPalette,backdrop,setBackdrop,reduced,setReduced,
 }
 function App() {
   const [view,setView]=useState(routeFromHash);
-  const [activeDock,setActiveDock]=useState(()=>location.hash?'browser':'home');
+  const [activeDock,setActiveDock]=useState(()=>{
+    const initial=routeFromHash();
+    return initial==='home'?'home':initial==='arcade'?'study':initial==='ai'?'cloud':initial==='chat'?'chat':'browser';
+  });
   const [dockOpen,setDockOpen]=useState(()=>readLocal('dock-open',true));
   const [palette,setPalette]=useState(()=>readLocal('celestial-palette','aurora'));
   const [backdrop,setBackdrop]=useState(()=>readLocal('celestial-backdrop','aurora'));
@@ -149,7 +154,6 @@ function App() {
   const [loading,setLoading]=useState(true);
   const [modal,setModal]=useState(null);
   const [toast,setToast]=useState('');
-  const [homeSignal,setHomeSignal]=useState(0);
   const [browserLaunch,setBrowserLaunch]=useState(null);
   const internalHashChange=useRef(false);
   const live=useBoltLive(user);
@@ -177,7 +181,7 @@ function App() {
         internalHashChange.current=false;
         return;
       }
-      setActiveDock(next==='arcade'?'study':next==='ai'?'cloud':next==='chat'?'chat':'browser');
+      setActiveDock(next==='home'?'home':next==='arcade'?'study':next==='ai'?'cloud':next==='chat'?'chat':'browser');
     };
     window.addEventListener('hashchange',sync);
     return()=>{mounted=false;window.removeEventListener('hashchange',sync);};
@@ -197,16 +201,14 @@ function App() {
   function selectSection(section) {
     setModal(null);
     setView(section);
-    setActiveDock(section==='arcade'?'study':section==='ai'?'cloud':section==='chat'?'chat':'browser');
+    setActiveDock(section==='home'?'home':section==='arcade'?'study':section==='ai'?'cloud':section==='chat'?'chat':'browser');
     if(location.hash!=='#'+section){internalHashChange.current=true;location.hash=section;}
   }
   function openDock(id) {
     if(id==='settings'){setModal('settings');return;}
     if(id==='apps'){setModal('apps');return;}
     if(id==='home'){
-      setView('browser');setActiveDock('home');setModal(null);
-      setHomeSignal(value=>value+1);
-      if(location.hash!=='#browser'){internalHashChange.current=true;location.hash='browser';}
+      selectSection('home');
       return;
     }
     if(id==='music'){
@@ -226,18 +228,29 @@ function App() {
     }catch(error){setToast(error.message);}
   }
 
+  if(loading) return <div className="celestial-entry">
+    <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
+    <div className="celestial-entry-loading">✧ Celestial</div>
+  </div>;
+
+  if(!user) return <div className="celestial-entry">
+    <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
+    <AuthSheet mode="login" locked close={()=>{}} onLoggedIn={person=>setUser(person)}/>
+  </div>;
+
   return <>
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
     <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced}/></Suspense></SceneBoundary>
     <div className="celestial-workspace">
       <main className="celestial-stage" id="main-content">
         <Suspense fallback={<div className="celestial-loading">Opening Celestial…</div>}>
-          {view==='browser'?<Browser user={user} onAuth={setModal} onShortcut={openDock}
-            homeSignal={homeSignal} homeMode={activeDock==='home'}
+          {view==='home'?<AI key="celestial-home" home user={user} onAuth={setModal}
+            onShortcut={openDock}/>:
+          view==='browser'?<Browser user={user} onAuth={setModal} onShortcut={openDock}
             launch={activeDock==='music'?browserLaunch:null}/>:
           view==='arcade'?<Arcade user={user} onAuth={setModal} live={live}/>:
           view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:
-          <AI user={user} onAuth={setModal}/>}
+          <AI key="celestial-ai" user={user} onAuth={setModal}/>}
         </Suspense>
       </main>
       <div className="celestial-online" title={loading?'Connecting':'Current live connections'}>
