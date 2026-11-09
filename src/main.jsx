@@ -292,8 +292,8 @@ function App() {
     </Modal>}
     {modal==='credits'&&<Modal title="Credits" close={()=>setModal(null)}>
       <h2>About Celestial.</h2>
-      <p>Celestial's new navigation and page layout follow the Xylora reference you supplied,
-        with a new aurora color palette and background.</p>
+      <p>Celestial brings your games, browser, chat and AI together with a compact dock,
+        a custom color palette and an aurora backdrop.</p>
       <p>The northern-lights photograph is by Troy Olson, available under the Unsplash License.</p>
       <a className="celestial-credit-link" href="https://unsplash.com/photos/aurora-borealis-lights-up-the-night-sky-over-forest-9h8pkF_N0FE"
         rel="noopener noreferrer" target="_blank">View background photo ↗</a>
