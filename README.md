@@ -1,91 +1,143 @@
-# Celestial v8 — Four worlds. One universe.
+# Celestial — Forest Edition
 
-Celestial is now built around exactly four applications: **Arcade**, **Browser**,
-**Chat** and **AI**. The previous dashboard, theme galleries, studios and
-character UI were deleted rather than renamed.
+A browser-first workspace with four sections: **Browser**, **Arcade**, **Chat**,
+and **AI**. The visual style is an immersive forest with restrained mint glass,
+an icon rail, soft WebGL fireflies, and functional floating workspaces.
 
-## Install and run
+The project was rebuilt using **Celestial v8** as a base, with substantial
+feature logic reviewed and ported from the connected
+[entityfrozen/bolt](https://github.com/entityfrozen/bolt) repository's
+\`bolt-hosted-v5\` branch. Bolt \`main\` is an earlier browser-only state and
+is **not** the source of these multiplayer features.
 
-Requires Node.js 20.19+:
+## Quick start
+
+Use Node.js 20.19 or newer.
 
     npm install
     npm start
 
-Visit http://localhost:3080. Run tests with:
+Open http://localhost:3080
 
-    npm run check
-
-The install builds the React frontend into public/bundle automatically.
-The normal server serves the compiled files, plus the existing account and
-community API. There is no runtime dependency on a CDN.
-
-## The four applications
-
-**Arcade:** Three playable minigames — Comet Drift, Pulse Reflex and
-Constellation memory — with local best scores. The hero contains interactive
-3D glass.
-
-**Browser:** Tabs, address/search input, back/forward history, bookmarks,
-new tabs and an in-page iframe. Browsers cannot embed every website:
-sites with X-Frame-Options or CSP frame-ancestors restrictions may refuse
-to display. The Open Directly button is always provided. This is not a
-Chromium-based unrestricted browser.
-
-**Chat:** Real-time community channels using the existing server message API.
-Guests can read. Signed-in users can post. Existing stored messages and
-account cookies remain compatible.
-
-**AI:** An actual server proxy to the OpenAI Responses API. Set OPENAI_API_KEY
-in the hosting environment and optionally OPENAI_MODEL. The key is never
-sent to the browser. Without a configured provider, AI visibly reports that
-the service is unavailable instead of simulating responses.
-
-## Visual architecture
-
-- React 19 + React Three Fiber 9 + Three.js and Drei
-- MeshPhysicalMaterial transmission, IOR, thickness, roughness and dispersion
-- True 3D scene texture refraction: the glass refracts the scene's own rendered
-  lettering and scenery, not a screenshot of a user browser tab
-- Drei Html projection for an HTML annotation attached to the 3D sculpture
-- DialKit live tuning for glass parameters, shown during development; add
-  ?tune=1 to the URL to opt into its controls on a deployed build
-- Responsive liquid-glass shell, 3D star ambience and a reduced-motion switch
-
-The creative direction is an original take on the **Glass Hero** style
-demonstrated by Zsolt Kacso (May 2026), rather than a copy of their code.
-
-Reference: https://experiments.thisiswhitespace.com/glass-hero
-
-## Development
-
-Main React entry: src/main.jsx
-Pages: src/Arcade.jsx, src/Browser.jsx, src/Chat.jsx, src/AI.jsx
-3D scene: src/GlassHero.jsx
-Styling: src/styles.css
-Vite: vite.config.js
-Node API: server.js
-
-To rebuild the frontend after editing source:
+Build and run tests:
 
     npm run build
+    npm run check
 
-The old static CSS/JavaScript files are intentionally removed. Do not
-re-introduce the old app.js from the previous UI.
+The frontend is React + Vite, with Three.js/React Three Fiber particle effects.
+No third-party script CDN is needed for the React app. The browser's Scramjet
+engine may download and cache its own runtime assets during bootstrap.
 
-## Deployment and data safety
+## What works
 
-Railway service and repository identifiers may still contain the word
-"lightning"; changing them is unnecessary for the Celestial UI.
+### Browser
 
-Keep LIGHTNING_DATA_FILE pointing to the existing persistent volume path.
-The legacy key and cookie name are retained intentionally, ensuring previously
-registered accounts and active sessions continue to work. No migration deletes
-users, messages or saved data.
+- Forest new-tab search homepage
+- Multiple tabs and remembered tabs
+- Address field, web search, bookmark bar, back/forward, reload
+- Bolt's **Scramjet** proxy controller with Wisp transport for signed-in users
+- Popup/escaped-link routing into Celestial tabs
+- For guests, normal iframe fallback and an external-open link
 
-Railway currently reported a trial-expired billing problem, so a successful
-GitHub merge does not imply the app is deployed. Set the plan and deploy
-the latest main branch after verifying the build.
+The web proxy is subject to network/provider, service-worker and browser
+capabilities; some websites still require a direct tab. The proxy is an
+advanced integration, not a full Chromium process. All proxy access requires a
+valid Celestial account session.
 
-The AI endpoint is rate limited and requires authentication. Add database
-backups, moderation, logging and more substantial abuse safeguards before
-inviting a large public community.
+### Arcade
+
+- **Chess** — server-authoritative legal moves, bot play and matchmaking
+- **Rock Paper Scissors** — hidden decisions, bot/online games and tournaments
+- **WorldPvP** — server-managed territories, nations, battles and resources
+- **2048** — complete local tile merge game, keyboard and button controls
+- **Minesweeper** — first-click safety, flags and win/loss state
+- **Uma Versus** — creator-hosted third-party game with direct-open fallback
+
+The multiplayer engines and world map are drawn from Bolt's known working
+implementation. The React presentation is new and intentionally lighter.
+A real account is required for multiplayer games.
+
+### Chat
+
+- Authenticated live WebSocket connection with reconnect
+- Community servers and multiple text channels
+- Online roster, reactions, replies, message editing/deletion
+- Server creation, membership and channel management
+- First-login migration of prior Celestial public messages where possible
+
+Old storage paths and account identifiers are retained so existing members
+are not silently migrated to new IDs. **Direct messages and advanced staff
+moderation from Bolt are not ported to this screen yet.**
+
+### AI
+
+- Conversation interface with saved local threads, rename/delete/new
+- Real backend provider calls, no fake responses
+- \`OPENAI_API_KEY\` (OpenAI Responses API), or \`NVIDIA_API_KEY\` (Bolt's
+  NVIDIA completion engine), with server-side configuration only
+- Authentication and request-size/rate limits
+- Explicit disabled state when no provider is configured
+
+Bolt's model failover code is imported; its screenshot parsing and web search
+extensions are **not yet included** in Celestial's AI endpoint.
+
+## Configuration
+
+Sample \`.env.example\`:
+
+    PORT=3080
+    LIGHTNING_DATA_FILE=/data/store.json
+    OPENAI_API_KEY=
+    OPENAI_MODEL=gpt-4.1-mini
+    NVIDIA_API_KEY=
+    NVIDIA_MODEL=
+
+Do not commit actual keys. Put them in Railway's service environment.
+
+For local testing when Scramjet/Wisp downloads are not available, use
+\`DISABLE_WEB_PROXY=1\`; the standard browser view remains usable with iframe
+limitations.
+
+## Visual design
+
+The forest experience is built in \`src/forest.css\`, with a photographic
+backdrop from Unsplash, deep green translucency, a mint search lens, and a
+compact icon rail. \`src/ForestParticles.jsx\` uses WebGL and R3F to render
+subtle animated forest lights; CSS fallback remains when WebGL fails or when
+reduced motion is preferred. Browser, games, chat and AI are ordinary
+accessible HTML controls over the atmosphere.
+
+Unsplash photos are licensed under the Unsplash License for projects like this:
+https://unsplash.com/license. Replace the image URL in \`src/forest.css\` if
+you want to use your own forest photography.
+
+The code also includes the older \`src/GlassHero.jsx\` R3F optical glass
+experiment, but it is **not mounted in the forest home screen**. This avoids
+distracting from the photography and centered search.
+
+## File map
+
+- \`src/main.jsx\`: minimal shell and account login
+- \`src/forest.css\`: forest design, game/gallery and responsive layouts
+- \`src/Browser.jsx\`, \`src/BoltProxy.js\`: browser UI and proxy adapter
+- \`src/Arcade.jsx\`: six playable games
+- \`src/Chat.jsx\`, \`src/useBoltLive.js\`: community UI and WebSocket state
+- \`src/AI.jsx\`: local chat history and real server provider interface
+- \`server.js\`: Celestial accounts, API, proxy, AI and real-time hooks
+- \`live.js\`, \`community-v2.js\`, \`chess-ai.js\`: Bolt-origin game/social engine
+- \`ai-provider.js\`, \`ai-stream.js\`: Bolt-origin NVIDIA completion engine
+
+## Deploying
+
+The existing Railway service/repo identifiers may still contain \`lightning\`;
+those are internal names, not the product brand.
+
+Keep the existing \`LIGHTNING_DATA_FILE\` path and data volume. Do not delete
+existing session cookies or account records. The legacy \`lightning_session\`
+cookie is intentionally retained. A source-code merge is not a Railway deploy.
+If the Railway trial is still expired or the connected project is unavailable,
+deployment requires account-side repair first.
+
+Automated checks cover the frontend build, account API, and live chat protocol.
+A real browser/GPU and authenticated Scramjet/Wisp browsing test are still
+needed before treating this as a fully production-validated release.
