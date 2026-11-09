@@ -406,3 +406,295 @@ body{background:var(--bg);color:var(--text);font-family:"Segoe UI",Arial,system-
   .forest-main-search,.forest-shortcuts button{background:var(--dock-panel)}
   .celestial-sheet,.celestial-corner-actions button{background:var(--dock-panel)}
 }
+
+
+/* Celestial home is AI-first: the same quiet, centered Xylora silhouette
+   opens into a conversation without exposing service/provider status. */
+.celestial-home-ai {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  overflow: hidden;
+}
+.celestial-home-center {
+  position: relative;
+  width: min(100%, 460px);
+  padding: 10px 14px 15px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  transform: translateY(-12px);
+}
+.celestial-home-center .forest-wordmark {
+  margin: 0 0 25px;
+}
+.celestial-ai-search {
+  width: min(100%, 374px);
+}
+.celestial-ai-search button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+.celestial-home-shortcuts {
+  gap: 7px;
+  margin-top: 14px;
+}
+.celestial-home-shortcuts button {
+  height: 32px;
+  gap: 5px;
+}
+.celestial-home-error {
+  max-width: 430px;
+  margin: 15px 0 0;
+  padding: 9px 12px;
+  color: #fff0e7;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  border: 1px solid rgba(255, 207, 180, .34);
+  border-radius: 9px;
+  background: rgba(85, 39, 31, .45);
+}
+.celestial-home-ai.has-conversation {
+  padding: 53px 62px 52px 74px;
+}
+.celestial-home-conversation {
+  display: flex;
+  flex-direction: column;
+  width: min(780px, 100%);
+  height: min(710px, 100%);
+  min-height: 330px;
+  overflow: hidden;
+  border: 1px solid var(--glass-line);
+  border-radius: 20px;
+  background: var(--glass-panel);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, .08);
+  backdrop-filter: blur(27px) saturate(1.25);
+}
+.celestial-home-chat-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 59px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--glass-line);
+}
+.celestial-home-chat-head .celestial-home-mark {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  flex: 0 0 30px;
+  color: var(--accent);
+  font-size: 24px;
+  border: 1px solid var(--glass-line);
+  border-radius: 9px;
+  background: var(--accent-soft);
+}
+.celestial-home-chat-head strong {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 800;
+}
+.celestial-home-chat-head button {
+  padding: 8px 11px;
+  border: 1px solid var(--glass-line);
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 750;
+}
+.celestial-home-chat-head button:hover {
+  border-color: var(--accent);
+}
+.celestial-home-messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 19px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 23px 22px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--glass-line) transparent;
+}
+.celestial-home-messages .ai-message {
+  max-width: 88%;
+  text-align: left;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.celestial-home-messages .ai-message.user {
+  align-self: flex-end;
+  color: var(--text);
+}
+.celestial-home-messages .ai-message.assistant {
+  align-self: flex-start;
+  color: var(--text);
+}
+.celestial-home-chat-compose {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0 16px 17px;
+  padding: 7px 7px 7px 14px;
+  border: 1px solid var(--glass-line);
+  border-radius: 99px;
+  background: rgba(14, 43, 52, .72);
+}
+.celestial-home-chat-compose:focus-within {
+  border-color: var(--accent);
+}
+.celestial-home-chat-compose input {
+  min-width: 0;
+  flex: 1;
+  padding: 7px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+}
+.celestial-home-chat-compose input::placeholder {
+  color: var(--muted);
+}
+.celestial-home-chat-compose button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.celestial-home-chat-compose button:disabled {
+  opacity: .58;
+  cursor: not-allowed;
+}
+.celestial-home-conversation .celestial-home-error {
+  margin: -5px 17px 13px;
+  max-width: unset;
+}
+.celestial-ai-locked {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  color: var(--text);
+}
+.celestial-ai-locked>span {
+  color: var(--accent);
+  font-size: 65px;
+}
+.celestial-ai-locked h2 {
+  margin: 0;
+  font-size: 26px;
+}
+.celestial-ai-locked p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.celestial-ai-locked button {
+  padding: 10px 17px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 760;
+}
+/* A login is required before the entire workspace is mounted. */
+.celestial-entry {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+  background: var(--bg);
+}
+.celestial-entry .celestial-backdrop {
+  z-index: 0;
+}
+.celestial-entry-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  transform: translate(-50%, -50%);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 750;
+}
+.auth-locked {
+  z-index: 40;
+  background: rgba(2, 9, 20, .36);
+  backdrop-filter: blur(9px);
+}
+.auth-locked .auth-sheet {
+  border-color: var(--glass-line);
+  box-shadow: 0 25px 90px rgba(0, 0, 0, .56);
+}
+.auth-locked .auth-fields {
+  padding-top: 48px;
+}
+@media (max-width: 700px) {
+  .celestial-home-center {
+    width: 100%;
+    padding: 10px 26px 15px 58px;
+    transform: translateY(-17px);
+  }
+  .celestial-home-shortcuts {
+    max-width: 360px;
+    gap: 5px;
+  }
+  .celestial-home-shortcuts button {
+    height: 31px;
+    padding: 6px 9px;
+    font-size: 10px;
+  }
+  .celestial-home-ai.has-conversation {
+    padding: 50px 10px 44px 54px;
+  }
+  .celestial-home-conversation {
+    min-height: 300px;
+    border-radius: 13px;
+  }
+  .celestial-home-messages {
+    padding: 15px 11px;
+  }
+  .celestial-home-messages .ai-message {
+    max-width: 96%;
+    font-size: 12px;
+  }
+}
+@media (max-width: 470px) {
+  .celestial-home-center .forest-wordmark {
+    font-size: 40px;
+  }
+  .celestial-ai-search {
+    height: 41px;
+    min-height: 41px;
+  }
+  .celestial-home-shortcuts {
+    max-width: 288px;
+  }
+  .celestial-home-chat-head {
+    padding: 10px;
+  }
+  .celestial-home-chat-compose {
+    margin: 0 7px 10px;
+  }
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .celestial-home-conversation {
+    background: var(--dock-panel);
+  }
+}
