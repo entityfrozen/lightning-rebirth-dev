@@ -202,7 +202,7 @@ function App() {
   }
   function openDock(id) {
     if(id==='settings'){setModal('settings');return;}
-    if(id==='apps'){setModal('apps');setActiveDock('apps');return;}
+    if(id==='apps'){setModal('apps');return;}
     if(id==='home'){
       setView('browser');setActiveDock('home');setModal(null);
       setHomeSignal(value=>value+1);
@@ -249,8 +249,8 @@ function App() {
             {dockItems.map(item=>{
               const FilledIcon=item.icon;
               return <button key={item.id} type="button" aria-label={item.label} title={item.label}
-                className={'dock-link '+(activeDock===item.id?'active':'')}
-                aria-current={activeDock===item.id?'page':undefined}
+                className={'dock-link '+((modal==='apps'?item.id==='apps':activeDock===item.id)?'active':'')}
+                aria-current={(modal==='apps'?item.id==='apps':activeDock===item.id)?'page':undefined}
                 onClick={()=>openDock(item.id)}><FilledIcon/></button>;
             })}
           </div>
