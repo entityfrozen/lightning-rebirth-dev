@@ -24,6 +24,22 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     let ready=false;
     for(let i=0;i<100;i++){try{await fetch(url+'/api/me');ready=true;break;}catch{await new Promise(r=>setTimeout(r,80));}}
     assert.equal(ready,true,'server started');
+    const homepage=await fetch(url+'/');
+    assert.equal(homepage.status,200);
+    const html=await homepage.text();
+    assert.match(html,/<title>Celestial/);
+    assert.match(html,/celestial-star\.svg/);
+    assert.doesNotMatch(html,/lightning-chan|mascotSprite|lightning-mark/);
+    const skyAsset=await fetch(url+'/celestial-sky.js');
+    assert.equal(skyAsset.status,200);
+    assert.match(await skyAsset.text(),/createCelestialSky/);
+    const cssAsset=await fetch(url+'/celestial.css');
+    assert.equal(cssAsset.status,200);
+    const starAsset=await fetch(url+'/assets/celestial-star.svg');
+    assert.equal(starAsset.status,200);
+    assert.match(await starAsset.text(),/<svg/);
+    const retiredAsset=await fetch(url+'/assets/lightning-chan-idle.png');
+    assert.equal(retiredAsset.status,404);
     let result=await call('/api/me');assert.equal(result.response.status,200);assert.equal(result.data.user,null);
     result=await call('/api/messages','POST',{channel:'general',text:'Guest post'});assert.equal(result.response.status,401);
     result=await call('/api/register','POST',{username:'TestCelestial',password:'correct horse battery staple'});assert.equal(result.response.status,201);assert.equal(result.data.user.username,'TestCelestial');
