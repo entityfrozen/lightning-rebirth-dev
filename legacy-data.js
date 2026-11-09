@@ -1,5 +1,6 @@
 import path from 'node:path';
-import {readFile} from 'node:fs/promises';
+import {readFile,copyFile,mkdir,writeFile,chmod,stat} from 'node:fs/promises';
+import {constants as fsConstants} from 'node:fs';
 import {randomBytes, scryptSync} from 'node:crypto';
 
 async function readOptionalJSON(filename) {
@@ -10,6 +11,46 @@ async function readOptionalJSON(filename) {
     if (error.code === 'ENOENT') return null;
     throw new Error('Unable to safely read existing data at ' + filename + ': ' + error.message);
   }
+}
+
+/**
+ * Before we mount the original community engine, take a local snapshot.
+ * Community code may update its own legacy schema in place, so we preserve
+ * the untouched originals for rollback. The manifest makes this idempotent.
+ */
+export async function backupBoltData(dataDir) {
+  const folder = path.join(dataDir,'celestial-backups','before-celestial-v1');
+  const manifest = path.join(folder,'manifest.json');
+  try {
+    await stat(manifest);
+    return {alreadySaved:true,files:[]};
+  } catch(error) {
+    if(error.code!=='ENOENT')throw error;
+  }
+  const filenames=['bolt.json','lightning-accounts.json',
+    'lightning-social.json','lightning-v2-communities.json'];
+  const present=[];
+  for(const name of filenames) {
+    try{
+      const info=await stat(path.join(dataDir,name));
+      if(info.isFile())present.push(name);
+    }catch(error){if(error.code!=='ENOENT')throw error;}
+  }
+  if(!present.length)return {alreadySaved:false,files:[]};
+  await mkdir(folder,{recursive:true,mode:0o700});
+  for(const name of present) {
+    const target=path.join(folder,name);
+    try{
+      await copyFile(path.join(dataDir,name),target,fsConstants.COPYFILE_EXCL);
+    }catch(error){
+      if(error.code!=='EEXIST')throw error;
+    }
+    await chmod(target,0o600);
+  }
+  await writeFile(manifest,JSON.stringify({
+    createdAt:new Date().toISOString(),files:present
+  },null,2),{mode:0o600,flag:'wx'});
+  return {alreadySaved:false,files:present};
 }
 
 const validLegacyId = value => typeof value === 'string'
