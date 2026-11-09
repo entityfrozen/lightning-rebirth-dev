@@ -445,3 +445,29 @@ button,textarea,input{accent-color:#a7efc4}
  .forest-backdrop,.forest-fireflies{animation:none!important}
  .forest-app *{animation-duration:.01ms!important;transition-duration:.01ms!important}
 }
+
+/* Saved AI conversations and quick-start prompts. */
+.forest-ai-chat-list{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#9dddac55 transparent}
+.forest-ai-chat{display:flex;align-items:center;gap:3px;border:1px solid transparent;border-radius:10px;color:#c5e6ce}
+.forest-ai-chat.active{background:#93e8a626;border-color:#b3f9c53f}
+.forest-ai-chat>button:first-child{display:flex;align-items:center;gap:9px;min-width:0;flex:1;text-align:left;background:transparent;border:0;padding:10px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:inherit}
+.forest-ai-chat>button:first-child span{font-size:19px;color:#aefad1}
+.forest-ai-chat>button:not(:first-child){border:0;background:none;color:#bdd9c1;opacity:0;font-size:14px;padding:6px}
+.forest-ai-chat:hover>button:not(:first-child),.forest-ai-chat:focus-within>button:not(:first-child){opacity:1}
+.forest-ai-chat>button:not(:first-child):hover{color:#fff}
+.forest-ai-starters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:23px auto 0;width:min(600px,100%)}
+.forest-ai-starters button{border:1px solid #c0f8d047;border-radius:11px;background:#22543b69;display:flex;flex-direction:column;align-items:flex-start;gap:7px;text-align:left;position:relative;padding:15px;color:#f0fff3}
+.forest-ai-starters button:hover{background:#4e916773;transform:translateY(-2px)}
+.forest-ai-starters button small{font-size:8px;font-weight:800;color:#9be8b6;letter-spacing:.15em}
+.forest-ai-starters button span{font-size:11px;max-width:90%;line-height:1.5}
+.forest-ai-starters button b{position:absolute;right:13px;bottom:10px;color:#aef3c0}
+@media(max-width:580px){
+ .forest-ai-starters{gap:6px}
+ .forest-ai-starters button{padding:11px}
+ .forest-ai-starters button span{font-size:10px}
+}
+/* Fallback if an image service, background blur, or WebGL is unavailable. */
+@supports not (backdrop-filter:blur(1px)){
+ .launcher,.forest-chat-layout,.ai-panel,.ai-side,.forest-game-stage,.forest-browser-chrome{background:#0a2518ef}
+ .forest-main-search{background:#183d29f2}
+}
