@@ -33,6 +33,16 @@ export async function getProxyController(){
   })().catch(error=>{controllerPromise=null;throw error;});
   return controllerPromise;
 }
+export function disposeProxyFrame(frame){
+  if(!frame)return;
+  try{
+    const list=frame.controller?.frames;
+    if(Array.isArray(list)){
+      const index=list.indexOf(frame);
+      if(index>=0)list.splice(index,1);
+    }
+  }catch{}
+}
 export async function createProxyFrame(element,onNavigate,openTab){
   const controller=await getProxyController();
   const utils=window.$scramjetUtils;
