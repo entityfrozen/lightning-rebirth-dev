@@ -86,6 +86,24 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
       live.close();
     }
 
+
+    const ownerId=hello.id;
+    const ownerCookie=cookie;
+    result=await call('/api/register','POST',{username:'TestPeer',password:'another correct horse staple'});
+    assert.equal(result.response.status,201);
+    const peerId=result.data.user.id;
+    result=await call('/api/dms/'+ownerId,'POST',{text:'A private message from TestPeer'});
+    assert.equal(result.response.status,201);
+    result=await call('/api/dms/'+ownerId);
+    assert.equal(result.data.messages.length,1);
+    assert.equal(result.data.messages[0].text,'A private message from TestPeer');
+    cookie=ownerCookie;
+    result=await call('/api/dms/'+peerId);
+    assert.equal(result.data.messages.length,1);
+    assert.equal(result.data.messages[0].author,'TestPeer');
+    result=await call('/api/dms');
+    assert.ok(result.data.threads.some(t=>t.user.id===peerId));
+
     result=await call('/api/drops','POST',{title:'New Theme',description:'My favorite purple palette',theme:palette});assert.equal(result.response.status,201);
     const dropId=result.data.drop.id;
     result=await call('/api/drops');assert.ok(result.data.drops.some(d=>d.id===dropId));
