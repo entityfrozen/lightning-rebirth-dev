@@ -1,7 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {
   Color24Filled,Globe24Filled,Shield24Filled,Person24Filled,
-  ArrowLeft20Filled,CheckmarkCircle20Filled,ArrowSquareOut20Filled,
+  ArrowLeft20Filled,CheckmarkCircle20Filled,ArrowUpRight20Filled,
   ArrowDownload20Filled,ArrowUpload20Filled
 } from '@fluentui/react-icons';
 import {readLocal,saveLocal} from './constants.js';
@@ -164,7 +164,7 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
                 <button onClick={()=>{identity({preset:'celestial',title:'',icon:''});notify('Tab identity reset.');}}>Reset tab identity</button>
                 <button className="primary" onClick={()=>{
                   const result=openCloakedTab();notify(result.ok?'Opened Celestial in a new tab.':result.error);
-                }}><ArrowSquareOut20Filled/> Open in about:blank</button>
+                }}><ArrowUpRight20Filled/> Open in about:blank</button>
               </div>
               <p className="celestial-settings-footnote">Cloaking changes appearance, not your network traffic or browser history. Some browsers block blank-tab windows or embedding.</p>
             </div>
