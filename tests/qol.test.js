@@ -41,7 +41,11 @@ test('Apps contains real tools rather than placeholder game tiles',()=>{
   assert.match(apps,/celestial-tool-calculator/);
   assert.match(apps,/celestial-tool-focus/);
   assert.match(apps,/onNavigate\(id\)/);
-  assert.doesNotMatch(apps,/WorldPvP|Minesweeper|Uma Versus/);
+  for(const name of ['Chess','2048','Minesweeper','Rock Paper Scissors','WorldPvP','Uma Versus']){
+    assert.ok(apps.includes(name),'missing playable game: '+name);
+  }
+  assert.match(apps,/selected\.game\?<Arcade embedded/);
+  assert.match(read('src/Arcade.jsx'),/if\(embedded&&selected\)/);
 });
 
 test('Settings restores appearance, browser, cloaking and account controls',()=>{
@@ -67,6 +71,19 @@ test('Browser uses a real proxy controller and handles failures visibly',()=>{
   assert.doesNotMatch(browser,/\.go\(tab\.url\)\.catch\(/);
   assert.doesNotMatch(browser,/el\.src=tab\.url/);
   assert.match(proxy,/await controller\.wait\(\)/);
+});
+
+test('Browser, games and community Chat can stay mounted together',()=>{
+  const main=read('src/main.jsx');
+  const side=read('src/WorkspaceChat.jsx');
+  const css=read('src/workspace.css');
+  assert.match(main,/celestial-activity-layout/);
+  assert.match(main,/WorkspaceChat user=\{user\} live=\{live\}/);
+  assert.match(main,/view==='apps'\?<Apps user=\{user\} live=\{live\}/);
+  assert.match(main,/view==='browser'\?<Browser/);
+  assert.match(side,/type:'v2Message'/);
+  assert.match(side,/\/api\/dms\//);
+  assert.match(css,/\.celestial-activity-layout\.with-chat/);
 });
 
 test('Chat displays offline members and source-authenticated platform role badges',()=>{
