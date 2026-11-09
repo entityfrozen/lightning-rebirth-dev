@@ -27,6 +27,11 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(ready,true,'server started');
     const homepage=await fetch(url+'/');
     assert.equal(homepage.status,200);
+    assert.equal(homepage.headers.get('cross-origin-opener-policy'),'same-origin');
+    assert.equal(homepage.headers.get('cross-origin-embedder-policy'),'credentialless');
+    assert.equal(homepage.headers.get('x-frame-options'),'SAMEORIGIN');
+    assert.match(homepage.headers.get('content-security-policy')||'',/frame-ancestors 'self'/);
+
     const html=await homepage.text();
     assert.match(html,/<title>Celestial/);
     assert.match(html,/celestial-star\.svg/);
@@ -36,6 +41,9 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.match(await appAsset.text(),/Celestial/);
     const cssAsset=await fetch(url+'/bundle/style.css');
     assert.equal(cssAsset.status,200);
+    assert.equal(cssAsset.headers.get('cross-origin-opener-policy'),'same-origin');
+    assert.equal(cssAsset.headers.get('cross-origin-embedder-policy'),'credentialless');
+
     assert.match(await cssAsset.text(),/browser-window/);
     const guestAiStatus=await call('/api/ai/status');
     assert.equal(guestAiStatus.response.status,401);

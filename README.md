@@ -1,10 +1,10 @@
 # Celestial — Aurora Edition
 
-Celestial opens into a **split homepage** after sign-in: the original
-main page and browser search remain on the left, while a compact, fully
-functional **Celestial AI sidebar** is optional on the right. Close it from
-its header for a full-width homepage, or restore it from the Show Celestial AI
-button / Appearance settings. Browser, Apps, Chat and full AI have their own routes.
+Celestial opens into a **split homepage** after sign-in: the original main
+page and browser search stay on the left, with an optional Celestial AI sidebar.
+**Community Chat can now open beside your browser or any game** without
+reloading the activity you are using. On smaller screens, Chat becomes an
+overlay you can close. The separate Browser, Apps, Chat and AI routes remain.
 A Celestial account is required before the workspace can be opened.
 
 The interface mirrors the supplied Xylora shell rather than a card dashboard:
@@ -50,7 +50,9 @@ engine may download and cache its own runtime assets during bootstrap.
 - Address field, web search, bookmark bar, back/forward, reload
 - Bolt's **Scramjet** proxy controller with Wisp transport for signed-in users
 - Popup/escaped-link routing into Celestial tabs
+- Cross-origin isolated app shell for Scramjet's service worker/WASM runtime
 - Explicit proxy-loading/error/retry state, plus an external-open link if a site won't work; no misleading silent iframe fallback
+- Tab strip stays accessible even when the active tab is blank; back/forward no longer navigates twice
 - Search engine choices, compact tabs, saved history and session restoration
 - Ctrl/Cmd+L for the address bar and Ctrl/Cmd+T for a new tab
 
@@ -61,17 +63,23 @@ valid Celestial account session.
 
 ### Apps
 
-The former Games navigation and crowded game-card gallery were replaced with
-a proper App Library. It has functioning launchers for Browser, Chat, AI and
-Music and three built-in utilities: **Notes**, **Calculator** and **Focus Timer**.
-Notes stay on this device, and the focus timer runs only while Celestial is open.
+The dedicated Games navigation and oversized card gallery were replaced with
+a focused App Library. It has functioning launchers for Browser, Chat, AI and
+Music, plus Notes, Calculator and Focus Timer.
 
-The old Arcade/game source files and multiplayer logic are retained in the
-repository for compatibility, but games are no longer linked from the UI.
-No server databases or saved game records were deleted.
+**All six games are still playable inside Apps:** Chess, 2048, Minesweeper,
+Rock Paper Scissors, WorldPvP and Uma Versus. Each opens inside the clean
+Apps play surface while a compact live Chat panel can remain alongside it.
+The original game engines and saved multiplayer records were not removed.
+The focus timer runs only while Celestial is open.
 
 ### Chat
 
+- **Multitasking panel:** use the Chat button on the Browser/Home/Apps page to
+  keep channels, private messages and community members visible while you
+  browse or play. It uses the same authenticated WebSocket as full Chat.
+- Hide the panel without interrupting an open website or local game; the
+  toggle is remembered locally.
 - Authenticated live WebSocket connection with reconnect
 - Community servers and multiple text channels
 - Full approved-member directory, including offline users and live status
@@ -108,6 +116,17 @@ staff-moderation tools are not yet ported into the new UI.**
 
 Bolt's model failover code is imported; its screenshot parsing and web search
 extensions are **not yet included** in Celestial's AI endpoint.
+
+## Visual direction
+
+The QOL workspace is intentionally calmer than the old glass-card UI:
+lightweight browser tabs, an uncluttered site canvas, a focused playable game
+surface and a narrow dark Chat rail. The photo/aurora background remains on
+the homepage, while active websites and games get legible, neutral surfaces.
+
+Visual screenshots and real-world website compatibility still require a
+browser-based smoke test. Scramjet is experimental and some sites may not work,
+even with a correct server and service-worker setup.
 
 ## Settings and cloaking
 

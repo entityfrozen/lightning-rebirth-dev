@@ -1,9 +1,11 @@
 import React,{useEffect,useState} from 'react';
+import {Arcade} from './Arcade.jsx';
 import {readLocal,saveLocal} from './constants.js';
 import {
   Globe24Filled,Chat24Filled,Cloud24Filled,MusicNote224Filled,
   Note24Filled,Calculator24Filled,Timer24Filled,ArrowUpRight20Filled,
-  ArrowLeft20Filled,Add20Filled,Delete20Filled
+  ArrowLeft20Filled,Add20Filled,Delete20Filled,
+  Chess20Filled,Games20Filled,Grid20Filled,Target20Filled
 } from '@fluentui/react-icons';
 
 const launchers=[
@@ -13,7 +15,14 @@ const launchers=[
   {id:'notes',label:'Notes',category:'TOOLS',description:'Quick notes that stay on this device.',icon:Note24Filled,gradient:'amber'},
   {id:'calculator',label:'Calculator',category:'TOOLS',description:'A little math without leaving Celestial.',icon:Calculator24Filled,gradient:'mint'},
   {id:'focus',label:'Focus Timer',category:'TOOLS',description:'A quiet countdown for getting things done.',icon:Timer24Filled,gradient:'rose'},
-  {id:'music',label:'Music',category:'TOOLS',description:'Open your music in the browser.',icon:MusicNote224Filled,gradient:'pink'}
+  {id:'music',label:'Music',category:'TOOLS',description:'Open your music in the browser.',icon:MusicNote224Filled,gradient:'pink'},
+
+  {id:'chess',label:'Chess',category:'PLAY',description:'Play a bot or challenge someone live.',icon:Chess20Filled,gradient:'blue',game:true},
+  {id:'2048',label:'2048',category:'PLAY',description:'Slide and merge. One more try?',icon:Grid20Filled,gradient:'amber',game:true},
+  {id:'mines',label:'Minesweeper',category:'PLAY',description:'Find the safe tiles. Avoid the mines.',icon:Target20Filled,gradient:'mint',game:true},
+  {id:'rps',label:'Rock Paper Scissors',category:'PLAY',description:'Play quick rounds with the community.',icon:Games20Filled,gradient:'rose',game:true},
+  {id:'world',label:'WorldPvP',category:'PLAY',description:'Claim territory and compete for the map.',icon:Globe24Filled,gradient:'teal',game:true},
+  {id:'uma',label:'Uma Versus',category:'PLAY',description:'A fighting game from its original creator.',icon:Games20Filled,gradient:'purple',game:true}
 ];
 const noteKey='apps-notes-v1';
 const pretty=seconds=>String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
@@ -79,7 +88,7 @@ function Focus(){
       <button onClick={()=>choose(minutes)}>Reset</button></div>
   </div>;
 }
-export function Apps({onNavigate,onMusic}){
+export function Apps({onNavigate,onMusic,user,live,onAuth}){
   const [query,setQuery]=useState('');
   const [opened,setOpened]=useState(null);
   const selected=launchers.find(app=>app.id===opened);
@@ -94,16 +103,16 @@ export function Apps({onNavigate,onMusic}){
       {selected?<><button className="celestial-apps-return" onClick={()=>setOpened(null)}><ArrowLeft20Filled/> All apps</button>
         <header className="celestial-apps-heading"><span className="celestial-section-kicker">CELESTIAL / APPS</span><h1>{selected.label}</h1><p>{selected.description}</p></header>
         <div className="celestial-tool-shell">
-          {selected.id==='notes'?<Notes/>:selected.id==='calculator'?<Calculator/>:<Focus/>}
+          {selected.game?<Arcade embedded gameId={selected.id} live={live} user={user} onAuth={onAuth}/>:selected.id==='notes'?<Notes/>:selected.id==='calculator'?<Calculator/>:<Focus/>}
         </div>
       </>:<>
         <header className="celestial-apps-heading"><span className="celestial-section-kicker">YOUR SPACE / YOUR TOOLS</span><h1>Everything, <em>in one place.</em></h1>
           <p>Only what you use. No clutter, no fake launch buttons.</p></header>
         <div className="celestial-apps-search"><span>⌕</span><input aria-label="Find an app" placeholder="Find an app…" value={query} onChange={e=>setQuery(e.target.value)}/><kbd>APPS</kbd></div>
-        {['ESSENTIAL','TOOLS'].map(group=>{
+        {['ESSENTIAL','PLAY','TOOLS'].map(group=>{
           const items=filtered.filter(app=>app.category===group);
           return items.length?<div className="celestial-apps-group" key={group}>
-            <h2>{group==='ESSENTIAL'?'Your essentials':'Useful little things'}</h2>
+            <h2>{group==='ESSENTIAL'?'Your essentials':group==='PLAY'?'Games you can actually play':'Useful little things'}</h2>
             <div className="celestial-apps-grid">{items.map(app=>{
               const Glyph=app.icon;
               return <button key={app.id} className="celestial-app-tile" onClick={()=>open(app.id)}>
