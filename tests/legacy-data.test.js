@@ -4,7 +4,7 @@ import {mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {scryptSync} from 'node:crypto';
 import path from 'node:path';
-import {importBoltData,bootstrapAdministrator} from '../legacy-data.js';
+import {importBoltData,bootstrapAdministrator,backupBoltData} from '../legacy-data.js';
 
 const salt='0123456789abcdef0123456789abcdef';
 const legacyHash=password=>'scrypt$'+salt+'$'+scryptSync(password,salt,64).toString('hex');
@@ -26,6 +26,11 @@ test('Bolt importer preserves IDs, account states, messages, and original files'
   try{
     await writeFile(path.join(dir,'bolt.json'),original);
     await writeFile(path.join(dir,'lightning-accounts.json'),dms);
+    const backup=await backupBoltData(dir);
+    assert.equal(backup.alreadySaved,false);
+    assert.ok(backup.files.includes('bolt.json'));
+    assert.equal(await readFile(path.join(dir,'celestial-backups','before-celestial-v1','bolt.json'),'utf8'),original);
+    assert.equal((await backupBoltData(dir)).alreadySaved,true);
     const report=await importBoltData(db,dir);
     assert.equal(report.legacyFound,true);
     assert.equal(report.accountsImported,4);
