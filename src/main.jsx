@@ -2,9 +2,9 @@
 import React, {Suspense, useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {
-  Home24Filled, Games24Filled, Grid24Filled, Globe24Filled,
+  Home24Filled, Grid24Filled, Globe24Filled,
   Cloud24Filled, MusicNote224Filled, Chat24Filled, Settings24Filled,
-  ChevronLeft24Filled, Person20Filled, CheckmarkCircle20Filled, Sparkle20Filled
+  ChevronLeft24Filled, Person20Filled, Sparkle20Filled
 } from '@fluentui/react-icons';
 import {DialRoot} from 'dialkit';
 import 'dialkit/styles.css';
@@ -12,37 +12,33 @@ import './styles.css';
 import './forest.css';
 import './xylora.css';
 import './home-split.css';
+import './qol.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
 import {SceneBoundary} from './SceneBoundary.jsx';
 import {AccountReview} from './AccountReview.jsx';
+import {applyCloak} from './Cloak.js';
 
 const Browser=React.lazy(()=>import('./Browser.jsx').then(mod=>({default:mod.Browser})));
-const Arcade=React.lazy(()=>import('./Arcade.jsx').then(mod=>({default:mod.Arcade})));
+const Apps=React.lazy(()=>import('./Apps.jsx').then(mod=>({default:mod.Apps})));
+const Settings=React.lazy(()=>import('./Settings.jsx').then(mod=>({default:mod.Settings})));
 const Chat=React.lazy(()=>import('./Chat.jsx').then(mod=>({default:mod.Chat})));
 const AI=React.lazy(()=>import('./AI.jsx').then(mod=>({default:mod.AI})));
 const ForestParticles=React.lazy(()=>import('./ForestParticles.jsx').then(mod=>({default:mod.ForestParticles})));
 
-const sections=new Set(['home','browser','arcade','chat','ai']);
+const sections=new Set(['home','browser','apps','chat','ai','settings']);
 const dockItems=[
   {id:'home',label:'Home',icon:Home24Filled},
-  {id:'study',label:'Games',icon:Games24Filled},
   {id:'apps',label:'Apps',icon:Grid24Filled},
   {id:'browser',label:'Browser',icon:Globe24Filled},
   {id:'cloud',label:'AI',icon:Cloud24Filled},
   {id:'music',label:'Music',icon:MusicNote224Filled},
   {id:'chat',label:'Chat',icon:Chat24Filled}
 ];
-const appItems=[
-  {id:'browser',label:'Browser',description:'Search, tabs and bookmarks',icon:Globe24Filled},
-  {id:'arcade',label:'Games',description:'Chess, WorldPvP and more',icon:Games24Filled},
-  {id:'chat',label:'Chat',description:'Channels, servers and messages',icon:Chat24Filled},
-  {id:'ai',label:'Celestial AI',description:'Write, learn and create',icon:Cloud24Filled}
-];
 const routeFromHash=()=>{
   const route=location.hash.replace(/^#/,'').split('/')[0];
-  return sections.has(route)?route:route==='community'?'chat':'home';
+  return sections.has(route)?route:route==='community'?'chat':route==='arcade'?'apps':'home';
 };
 
 function AuthSheet({mode,close,onLoggedIn,locked=false}){
@@ -115,51 +111,14 @@ function Modal({title,close,children}) {
     </section>
   </div>;
 }
-function Appearance({palette,setPalette,backdrop,setBackdrop,reduced,setReduced,close}) {
-  const colors=[
-    {id:'aurora',name:'Aurora',sub:'Ice teal + violet'},
-    {id:'jade',name:'Evergreen',sub:'Fresh mint + pine'},
-    {id:'amethyst',name:'Amethyst',sub:'Lavender + midnight'}
-  ];
-  const scenes=[
-    {id:'aurora',name:'Northern lights'},
-    {id:'forest',name:'Deep forest'},
-    {id:'minimal',name:'Midnight gradient'}
-  ];
-  return <Modal title="Settings" close={close}>
-    <h2>Make it yours.</h2>
-    <p>Same clean layout. Pick the atmosphere you like.</p>
-    <div className="celestial-setting-group"><strong>COLOR THEME</strong>
-      <div className="celestial-theme-list">{colors.map(theme=><button key={theme.id}
-        className={'celestial-theme-tile '+(theme.id===palette?'selected':'')}
-        aria-pressed={theme.id===palette} onClick={()=>setPalette(theme.id)}>
-        <i className={'celestial-color-sample '+theme.id}/>
-        <span><b>{theme.name}</b><small>{theme.sub}</small></span>
-        {theme.id===palette&&<CheckmarkCircle20Filled/>}
-      </button>)}</div>
-    </div>
-    <div className="celestial-setting-group"><strong>BACKGROUND</strong>
-      <div className="celestial-scene-list">{scenes.map(scene=><button key={scene.id}
-        className={'celestial-scene-option '+(scene.id===backdrop?'selected':'')}
-        onClick={()=>setBackdrop(scene.id)} aria-pressed={scene.id===backdrop}>
-        <span className={'celestial-scene-preview '+scene.id}/>
-        <span>{scene.name}</span>
-        {scene.id===backdrop&&<CheckmarkCircle20Filled/>}
-      </button>)}</div>
-    </div>
-    <label className="celestial-motion-setting">
-      <span><b>Reduce animation</b><small>Less movement in the background</small></span>
-      <input type="checkbox" checked={reduced} onChange={event=>setReduced(event.target.checked)}/>
-    </label>
-  </Modal>;
-}
 function App() {
   const [view,setView]=useState(routeFromHash);
   const [activeDock,setActiveDock]=useState(()=>{
     const initial=routeFromHash();
-    return initial==='home'?'home':initial==='arcade'?'study':initial==='ai'?'cloud':initial==='chat'?'chat':'browser';
+    return initial==='home'?'home':initial==='ai'?'cloud':initial==='chat'?'chat':initial==='apps'?'apps':initial==='settings'?'settings':'browser';
   });
   const [dockOpen,setDockOpen]=useState(()=>readLocal('dock-open',true));
+  const [showHomeAI,setShowHomeAI]=useState(()=>readLocal('home-ai-sidebar',true)!==false);
   const [palette,setPalette]=useState(()=>readLocal('celestial-palette','aurora'));
   const [backdrop,setBackdrop]=useState(()=>readLocal('celestial-backdrop','aurora'));
   const [reduced,setReduced]=useState(()=>readLocal('reduce-motion',false));
@@ -185,6 +144,8 @@ function App() {
     document.documentElement.dataset.motion=reduced?'reduced':'full';
   },[reduced]);
   useEffect(()=>saveLocal('dock-open',dockOpen),[dockOpen]);
+  useEffect(()=>saveLocal('home-ai-sidebar',showHomeAI),[showHomeAI]);
+  useEffect(()=>{applyCloak();},[]);
   useEffect(()=>{
     let mounted=true;
     api('/api/me').then(data=>{if(mounted)setUser(data.user);}).catch(()=>{}).finally(()=>{
@@ -197,7 +158,7 @@ function App() {
         internalHashChange.current=false;
         return;
       }
-      setActiveDock(next==='home'?'home':next==='arcade'?'study':next==='ai'?'cloud':next==='chat'?'chat':'browser');
+      setActiveDock(next==='home'?'home':next==='ai'?'cloud':next==='chat'?'chat':next==='apps'?'apps':next==='settings'?'settings':'browser');
     };
     window.addEventListener('hashchange',sync);
     return()=>{mounted=false;window.removeEventListener('hashchange',sync);};
@@ -217,12 +178,11 @@ function App() {
   function selectSection(section) {
     setModal(null);
     setView(section);
-    setActiveDock(section==='home'?'home':section==='arcade'?'study':section==='ai'?'cloud':section==='chat'?'chat':'browser');
+    setActiveDock(section==='home'?'home':section==='ai'?'cloud':section==='chat'?'chat':section==='apps'?'apps':section==='settings'?'settings':'browser');
     if(location.hash!=='#'+section){internalHashChange.current=true;location.hash=section;}
   }
   function openDock(id) {
-    if(id==='settings'){setModal('settings');return;}
-    if(id==='apps'){setModal('apps');return;}
+    if(id==='settings'||id==='apps'){selectSection(id);return;}
     if(id==='home'){
       selectSection('home');
       return;
@@ -233,7 +193,7 @@ function App() {
       if(location.hash!=='#browser'){internalHashChange.current=true;location.hash='browser';}
       return;
     }
-    selectSection(id==='study'?'arcade':id==='cloud'?'ai':id);
+    selectSection(id==='cloud'?'ai':id);
     setActiveDock(id);
   }
   async function logout() {
@@ -260,17 +220,25 @@ function App() {
     <div className="celestial-workspace">
       <main className="celestial-stage" id="main-content">
         <Suspense fallback={<div className="celestial-loading">Opening Celestial…</div>}>
-          {view==='home'?<div className="celestial-home-split">
+          {view==='home'?<div className={'celestial-home-split '+(!showHomeAI?'ai-hidden':'')}>
             <section className="celestial-home-main" aria-label="Main page">
               <Browser user={user} onAuth={setModal} onShortcut={openDock} homeMode/>
+              {!showHomeAI&&<button type="button" className="celestial-show-home-ai"
+                aria-label="Show Celestial AI sidebar" title="Restore Celestial AI"
+                onClick={()=>setShowHomeAI(true)}><span aria-hidden="true">✧</span> Show Celestial AI</button>}
             </section>
-            <aside className="celestial-home-rail" aria-label="Celestial AI sidebar">
-              <AI key="celestial-home-sidebar" sidebar user={user} onAuth={setModal}/>
-            </aside>
+            {showHomeAI&&<aside className="celestial-home-rail" aria-label="Celestial AI sidebar">
+              <AI key="celestial-home-sidebar" sidebar user={user} onAuth={setModal}
+                onHide={()=>setShowHomeAI(false)}/>
+            </aside>}
           </div>:
           view==='browser'?<Browser user={user} onAuth={setModal} onShortcut={openDock}
             launch={activeDock==='music'?browserLaunch:null}/>:
-          view==='arcade'?<Arcade user={user} onAuth={setModal} live={live}/>:
+          view==='apps'?<Apps onNavigate={selectSection} onMusic={()=>openDock('music')}/>:
+          view==='settings'?<Settings user={user} palette={palette} setPalette={setPalette}
+            backdrop={backdrop} setBackdrop={setBackdrop} reduced={reduced} setReduced={setReduced}
+            showHomeAI={showHomeAI} setShowHomeAI={setShowHomeAI}
+            onBack={()=>selectSection('home')} onLogout={logout}/>:
           view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:
           <AI key="celestial-ai" user={user} onAuth={setModal}/>}
         </Suspense>
@@ -284,14 +252,14 @@ function App() {
             {dockItems.map(item=>{
               const FilledIcon=item.icon;
               return <button key={item.id} type="button" aria-label={item.label} title={item.label}
-                className={'dock-link '+((modal==='apps'?item.id==='apps':activeDock===item.id)?'active':'')}
-                aria-current={(modal==='apps'?item.id==='apps':activeDock===item.id)?'page':undefined}
+                className={'dock-link '+(activeDock===item.id?'active':'')}
+                aria-current={activeDock===item.id?'page':undefined}
                 onClick={()=>openDock(item.id)}><FilledIcon/></button>;
             })}
           </div>
           <div className="dock-group dock-bottom">
-            <button type="button" className={'dock-link '+(modal==='settings'?'active':'')}
-              title="Settings" aria-label="Settings" onClick={()=>openDock('settings')}><Settings24Filled/></button>
+            <button type="button" className={'dock-link '+(view==='settings'?'active':'')}
+              title="Settings" aria-label="Settings" onClick={()=>selectSection('settings')}><Settings24Filled/></button>
           </div>
         </aside>
         <button className="dock-toggle" type="button" title={dockOpen?'Hide sidebar':'Show sidebar'}
@@ -314,17 +282,6 @@ function App() {
         <button className="celestial-sheet-action" onClick={()=>{setModal(null);logout();}}>Sign out</button>
       </div>
       {['admin','account_manager'].includes(user.role)&&<AccountReview/>}
-    </Modal>}
-    {modal==='settings'&&<Appearance palette={palette} setPalette={setPalette} backdrop={backdrop}
-      setBackdrop={setBackdrop} reduced={reduced} setReduced={setReduced} close={()=>setModal(null)}/>}
-    {modal==='apps'&&<Modal title="Apps" close={()=>setModal(null)}>
-      <h2>Where to?</h2><p>Your Celestial spaces, all one click away.</p>
-      <div className="celestial-app-list">{appItems.map(item=>{
-        const FilledIcon=item.icon;
-        return <button key={item.id} onClick={()=>selectSection(item.id)}>
-          <FilledIcon/><span><b>{item.label}</b><small>{item.description}</small></span><span className="celestial-app-arrow">↗</span>
-        </button>;
-      })}</div>
     </Modal>}
     {toast&&<div className="celestial-toast" role="status"><Sparkle20Filled/> {toast}</div>}
     <DialRoot productionEnabled={new URLSearchParams(location.search).has('tune')}/>

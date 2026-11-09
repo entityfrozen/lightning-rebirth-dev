@@ -68,7 +68,7 @@ export function attachLightningLive({server,sessionFromHeaders,dataDir,getDispla
  const clientOf=id=>[...clients.entries()].filter(([,u])=>u.id===id);
  const sendUser=(id,evt)=>{for(const [socket] of clientOf(id))safeSend(socket,evt)};
  const summary=()=>({users:usersOnline().length,queue:{chess:queues.chess.length,rps:queues.rps.length,world:worldQueue.length},tournaments:[...tournaments.values()].filter(t=>!t.done).map(t=>({id:t.id,players:t.ids.length,max:4,status:t.status})),games:{chess:chessGames.size,rps:rpsGames.size}});
- const presence=()=>sendAll({type:"presence",...summary(),online:usersOnline().map(id=>({id,name:clientOf(id)[0]?.[1]?.name||id,username:clientOf(id)[0]?.[1]?.username||""}))});
+ const presence=()=>sendAll({type:"presence",...summary(),online:usersOnline().map(id=>({id,name:clientOf(id)[0]?.[1]?.name||id,username:clientOf(id)[0]?.[1]?.username||"",role:clientOf(id)[0]?.[1]?.role||'user'}))});
  const communities=createCommunityStore({dataDir,sendToUser:sendUser,sendAll,getRole,notifyMentions});
  const validateSend=(ws,msg)=>{
   const u=clients.get(ws);
@@ -745,7 +745,7 @@ export function attachLightningLive({server,sessionFromHeaders,dataDir,getDispla
  wss.on("connection",(ws,auth,req)=>{
   const id=auth.identity.id,u={ws,id,name:getDisplayName(id,nameOf(auth.identity)),username:nameOf(auth.identity),role:auth.identity.role,last:0,world:false};
   clients.set(ws,u);
-  safeSend(ws,{type:"hello",id,name:u.name,username:u.username,role:u.role,channels:CHANNELS,history,online:usersOnline().map(id=>({id,name:clientOf(id)[0]?.[1]?.name||id,username:clientOf(id)[0]?.[1]?.username||""})),summary:summary()});
+  safeSend(ws,{type:"hello",id,name:u.name,username:u.username,role:u.role,channels:CHANNELS,history,online:usersOnline().map(id=>({id,name:clientOf(id)[0]?.[1]?.name||id,username:clientOf(id)[0]?.[1]?.username||"",role:clientOf(id)[0]?.[1]?.role||'user'})),summary:summary()});
   safeSend(ws,{type:"v2State",...communities.snapshot(u)});
   // Restore active RPS matches after hello so the client knows its account ID.
   for(const g of rpsGames.values())if(!g.over&&g.ids.includes(u.id))

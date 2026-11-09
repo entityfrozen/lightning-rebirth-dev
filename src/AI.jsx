@@ -28,7 +28,7 @@ function Message({message}) {
   </article>;
 }
 
-export function AI({user, onAuth, sidebar = false}) {
+export function AI({user, onAuth, sidebar = false, onHide}) {
   const storage = 'ai-conversations-' + (user?.id || 'guest');
   const [chats, setChats] = useState(() => savedConversations(storage));
   const [active, setActive] = useState(null);
@@ -137,6 +137,9 @@ export function AI({user, onAuth, sidebar = false}) {
         <button type="button" className="celestial-ai-sidebar-icon"
           aria-label="New conversation" title="New conversation"
           onClick={() => {fresh(); setHistoryOpen(false);}}>＋</button>
+        {onHide&&<button type="button" className="celestial-ai-sidebar-icon celestial-ai-sidebar-hide"
+          aria-label="Hide Celestial AI sidebar" title="Hide sidebar"
+          onClick={onHide}>×</button>}
       </header>
       {historyOpen && <nav className="celestial-ai-sidebar-history" aria-label="Your conversations">
         <div className="celestial-ai-history-title">CONVERSATIONS</div>

@@ -31,14 +31,15 @@ const publicServer=s=>({
 const canManage=(u,s)=>hasPermission(u.role,"community.manage")||(!s.permanent&&s.owner===u.id);
 const canModerate=(u,s)=>canManage(u,s)||hasPermission(u.role,"community.moderate");
 const channelAccess=(u,s,c)=>!c.staffOnly||canManage(u,s);
-const memberState=(s,u)=>({
+const memberState=(s,u,getRole=()=>null)=>({
  ...publicServer(s),owner:s.owner,canManage:canManage(u,s),canModerate:canModerate(u,s),
   ...(canManage(u,s)&&s.inviteOnly?{inviteCode:s.inviteCode||""}:{}),
  channels:s.channels.filter(c=>channelAccess(u,s,c)).map(c=>({...c})),
  roles:s.roles.map(r=>({...r})),
  members:s.members.slice(-500).map(userId=>({
   id:userId,name:s.profiles?.[userId]?.name||"Member",username:s.profiles?.[userId]?.username||"",role:s.memberRoles?.[userId]||"member",
-  admin:s.profiles?.[userId]?.admin===true
+  admin:getRole(userId)==='admin'||s.profiles?.[userId]?.admin===true,
+  platformRole:getRole(userId)||(s.profiles?.[userId]?.admin===true?'admin':'user')
  })),
  messages:Object.fromEntries(s.channels.filter(c=>channelAccess(u,s,c)).map(c=>[c.id,(s.messages[c.id]||[]).slice(-LIMITS.messages)]))
 });
@@ -125,7 +126,7 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
   const user=typeof u==="string"
    ?{id:u,name:previous?.name||"Member",username:previous?.username||"",role:previous?.admin?"admin":"user"}:u;
   refreshProfile(user);
-  return {servers:servers.filter(s=>s.members.includes(user.id)).map(s=>memberState(s,user)),
+  return {servers:servers.filter(s=>s.members.includes(user.id)).map(s=>memberState(s,user,getRole)),
    directory:directory(),defaultServerId:MAIN_SERVER_ID};
  };
  const err=(u,message)=>sendToUser(u.id,{type:"error",message});
@@ -133,7 +134,7 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
  const serverChanged=s=>{
   s.members.forEach(uid=>{
    const profile=s.profiles?.[uid]||{};
-   sendToUser(uid,{type:"v2Server",server:memberState(s,{id:uid,role:roleFor(uid,s)})});
+   sendToUser(uid,{type:"v2Server",server:memberState(s,{id:uid,role:roleFor(uid,s)},getRole)});
   });
   sendAll({type:"v2Directory",directory:directory()});
  };
