@@ -191,6 +191,15 @@ async function handleAPI(req,res,url) {
     return respond(res,200,{configured:Boolean(process.env.OPENAI_API_KEY||process.env.NVIDIA_API_KEY)});
   }
   if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),authenticated:Boolean(user)});
+  if(req.method==='GET' && pathname==='/api/community/members'){
+    if(!user)return fail(res,401,'Sign in required');
+    // The community directory includes approved accounts, even when offline.
+    // Never expose passwords, session tokens, pending accounts, or staff notes.
+    return respond(res,200,{members:db.users.filter(activeAccount)
+      .map(person=>({id:person.id,username:person.username,
+        name:person.username,platformRole:person.role||'user'}))
+      .sort((a,b)=>a.username.localeCompare(b.username)).slice(0,500)});
+  }
   if(req.method==='GET' && pathname==='/api/admin/accounts/pending'){
     if(!user)return fail(res,401,'Sign in required');
     if(!managesAccounts(user))return fail(res,403,'Not authorized to review accounts');
