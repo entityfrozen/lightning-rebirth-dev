@@ -14,6 +14,7 @@ import './xylora.css';
 import './home-split.css';
 import './qol.css';
 import './workspace.css';
+import './messenger.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
