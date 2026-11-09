@@ -12,13 +12,11 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
-// On Railway the already-mounted Bolt volume is authoritative. Never start a
-// second ephemeral account database when BOLT_DATA_DIR is provided.
-const DATA_DIR = path.resolve(ROOT, process.env.BOLT_DATA_DIR ||
-  process.env.RAILWAY_VOLUME_MOUNT_PATH ||
-  (process.env.LIGHTNING_DATA_FILE ? path.dirname(process.env.LIGHTNING_DATA_FILE) : path.join(ROOT, 'data')));
-const STORE_FILE = process.env.LIGHTNING_DATA_FILE || path.join(DATA_DIR, 'store.json');
-const PORT = Number(process.env.PORT || 3080);
+const DATA_DIR=path.resolve(ROOT,process.env.BOLT_DATA_DIR||
+  process.env.RAILWAY_VOLUME_MOUNT_PATH||
+  (process.env.LIGHTNING_DATA_FILE?path.dirname(process.env.LIGHTNING_DATA_FILE):path.join(ROOT,'data')));
+const STORE_FILE=process.env.LIGHTNING_DATA_FILE||path.join(DATA_DIR,'store.json');
+const PORT=Number(process.env.PORT||3080);
 mkdirSync(DATA_DIR,{recursive:true});
 // The Bolt-era backend provides real browser proxying and multiplayer.
 // Missing proxy downloads must never block the rest of the platform.
@@ -80,10 +78,10 @@ function persist() {
 const legacyImport=await importBoltData(db,DATA_DIR);
 const adminCreated=bootstrapAdministrator(db);
 if(legacyImport.accountsImported||legacyImport.conversationsImported||adminCreated)await persist();
-console.log('Celestial storage ready:',JSON.stringify({
+console.log('Celestial data ready',JSON.stringify({
   directory:DATA_DIR,legacyFound:legacyImport.legacyFound,
   accountsImported:legacyImport.accountsImported,
-  oldDirectMessagesImported:legacyImport.conversationsImported,
+  directMessagesImported:legacyImport.conversationsImported,
   skippedConflicts:legacyImport.skippedConflicts,
   hasApprover:db.users.some(u=>u.role==='admin'||u.role==='account_manager')
 }));
@@ -102,7 +100,7 @@ function account(req) {
   if(!value) return null;
   const session = db.sessions.find(s => s.hash===tokenHash(value) && s.expires>Date.now());
   const user = session ? db.users.find(u=>u.id===session.userId) : null;
-  return activeAccount(user) ? user : null;
+  return activeAccount(user)?user:null;
 }
 function liveIdentity(headers){
   const token=parseCookie(headers.cookie||'').lightning_session;
@@ -259,7 +257,23 @@ async function handleAPI(req,res,url) {
     if(typeof password!=='string'||!found)return fail(res,401,'Incorrect username or password');
     let valid=false;
     try{
-      if(typeof found.passwordHash==='string'&&found.passwordHash.startsWith('scrypt
+      if(typeof found.passwordHash==='string'&&found.passwordHash.startsWith('scrypt$')){
+        const [,salt,hash]=found.passwordHash.split('$');
+        const expected=Buffer.from(hash,'hex');
+        const actual=scryptSync(password,salt,expected.length);
+        valid=expected.length===64&&timingSafeEqual(actual,expected);
+      }else if(typeof found.salt==='string'&&typeof found.hash==='string'){
+        const actual=scryptSync(password,found.salt,64);
+        const expected=Buffer.from(found.hash,'hex');
+        valid=expected.length===actual.length&&timingSafeEqual(actual,expected);
+      }
+    }catch{valid=false;}
+    if(!valid)return fail(res,401,'Incorrect username or password');
+    if(found.approved===false)return fail(res,403,found.reviewStatus==='rejected'?
+      'Your account request was declined. Contact an administrator.' :
+      'Your account is awaiting manual approval.');
+    if(!activeAccount(found))return fail(res,403,'This account is disabled or expired.');
+    startSession(res,found,req);await persist();return respond(res,200,{user:publicAccount(found)});
   }
   if(pathname==='/api/logout' && req.method==='POST') {
     const token=parseCookie(req.headers.cookie).lightning_session;
@@ -291,334 +305,6 @@ async function handleAPI(req,res,url) {
     const match=pathname.match(/^\/api\/dms\/(usr_[a-zA-Z0-9_-]{8,40}|[a-f0-9]{24})$/);
     if(!match)return fail(res,404,'Member not found');
     const other=db.users.find(member=>member.id===match[1]&&member.id!==user.id&&activeAccount(member));
-    if(!other)return fail(res,404,'Member not found');
-    if(limited(req,'dm:'+user.id,28,60000))return fail(res,429,'Too many messages. Try again shortly.');
-    const text=cleanLine(body.text,1000);
-    if(!text)return fail(res,400,'Write a message first');
-    const row={id:id(),from:user.id,to:other.id,text,createdAt:new Date().toISOString()};
-    db.dms.push(row);
-    db.dms=db.dms.slice(-5000);
-    await persist();
-    notify('dm');
-    return respond(res,201,{message:{...row,author:user.username}});
-  }
-  if(pathname==='/api/ai' && req.method==='POST'){
-    if(!process.env.OPENAI_API_KEY&&!process.env.NVIDIA_API_KEY)return fail(res,503,'Celestial is unavailable right now.');
-    if(limited(req,'ai:'+user.id,16,3600000))return fail(res,429,'Too many AI requests. Try again later.');
-    if(!Array.isArray(body.messages)||body.messages.length<1||body.messages.length>14) return fail(res,400,'Send between 1 and 14 messages');
-    const messages=[];
-    for(const item of body.messages) {
-      if(!item||!['user','assistant'].includes(item.role)||typeof item.content!=='string'||!item.content.trim()||item.content.length>2500)return fail(res,400,'Invalid AI message');
-      messages.push({role:item.role,content:item.content.trim()});
-    }
-    if(messages.at(-1).role!=='user'||messages.reduce((total,m)=>total+m.content.length,0)>12000)return fail(res,400,'Invalid conversation');
-    try {
-      if(!process.env.OPENAI_API_KEY&&process.env.NVIDIA_API_KEY){
-        const answer=await completeAi({
-          apiKey:process.env.NVIDIA_API_KEY,
-          model:usableModel(process.env.NVIDIA_MODEL,TEXT_MODEL),
-          messages:[{role:'system',content:'You are Celestial AI, an attentive assistant in a workspace for games, browsing and community chat. Provide concrete and grounded help. Never invent browsing results.'},...messages],
-          stream:false,
-          signal:AbortSignal.timeout(40000),
-          maxTokens:950
-        });
-        return respond(res,200,{text:answer.reply.slice(0,10000)});
-      }
-      const upstream=await fetch('https://api.openai.com/v1/responses',{
-        method:'POST',
-        headers:{Authorization:'Bearer '+process.env.OPENAI_API_KEY,'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:process.env.OPENAI_MODEL||'gpt-4.1-mini',
-          instructions:'You are Celestial AI, a helpful, clear creative assistant inside a workspace with Arcade, Browser and Community Chat. Be warm, practical and concise. Never claim you accessed user data or websites unless that data is actually provided.',
-          input:messages,
-          max_output_tokens:850,
-          store:false
-        }),
-        signal:AbortSignal.timeout(35000)
-      });
-      const data=await upstream.json().catch(()=>({}));
-      if(!upstream.ok){
-        console.warn('AI provider response:',upstream.status,data?.error?.type||'unknown');
-        return fail(res,502,'Celestial is temporarily unavailable. Please try again.');
-      }
-      const text=(data.output||[]).flatMap(item=>item.type==='message'?item.content||[]:[]).filter(part=>part.type==='output_text').map(part=>part.text).join('\n').trim();
-      if(!text)return fail(res,502,'Celestial could not complete that request.');
-      return respond(res,200,{text:text.slice(0,10000)});
-    }catch(error){
-      console.warn('AI request failed:',error?.name||'unknown');
-      return fail(res,502,'Celestial is temporarily unavailable. Please try again.');
-    }
-  }
-  if(pathname==='/api/messages' && req.method==='POST') {
-    if(limited(req,`message:${user.id}`,18,60000))return fail(res,429,'Slow down a little');
-    const text=cleanLine(body.text,600);const channel=body.channel;
-    if(!channels.has(channel))return fail(res,400,'Unknown channel');
-    if(text.length<1)return fail(res,400,'Write something first');
-    const msg={id:id(),channel,author:user.username,ownerId:user.id,text,createdAt:new Date().toISOString()};
-    db.messages.push(msg);db.messages=db.messages.slice(-2000);
-    await persist();notify('chat');return respond(res,201,{message:msg});
-  }
-  if(pathname==='/api/drops' && req.method==='POST') {
-    if(limited(req,`drop:${user.id}`,12,3600000))return fail(res,429,'Too many new Drops in one hour');
-    const title=cleanLine(body.title,46),description=cleanLine(body.description,240);
-    if(title.length<3 || description.length<8)return fail(res,400,'Add a title and a short description');
-    const theme=validateTheme(body.theme);
-    const drop={id:id(),ownerId:user.id,author:user.username,title,description,tags:['community','theme'],createdAt:new Date().toISOString(),downloads:0,likedBy:[],theme};
-    db.drops.push(drop);await persist();notify('drops');return respond(res,201,{drop:publicDrop(drop,user)});
-  }
-  const star=pathname.match(/^\/api\/drops\/([^/]+)\/star$/);
-  if(star && req.method==='POST') {
-    const drop=db.drops.find(d=>d.id===star[1]);if(!drop)return fail(res,404,'Drop not found');
-    drop.likedBy=drop.likedBy||[];
-    if(drop.likedBy.includes(user.id))drop.likedBy=drop.likedBy.filter(v=>v!==user.id);
-    else drop.likedBy.push(user.id);
-    await persist();notify('drops');return respond(res,200,{drop:publicDrop(drop,user)});
-  }
-  const removeDrop=pathname.match(/^\/api\/drops\/([^/]+)$/);
-  if(removeDrop && req.method==='DELETE') {
-    const drop=db.drops.find(d=>d.id===removeDrop[1]);
-    if(!drop)return fail(res,404,'Drop not found');
-    if(drop.ownerId!==user.id)return fail(res,403,'You can only remove your own Drops');
-    db.drops=db.drops.filter(d=>d.id!==drop.id);await persist();notify('drops');return respond(res,200,{ok:true});
-  }
-  return fail(res,404,'API route not found');
-}
-const types={'.json':'application/json; charset=utf-8','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
-async function staticFile(req,res,url) {
-  if(req.method!=='GET' && req.method!=='HEAD')return fail(res,405,'Method not allowed');
-  let filename;
-  try {filename=decodeURIComponent(url.pathname);}catch{return fail(res,400,'Bad path');}
-  if(filename==='/' || (!path.extname(filename) && !filename.startsWith('/assets/')))filename='/index.html';
-  const filepath=path.resolve(PUBLIC,'.'+filename);
-  if(!(filepath===PUBLIC||filepath.startsWith(PUBLIC+path.sep)))return fail(res,403,'Invalid file path');
-  const type=types[path.extname(filepath)];if(!type)return fail(res,404,'File not found');
-  try {
-    const info=await stat(filepath);if(!info.isFile())throw Error('Not a file');
-    const content=await readFile(filepath);
-    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com; connect-src 'self' https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",'Cache-Control':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
-    return res.end(req.method==='HEAD'?undefined:content);
-  }catch{return fail(res,404,'File not found');}
-}
-export function createServer(){
-  const server=http.createServer(async(req,res)=>{
-    try {const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
-      if(url.pathname.startsWith('/api/'))return await handleAPI(req,res,url);
-      // All Scramjet bootstrap, service worker and rewritten pages are
-      // session protected, just like the original Bolt implementation.
-      if(proxyBackend&&liveIdentity(req.headers)&&proxyBackend.routeRequest(req,res))return;
-      return await staticFile(req,res,url);
-    }catch(error){
-      console.error('Request error:',error.message);
-      if(!res.headersSent)fail(res,error.message==='Request is too large'?413:400,error.message||'Request failed');
-      else res.end();
-    }
-  });
-  if(proxyBackend)server.on('upgrade',(req,socket,head)=>{
-    if(req.url?.startsWith('/live'))return;
-    if(!liveIdentity(req.headers)){
-      socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
-      socket.destroy();return;
-    }
-    try{proxyBackend.routeUpgrade(req,socket,head);}
-    catch(error){console.warn('Browser transport failed:',error.message);socket.destroy();}
-  });
-  // Bridge Celestial's existing accounts to Bolt's proven multiplayer
-  // server; old user IDs remain stable, preserving community identity.
-  attachLightningLive({
-    server,sessionFromHeaders:liveIdentity,dataDir:DATA_DIR,
-    getDisplayName:(_id,username)=>username,getRole:()=> 'user'
-  });
-  return server;
-}
-if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  createServer().listen(PORT,()=>console.log(`✦ Celestial running at http://localhost:${PORT}`));
-}
-export {validateTheme};
-)){
-        const [,salt,hash]=found.passwordHash.split('
-  }
-  if(pathname==='/api/logout' && req.method==='POST') {
-    const token=parseCookie(req.headers.cookie).lightning_session;
-    if(token)db.sessions=db.sessions.filter(s=>s.hash!==tokenHash(token));
-    res.setHeader('Set-Cookie','lightning_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
-    await persist();return respond(res,200,{ok:true});
-  }
-  if(!user)return fail(res,401,'Sign in to use this feature');
-  if(pathname.startsWith('/api/dms/')&&req.method==='POST'){
-    const match=pathname.match(/^\/api\/dms\/([a-f0-9]{24})$/);
-    if(!match)return fail(res,404,'Member not found');
-    const other=db.users.find(member=>member.id===match[1]&&member.id!==user.id);
-    if(!other)return fail(res,404,'Member not found');
-    if(limited(req,'dm:'+user.id,28,60000))return fail(res,429,'Too many messages. Try again shortly.');
-    const text=cleanLine(body.text,1000);
-    if(!text)return fail(res,400,'Write a message first');
-    const row={id:id(),from:user.id,to:other.id,text,createdAt:new Date().toISOString()};
-    db.dms.push(row);
-    db.dms=db.dms.slice(-5000);
-    await persist();
-    notify('dm');
-    return respond(res,201,{message:{...row,author:user.username}});
-  }
-  if(pathname==='/api/ai' && req.method==='POST'){
-    if(!process.env.OPENAI_API_KEY&&!process.env.NVIDIA_API_KEY)return fail(res,503,'Celestial is unavailable right now.');
-    if(limited(req,'ai:'+user.id,16,3600000))return fail(res,429,'Too many AI requests. Try again later.');
-    if(!Array.isArray(body.messages)||body.messages.length<1||body.messages.length>14) return fail(res,400,'Send between 1 and 14 messages');
-    const messages=[];
-    for(const item of body.messages) {
-      if(!item||!['user','assistant'].includes(item.role)||typeof item.content!=='string'||!item.content.trim()||item.content.length>2500)return fail(res,400,'Invalid AI message');
-      messages.push({role:item.role,content:item.content.trim()});
-    }
-    if(messages.at(-1).role!=='user'||messages.reduce((total,m)=>total+m.content.length,0)>12000)return fail(res,400,'Invalid conversation');
-    try {
-      if(!process.env.OPENAI_API_KEY&&process.env.NVIDIA_API_KEY){
-        const answer=await completeAi({
-          apiKey:process.env.NVIDIA_API_KEY,
-          model:usableModel(process.env.NVIDIA_MODEL,TEXT_MODEL),
-          messages:[{role:'system',content:'You are Celestial AI, an attentive assistant in a workspace for games, browsing and community chat. Provide concrete and grounded help. Never invent browsing results.'},...messages],
-          stream:false,
-          signal:AbortSignal.timeout(40000),
-          maxTokens:950
-        });
-        return respond(res,200,{text:answer.reply.slice(0,10000)});
-      }
-      const upstream=await fetch('https://api.openai.com/v1/responses',{
-        method:'POST',
-        headers:{Authorization:'Bearer '+process.env.OPENAI_API_KEY,'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:process.env.OPENAI_MODEL||'gpt-4.1-mini',
-          instructions:'You are Celestial AI, a helpful, clear creative assistant inside a workspace with Arcade, Browser and Community Chat. Be warm, practical and concise. Never claim you accessed user data or websites unless that data is actually provided.',
-          input:messages,
-          max_output_tokens:850,
-          store:false
-        }),
-        signal:AbortSignal.timeout(35000)
-      });
-      const data=await upstream.json().catch(()=>({}));
-      if(!upstream.ok){
-        console.warn('AI provider response:',upstream.status,data?.error?.type||'unknown');
-        return fail(res,502,'Celestial is temporarily unavailable. Please try again.');
-      }
-      const text=(data.output||[]).flatMap(item=>item.type==='message'?item.content||[]:[]).filter(part=>part.type==='output_text').map(part=>part.text).join('\n').trim();
-      if(!text)return fail(res,502,'Celestial could not complete that request.');
-      return respond(res,200,{text:text.slice(0,10000)});
-    }catch(error){
-      console.warn('AI request failed:',error?.name||'unknown');
-      return fail(res,502,'Celestial is temporarily unavailable. Please try again.');
-    }
-  }
-  if(pathname==='/api/messages' && req.method==='POST') {
-    if(limited(req,`message:${user.id}`,18,60000))return fail(res,429,'Slow down a little');
-    const text=cleanLine(body.text,600);const channel=body.channel;
-    if(!channels.has(channel))return fail(res,400,'Unknown channel');
-    if(text.length<1)return fail(res,400,'Write something first');
-    const msg={id:id(),channel,author:user.username,ownerId:user.id,text,createdAt:new Date().toISOString()};
-    db.messages.push(msg);db.messages=db.messages.slice(-2000);
-    await persist();notify('chat');return respond(res,201,{message:msg});
-  }
-  if(pathname==='/api/drops' && req.method==='POST') {
-    if(limited(req,`drop:${user.id}`,12,3600000))return fail(res,429,'Too many new Drops in one hour');
-    const title=cleanLine(body.title,46),description=cleanLine(body.description,240);
-    if(title.length<3 || description.length<8)return fail(res,400,'Add a title and a short description');
-    const theme=validateTheme(body.theme);
-    const drop={id:id(),ownerId:user.id,author:user.username,title,description,tags:['community','theme'],createdAt:new Date().toISOString(),downloads:0,likedBy:[],theme};
-    db.drops.push(drop);await persist();notify('drops');return respond(res,201,{drop:publicDrop(drop,user)});
-  }
-  const star=pathname.match(/^\/api\/drops\/([^/]+)\/star$/);
-  if(star && req.method==='POST') {
-    const drop=db.drops.find(d=>d.id===star[1]);if(!drop)return fail(res,404,'Drop not found');
-    drop.likedBy=drop.likedBy||[];
-    if(drop.likedBy.includes(user.id))drop.likedBy=drop.likedBy.filter(v=>v!==user.id);
-    else drop.likedBy.push(user.id);
-    await persist();notify('drops');return respond(res,200,{drop:publicDrop(drop,user)});
-  }
-  const removeDrop=pathname.match(/^\/api\/drops\/([^/]+)$/);
-  if(removeDrop && req.method==='DELETE') {
-    const drop=db.drops.find(d=>d.id===removeDrop[1]);
-    if(!drop)return fail(res,404,'Drop not found');
-    if(drop.ownerId!==user.id)return fail(res,403,'You can only remove your own Drops');
-    db.drops=db.drops.filter(d=>d.id!==drop.id);await persist();notify('drops');return respond(res,200,{ok:true});
-  }
-  return fail(res,404,'API route not found');
-}
-const types={'.json':'application/json; charset=utf-8','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
-async function staticFile(req,res,url) {
-  if(req.method!=='GET' && req.method!=='HEAD')return fail(res,405,'Method not allowed');
-  let filename;
-  try {filename=decodeURIComponent(url.pathname);}catch{return fail(res,400,'Bad path');}
-  if(filename==='/' || (!path.extname(filename) && !filename.startsWith('/assets/')))filename='/index.html';
-  const filepath=path.resolve(PUBLIC,'.'+filename);
-  if(!(filepath===PUBLIC||filepath.startsWith(PUBLIC+path.sep)))return fail(res,403,'Invalid file path');
-  const type=types[path.extname(filepath)];if(!type)return fail(res,404,'File not found');
-  try {
-    const info=await stat(filepath);if(!info.isFile())throw Error('Not a file');
-    const content=await readFile(filepath);
-    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','X-Frame-Options':'DENY','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com; connect-src 'self' https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",'Cache-Control':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
-    return res.end(req.method==='HEAD'?undefined:content);
-  }catch{return fail(res,404,'File not found');}
-}
-export function createServer(){
-  const server=http.createServer(async(req,res)=>{
-    try {const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
-      if(url.pathname.startsWith('/api/'))return await handleAPI(req,res,url);
-      // All Scramjet bootstrap, service worker and rewritten pages are
-      // session protected, just like the original Bolt implementation.
-      if(proxyBackend&&liveIdentity(req.headers)&&proxyBackend.routeRequest(req,res))return;
-      return await staticFile(req,res,url);
-    }catch(error){
-      console.error('Request error:',error.message);
-      if(!res.headersSent)fail(res,error.message==='Request is too large'?413:400,error.message||'Request failed');
-      else res.end();
-    }
-  });
-  if(proxyBackend)server.on('upgrade',(req,socket,head)=>{
-    if(req.url?.startsWith('/live'))return;
-    if(!liveIdentity(req.headers)){
-      socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
-      socket.destroy();return;
-    }
-    try{proxyBackend.routeUpgrade(req,socket,head);}
-    catch(error){console.warn('Browser transport failed:',error.message);socket.destroy();}
-  });
-  // Bridge Celestial's existing accounts to Bolt's proven multiplayer
-  // server; old user IDs remain stable, preserving community identity.
-  attachLightningLive({
-    server,sessionFromHeaders:liveIdentity,dataDir:DATA_DIR,
-    getDisplayName:(_id,username)=>username,getRole:()=> 'user'
-  });
-  return server;
-}
-if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  createServer().listen(PORT,()=>console.log(`✦ Celestial running at http://localhost:${PORT}`));
-}
-export {validateTheme};
-);
-        const expected=Buffer.from(hash,'hex');
-        const actual=scryptSync(password,salt,expected.length);
-        valid=expected.length===64&&timingSafeEqual(actual,expected);
-      }else if(typeof found.salt==='string'&&typeof found.hash==='string'){
-        const actual=scryptSync(password,found.salt,64);
-        const expected=Buffer.from(found.hash,'hex');
-        valid=expected.length===actual.length&&timingSafeEqual(actual,expected);
-      }
-    }catch{valid=false;}
-    if(!valid)return fail(res,401,'Incorrect username or password');
-    if(found.approved===false)return fail(res,403,found.reviewStatus==='rejected'?
-      'Your account request was declined. Contact an administrator.' :
-      'Your account is awaiting manual approval.');
-    if(!activeAccount(found))return fail(res,403,'This account is disabled or expired.');
-    startSession(res,found,req);await persist();return respond(res,200,{user:publicAccount(found)});
-  }
-  if(pathname==='/api/logout' && req.method==='POST') {
-    const token=parseCookie(req.headers.cookie).lightning_session;
-    if(token)db.sessions=db.sessions.filter(s=>s.hash!==tokenHash(token));
-    res.setHeader('Set-Cookie','lightning_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
-    await persist();return respond(res,200,{ok:true});
-  }
-  if(!user)return fail(res,401,'Sign in to use this feature');
-  if(pathname.startsWith('/api/dms/')&&req.method==='POST'){
-    const match=pathname.match(/^\/api\/dms\/([a-f0-9]{24})$/);
-    if(!match)return fail(res,404,'Member not found');
-    const other=db.users.find(member=>member.id===match[1]&&member.id!==user.id);
     if(!other)return fail(res,404,'Member not found');
     if(limited(req,'dm:'+user.id,28,60000))return fail(res,429,'Too many messages. Try again shortly.');
     const text=cleanLine(body.text,1000);
