@@ -54,6 +54,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     const policy=loader.headers.get('content-security-policy')||'';
     assert.match(policy,/script-src 'self' blob:/);
     assert.doesNotMatch(policy,/script-src[^;]*data:/);
+    assert.match(policy,/connect-src 'self' data:/);
 
 
     assert.match(await cssAsset.text(),/browser-window/);
