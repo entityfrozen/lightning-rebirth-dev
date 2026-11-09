@@ -30,7 +30,7 @@ test('Games navigation is replaced with Apps, but core Chat and Browser routes r
   assert.match(shell,/view==='settings'\?<Settings/);
   assert.match(shell,/view==='chat'\?<Chat/);
   assert.match(shell,/view==='browser'\?<Browser/);
-  assert.match(shell,/view==='home'\?<div className="celestial-home-split"/);
+  assert.match(shell,/view==='home'\?<div className=\{[\s\S]*?celestial-home-split/);
   assert.match(shell,/return sections\.has\(route\)\?route:route==='community'\?'chat':route==='arcade'\?'apps':'home'/);
 });
 
