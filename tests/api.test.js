@@ -43,6 +43,18 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(cssAsset.status,200);
     assert.equal(cssAsset.headers.get('cross-origin-opener-policy'),'same-origin');
     assert.equal(cssAsset.headers.get('cross-origin-embedder-policy'),'credentialless');
+    const loader=await fetch(url+'/proxy-entry.js');
+    assert.equal(loader.status,200);
+    const loaderCode=await loader.text();
+    assert.match(loaderCode,/window\.initBootstrap/);
+    assert.match(loaderCode,/navigator\.serviceWorker\.register/);
+    assert.match(loaderCode,/scramjet\.js/);
+    assert.match(loaderCode,/libcurl-client\.js/);
+    assert.doesNotMatch(loaderCode,/import\(["']data:/);
+    const policy=loader.headers.get('content-security-policy')||'';
+    assert.match(policy,/script-src 'self' blob:/);
+    assert.doesNotMatch(policy,/script-src[^;]*data:/);
+
 
     assert.match(await cssAsset.text(),/browser-window/);
     const guestAiStatus=await call('/api/ai/status');
