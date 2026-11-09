@@ -525,3 +525,106 @@ body{background:var(--bg);color:var(--text);font-family:"Segoe UI",Arial,system-
     background: var(--dock-panel);
   }
 }
+
+/* More atmospheric movement: layered, long-period and reduced-motion safe. */
+.celestial-backdrop {
+  will-change: transform, filter;
+  animation: celestial-landscape-pan 29s cubic-bezier(.45,.05,.55,.95) infinite alternate;
+}
+.celestial-backdrop::before {
+  animation: celestial-shadow-pulse 13s ease-in-out infinite alternate;
+}
+.celestial-backdrop::after {
+  opacity: .72;
+  background:
+    linear-gradient(115deg, transparent 20%, rgba(105,234,224,.11) 47%, rgba(183,140,245,.09) 61%, transparent 80%),
+    radial-gradient(ellipse 55% 30% at 50% 25%, rgba(126,214,221,.09), transparent 80%);
+  animation: celestial-aurora-sweep 19s ease-in-out infinite alternate;
+}
+.celestial-ambient {
+  animation: celestial-ambient-drift 22s ease-in-out infinite alternate;
+}
+.forest-particles {
+  opacity: .86;
+  filter:drop-shadow(0 0 7px var(--glow));
+}
+.dock-link>svg, .forest-shortcuts button>svg {
+  transition: transform .25s cubic-bezier(.22,1,.36,1),filter .25s;
+}
+.dock-link:hover>svg, .forest-shortcuts button:hover>svg {
+  transform:translateY(-2px) scale(1.11);
+  filter:drop-shadow(0 0 10px var(--glow));
+}
+.forest-main-search {
+  transition:border-color .3s,box-shadow .3s,transform .3s;
+}
+.forest-main-search:focus-within {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft),0 0 30px var(--glow),0 18px 43px rgba(0,4,12,.4);
+}
+@keyframes celestial-landscape-pan {
+  0%{transform:scale(1.04) translate3d(-.4%,0,0);filter:saturate(.93) contrast(1.07)}
+  50%{filter:saturate(1.09) contrast(1.1)}
+  100%{transform:scale(1.11) translate3d(.5%,-.5%,0);filter:saturate(1.16) contrast(1.12)}
+}
+@keyframes celestial-shadow-pulse {
+  0%{opacity:.83;transform:scale(1)}
+  100%{opacity:1;transform:scale(1.06)}
+}
+@keyframes celestial-aurora-sweep {
+  0%{opacity:.32;transform:translate3d(-4%,2%,0) rotate(-4deg) scale(1.06)}
+  50%{opacity:.72}
+  100%{opacity:.85;transform:translate3d(4%,-2%,0) rotate(4deg) scale(1.1)}
+}
+@keyframes celestial-ambient-drift {
+  0%{transform:translate3d(-2%,0,0);opacity:.55}
+  100%{transform:translate3d(2%,-1%,0);opacity:1}
+}
+
+/* Settings/profile now houses approval controls; no Credits/Community footer. */
+.celestial-corner-actions {
+  right:12px;
+  bottom:10px;
+}
+.celestial-account-review {
+  margin-top:24px;
+  border-top:1px solid var(--glass-line);
+  padding:19px 0 4px;
+  text-align:left;
+}
+.celestial-account-review>header {
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.celestial-account-review>header h3 {
+  font-size:16px;margin:0 0 4px;letter-spacing:-.03em;
+}
+.celestial-account-review p {
+  font-size:11px;color:var(--muted);line-height:1.5;margin:5px 0 13px;
+}
+.celestial-account-review header>button {
+  border:1px solid var(--glass-line);border-radius:9px;
+  color:var(--accent);background:var(--accent-soft);padding:5px 10px;font-size:19px;
+}
+.celestial-review-queue {display:flex;flex-direction:column;gap:8px;max-height:270px;overflow:auto}
+.celestial-review-queue article {
+  display:flex;align-items:center;gap:6px;
+  border:1px solid var(--glass-line);border-radius:10px;padding:10px;
+  background:rgba(255,255,255,.035);
+}
+.celestial-review-queue article>div {display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+.celestial-review-queue strong {font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.celestial-review-queue small {color:var(--muted);font-size:10px}
+.celestial-review-queue article button {
+  border:1px solid var(--glass-line);border-radius:8px;
+  padding:8px 9px;background:var(--accent-soft);color:var(--text);font-size:10px;
+}
+.celestial-review-queue article button:nth-of-type(1){background:var(--accent);color:var(--accent-ink)}
+.celestial-review-queue article button:disabled {opacity:.55}
+.celestial-account-review .celestial-review-error {color:#ffc7c1}
+.celestial-account-review .celestial-review-notice {color:var(--accent)}
+.auth-fields>.primary-btn {min-height:42px}
+@media(prefers-reduced-motion:reduce){
+  .celestial-backdrop,.celestial-backdrop::before,.celestial-backdrop::after,
+  .celestial-ambient {animation:none!important;transform:none!important}
+  .dock-link>svg,.forest-shortcuts button>svg,.forest-main-search {transition:none!important}
+}
