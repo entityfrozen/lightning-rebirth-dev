@@ -18,9 +18,12 @@ const DATA_DIR=path.resolve(ROOT,process.env.BOLT_DATA_DIR||
 const STORE_FILE=process.env.LIGHTNING_DATA_FILE||path.join(DATA_DIR,'store.json');
 const PORT=Number(process.env.PORT||3080);
 const hadStore=existsSync(STORE_FILE);
-if(process.env.RAILWAY_VOLUME_MOUNT_PATH &&
-  DATA_DIR!==path.resolve(ROOT,process.env.RAILWAY_VOLUME_MOUNT_PATH)){
-  throw Error('Storage path does not match the attached Railway volume; refusing to use an ephemeral database');
+if(process.env.RAILWAY_VOLUME_MOUNT_PATH){
+  const mount=path.resolve(ROOT,process.env.RAILWAY_VOLUME_MOUNT_PATH);
+  const onVolume=value=>value===mount||value.startsWith(mount+path.sep);
+  if(!onVolume(DATA_DIR)||!onVolume(path.resolve(STORE_FILE))){
+    throw Error('Account data paths are outside the attached Railway volume; refusing ephemeral storage');
+  }
 }
 mkdirSync(DATA_DIR,{recursive:true});
 // The Bolt-era backend provides real browser proxying and multiplayer.
