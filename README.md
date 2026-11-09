@@ -13,9 +13,7 @@ assistant lives in its own glass side panel, not over the scenery. The default
 backdrop is a pine forest under violet-blue northern lights,
 with icy teal glass controls.
 
-The dock has a few shortcuts for convenience. Games opens Arcade; Cloud opens
-AI; Apps opens a lightweight launcher, Music opens a browser tab, and Settings
-contains appearance controls. All four actual app engines remain unchanged.
+The dock still opens Games, Browser, Chat and AI, and Settings controls appearance. The Credits and Community buttons that previously sat in the bottom corner have been removed; the account/profile control remains.
 
 The project was rebuilt using **Celestial v8** as a base, with substantial
 feature logic reviewed and ported from the connected
@@ -104,11 +102,61 @@ staff-moderation tools are not yet ported into the new UI.**
 Bolt's model failover code is imported; its screenshot parsing and web search
 extensions are **not yet included** in Celestial's AI endpoint.
 
+## Manual account approval and legacy data
+
+Registration now submits a **pending request**. A new user receives no session
+and cannot use Browser, Games, Chat or AI until an authorized administrator
+approves that request. Rejected requests remain disabled. Existing approved
+Celestial or Bolt members are not forced to reapply. Existing Bolt accounts
+that were already pending or disabled stay that way.
+
+An approved administrator or account manager can open the profile control
+(bottom-right) and review pending applications. The server verifies roles
+on every approval/decline request; changing the frontend does not authorize
+unprivileged members. There is no default approval bypass.
+
+**Important for the existing Railway service:** keep the existing
+`bolt-v5-data` volume mounted at `/data` on `bolt-v5-preview` in the
+`chic-encouragement` project. The application now chooses `BOLT_DATA_DIR`,
+then `RAILWAY_VOLUME_MOUNT_PATH`, before falling back to local storage. If the
+mount is `/data`, its new Celestial store is `/data/store.json`, while the old
+Bolt records are read from `/data/bolt.json` and
+`/data/lightning-accounts.json`. This uses the existing old server data,
+**not a newly created database or volume**.
+
+On first start, the server writes a local backup to
+`/data/celestial-backups/before-celestial-v1/`, preserving each legacy file
+before it can be upgraded. IDs, password hashes, existing approval states,
+legacy DMs and community membership are preserved. The live community
+engine continues using `lightning-v2-communities.json` and
+`lightning-social.json` on that same volume, so previous servers and chats
+remain available. A Bolt user can sign in using their original password;
+existing Bolt browser cookies are not migrated, so they may need to sign in
+again. New Celestial sessions remain compatible with `lightning_session`.
+
+If an old username conflicts with a newer account ID, the importer skips the
+conflicting record rather than overwriting either account. Review migration
+logs and the backup before resolving conflicts. On Railway, an absent or
+misconfigured data volume causes startup to fail safely rather than silently
+starting with an empty user database. Do not wipe or detach the old volume.
+
+If there is no imported admin, the service can bootstrap an administrator
+**only** when both `BOLT_ADMIN_USER` and a strong (12+ characters)
+`BOLT_ADMIN_PASSWORD` are configured on the server. This never promotes an
+existing user just by matching a username. Never commit admin credentials.
+
+Other original Bolt account-space files (such as past AI workspaces and
+profile preferences) remain on the volume; this update migrates account
+identity, community messages and direct messages, not every archived AI
+workspace. Avoid running two independently writing servers against the same
+JSON store.
+
 ## Configuration
 
 Sample `.env.example`:
 
     PORT=3080
+    BOLT_DATA_DIR=/data
     LIGHTNING_DATA_FILE=/data/store.json
     OPENAI_API_KEY=
     OPENAI_MODEL=gpt-4.1-mini
@@ -133,6 +181,9 @@ limitations.
 - `src/ForestParticles.jsx`: optional low-power WebGL fireflies. Motion can
   be reduced under Settings.
 
+The aurora now has richer, slow-moving layers and more WebGL fireflies,
+with reduced-motion support retained.
+
 Settings offers three palettes (**Aurora**, **Evergreen**, **Amethyst**) and
 three backgrounds (**Northern lights**, **Deep forest**, **Midnight gradient**).
 These choices persist locally. The default photograph is by Troy Olson,
@@ -149,6 +200,8 @@ user data or live sessions.
 - `src/xylora.css`: Celestial palette, background and faithful edge dock
 - `src/home-split.css`: responsive main page + glass AI sidebar
 - `src/forest.css`: forest design, game/gallery and responsive layouts
+- `src/AccountReview.jsx`: account approval and rejection interface
+- `legacy-data.js`: original Bolt account and chat importer with backup
 - `src/Browser.jsx`, `src/BoltProxy.js`: browser UI and proxy adapter
 - `src/Arcade.jsx`: six playable games
 - `src/Chat.jsx`, `src/useBoltLive.js`: community UI and WebSocket state
