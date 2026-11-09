@@ -13,7 +13,7 @@ const palette={accent:'#b67cff',background:'#0f0b1b',surface:'#20152f',text:'#f9
 test('end-to-end account, chat, and community drop API', {timeout:18000}, async ()=>{
   const tmp=await mkdtemp(path.join(tmpdir(),'celestial-test-'));
   const port=31000+Math.floor(Math.random()*10000);
-  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
+  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,OPENAI_API_KEY:'',NVIDIA_API_KEY:'',PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
   let cookie='';
   const url=`http://127.0.0.1:${port}`;
   const call=async(route,method='GET',body)=>{
@@ -37,9 +37,8 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     const cssAsset=await fetch(url+'/bundle/style.css');
     assert.equal(cssAsset.status,200);
     assert.match(await cssAsset.text(),/browser-window/);
-    const aiStatus=await call('/api/ai/status');
-    assert.equal(aiStatus.response.status,200);
-    assert.equal(typeof aiStatus.data.configured,'boolean');
+    const guestAiStatus=await call('/api/ai/status');
+    assert.equal(guestAiStatus.response.status,401);
     const starAsset=await fetch(url+'/assets/celestial-star.svg');
     assert.equal(starAsset.status,200);
     assert.match(await starAsset.text(),/<svg/);
@@ -49,6 +48,12 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     result=await call('/api/messages','POST',{channel:'general',text:'Guest post'});assert.equal(result.response.status,401);
     result=await call('/api/register','POST',{username:'TestCelestial',password:'correct horse battery staple'});assert.equal(result.response.status,201);assert.equal(result.data.user.username,'TestCelestial');
     const ownerId=result.data.user.id;
+    const aiStatus=await call('/api/ai/status');
+    assert.equal(aiStatus.response.status,200);
+    assert.equal(typeof aiStatus.data.configured,'boolean');
+    assert.deepEqual(Object.keys(aiStatus.data),['configured']);
+    const aiRequest=await call('/api/ai','POST',{messages:[{role:'user',content:'Hello'}]});
+    assert.equal(aiRequest.response.status,503);
     result=await call('/api/messages','POST',{channel:'general',text:'Hello from API test'});assert.equal(result.response.status,201);
     result=await call('/api/messages?channel=general');assert.equal(result.data.messages.at(-1).text,'Hello from API test');
     const browserStatus=await call('/api/browser/status');
