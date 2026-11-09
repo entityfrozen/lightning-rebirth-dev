@@ -152,7 +152,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     const dropId=result.data.drop.id;
     result=await call('/api/drops');assert.ok(result.data.drops.some(d=>d.id===dropId));
     assert.ok(result.data.drops.some(d=>d.ownerId==='system'&&d.author==='Celestial Studio'));
-    const download=await fetch(url+`/api/drops/${dropId}/download`);
+    const download=await fetch(url+`/api/drops/${dropId}/download`,{headers:{Cookie:cookie}});
     assert.equal(download.status,200);
     assert.equal((await download.json()).format,'celestial.theme');
     result=await call(`/api/drops/${dropId}/star`,'POST',{});assert.equal(result.data.drop.likes,1);
