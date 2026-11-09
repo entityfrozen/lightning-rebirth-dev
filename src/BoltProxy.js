@@ -6,12 +6,21 @@ async function loadBootstrap() {
   if(typeof window.initBootstrap==='function')return;
   await new Promise((resolve,reject)=>{
     const prior=document.querySelector('script[data-celestial-proxy]');
-    if(prior){prior.addEventListener('load',resolve,{once:true});prior.addEventListener('error',()=>reject(Error('Browser bootstrap unavailable')),{once:true});return;}
+    if(prior){
+      if(prior.dataset.state==='loaded'){
+        if(typeof window.initBootstrap==='function'){resolve();return;}
+        prior.remove();
+      }else if(prior.dataset.state!=='error'){
+        prior.addEventListener('load',resolve,{once:true});
+        prior.addEventListener('error',()=>reject(Error('Browser bootstrap unavailable')),{once:true});
+        return;
+      }else prior.remove();
+    }
     const element=document.createElement('script');
     element.dataset.celestialProxy='true';
     element.src='/bootstrap-init.js';
-    element.onload=resolve;
-    element.onerror=()=>reject(Error('Browser engine unavailable. Sign in and try again.'));
+    element.onload=()=>{element.dataset.state='loaded';resolve();};
+    element.onerror=()=>{element.dataset.state='error';reject(Error('Browser engine unavailable. Sign in and try again.'));};
     document.head.append(element);
   });
   if(typeof window.initBootstrap!=='function')throw Error('Scramjet bootstrap could not initialize.');
