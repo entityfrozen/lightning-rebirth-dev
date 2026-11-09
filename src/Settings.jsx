@@ -32,7 +32,7 @@ function Toggle({title,description,checked,onChange}){
     <input type="checkbox" checked={Boolean(checked)} onChange={e=>onChange(e.target.checked)}/>
   </label>;
 }
-export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,setReduced,onBack,onLogout}){
+export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,setReduced,showHomeAI,setShowHomeAI,onBack,onLogout}){
   const [panel,setPanel]=useState('appearance');
   const [browser,setBrowser]=useState(browserPreferences);
   const [cloak,setCloak]=useState(getCloakSettings);
@@ -48,7 +48,7 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
   const identity=patch=>setCloak(saveCloak(patch));
   const notify=message=>{setNotification(message);};
   const exportSettings=()=>{
-    const safe={version:1,palette,backdrop,reduced,browser:browserPreferences(),cloak:getCloakSettings()};
+    const safe={version:1,palette,backdrop,reduced,showHomeAI,browser:browserPreferences(),cloak:getCloakSettings()};
     const file=new Blob([JSON.stringify(safe,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(file);
     const link=document.createElement('a');link.href=url;link.download='celestial-settings.json';
@@ -64,6 +64,7 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
       if(palettes.some(x=>x.id===data.palette))setPalette(data.palette);
       if(backdrops.some(x=>x.id===data.backdrop))setBackdrop(data.backdrop);
       if(typeof data.reduced==='boolean')setReduced(data.reduced);
+      if(typeof data.showHomeAI==='boolean')setShowHomeAI(data.showHomeAI);
       if(data.browser&&typeof data.browser==='object'){
         const prefs={};
         for(const key of ['restoreTabs','saveHistory','compactTabs','openLinksInTabs']){
@@ -117,6 +118,11 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
                   {backdrop===scene.id&&<CheckmarkCircle20Filled/>}
                 </button>)}
               </div>
+            </div>
+            <div className="celestial-settings-group"><h3>HOMEPAGE LAYOUT</h3>
+              <Toggle title="Celestial AI sidebar"
+                description="Show AI beside the main page. Turn it off for a full-width homepage."
+                checked={showHomeAI} onChange={setShowHomeAI}/>
             </div>
             <div className="celestial-settings-group"><h3>ANIMATION</h3>
               <Toggle title="Reduce motion" description="Keep the background still and pause the moving particles."
