@@ -45,6 +45,8 @@ function Puzzle2048(){
       const directions={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
       const dir=directions[e.key];
       if(!dir)return;
+      const target=e.target;
+      if(target?.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(target?.tagName))return;
       e.preventDefault();setGame(g=>step2048(g,dir));
     };
     window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);
