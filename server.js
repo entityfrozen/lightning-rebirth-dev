@@ -1,4 +1,4 @@
-/** Lightning's small single-instance server. No npm dependencies needed. */
+/** Celestial's small single-instance server. No npm dependencies needed. */
 import http from 'node:http';
 import { readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
 import { randomBytes, createHash, scryptSync, timingSafeEqual } from 'node:crypto';
@@ -16,10 +16,10 @@ let writeChain = Promise.resolve();
 
 const palette = (accent, background, surface, text, muted, line) => ({accent, background, surface, text, muted, line, glow: 55, radius: 16, petals: true});
 const starterDrops = [
-  {id:'starter-void', ownerId:'system', author:'Lightning Studio', title:'Eclipse', description:'For late nights and clean focus. Violet lightning over a deep midnight canvas.', tags:['dark','neon'], createdAt:'2026-11-01T12:00:00Z', downloads:0, likedBy:[], theme:palette('#b67cff','#0f0b1b','#20152f','#f9f2ff','#b8a9cb','#513966')},
-  {id:'starter-sakura', ownerId:'system', author:'Lightning Studio', title:'Sakura Afterglow', description:'Soft cherry-blossom pinks, lavender glass and a little extra glow.', tags:['pastel','sakura'], createdAt:'2026-11-01T12:00:00Z', downloads:0, likedBy:[], theme:palette('#f29be9','#211426','#38213c','#fff3fc','#d4b8d5','#86547f')},
-  {id:'starter-ice', ownerId:'system', author:'Lightning Studio', title:'Frostbyte', description:'A crystalline cold blue spin on the Lightning layout.', tags:['cool','minimal'], createdAt:'2026-11-01T12:00:00Z', downloads:0, likedBy:[], theme:palette('#8edcff','#0b1421','#142738','#eaf9ff','#a5c5d7','#37617c')},
-  {id:'starter-ember', ownerId:'system', author:'Lightning Studio', title:'Solar Flare', description:'Warm sunset contrast. Copper, coral and violet in one mix.', tags:['warm','contrast'], createdAt:'2026-11-01T12:00:00Z', downloads:0, likedBy:[], theme:palette('#f6a66d','#201019','#38222e','#fff0e9','#d0b5bd','#845563')}
+  {id:'starter-void', ownerId:'system', author:'Celestial Studio', title:'Eclipse', description:'For late nights and clean focus. Violet starlight over a deep midnight canvas.', tags:['dark','neon'], createdAt:'2026-11-01T12:00:00Z', downloads:0, likedBy:[], theme:palette('#b67cff','#0f0b1b','#20152f','#f9f2ff','#b8a9cb','#513966')},
+  {id:'starter-sakura', ownerId:'system', author:'Celestial Studio', title:'Sakura Afterglow', description:'Soft cherry-blossom pinks, lavender glass and a little extra glow.', tags:['pastel','sakura'], createdAt:'2026-11-01T12:00:00Z', downloads:0, likedBy:[], theme:palette('#f29be9','#211426','#38213c','#fff3fc','#d4b8d5','#86547f')},
+  {id:'starter-ice', ownerId:'system', author:'Celestial Studio', title:'Frostbyte', description:'A crystalline cold blue spin in the Celestial interface.', tags:['cool','minimal'], createdAt:'2026-11-01T12:00:00Z', downloads:0, likedBy:[], theme:palette('#8edcff','#0b1421','#142738','#eaf9ff','#a5c5d7','#37617c')},
+  {id:'starter-ember', ownerId:'system', author:'Celestial Studio', title:'Solar Flare', description:'Warm sunset contrast. Copper, coral and violet in one mix.', tags:['warm','contrast'], createdAt:'2026-11-01T12:00:00Z', downloads:0, likedBy:[], theme:palette('#f6a66d','#201019','#38222e','#fff0e9','#d0b5bd','#845563')}
 ];
 const emptyStore = () => ({users:[], sessions:[], messages:[], drops:starterDrops});
 let db;
@@ -99,7 +99,7 @@ function validateTheme(input) {
 }
 function publicDrop(drop,user) {
   const {likedBy=[],...rest}=drop;
-  return {...rest,likes:likedBy.length,liked:Boolean(user && likedBy.includes(user.id))};
+  return {...rest,author:drop.ownerId==='system'?'Celestial Studio':rest.author,likes:likedBy.length,liked:Boolean(user && likedBy.includes(user.id))};
 }
 function safeOrigin(req) {
   const origin=req.headers.origin;
@@ -130,8 +130,8 @@ async function handleAPI(req,res,url) {
     if(!drop)return fail(res,404,'Drop not found');
     drop.downloads=(drop.downloads||0)+1;
     await persist();
-    const packageData={format:'lightning.theme',version:1,name:drop.title,author:drop.author,theme:drop.theme};
-    res.writeHead(200,{'Content-Type':'application/json','Content-Disposition':`attachment; filename="lightning-${drop.id}.json"`,'Cache-Control':'no-store'});
+    const packageData={format:'celestial.theme',version:1,name:drop.title,author:drop.author,theme:drop.theme};
+    res.writeHead(200,{'Content-Type':'application/json','Content-Disposition':`attachment; filename="celestial-${drop.id}.json"`,'Cache-Control':'no-store'});
     return res.end(JSON.stringify(packageData,null,2));
   }
   if(!['POST','DELETE'].includes(req.method)) return fail(res,404,'API route not found');
@@ -221,6 +221,6 @@ export function createServer(){return http.createServer(async(req,res)=>{
   } catch(error) {console.error('Request error:',error.message);if(!res.headersSent)fail(res,error.message==='Request is too large'?413:400,error.message||'Request failed');else res.end();}
 });}
 if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
-  createServer().listen(PORT,()=>console.log(`⚡ Lightning running at http://localhost:${PORT}`));
+  createServer().listen(PORT,()=>console.log(`✦ Celestial running at http://localhost:${PORT}`));
 }
 export {validateTheme};

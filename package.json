@@ -1,14 +1,16 @@
 {
-  "name": "lightning-rebirth",
-  "version": "6.0.0",
+  "name": "celestial",
+  "version": "7.0.0",
   "private": true,
-  "description": "Lightning Rebirth — community, theme studio and optional 2D companion",
+  "description": "Celestial — a WebGL-powered creative studio and community with liquid glass design",
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test tests/*.test.js",
-    "check": "node --check public/app.js && node --check public/glass-toggle.js && node --check server.js && node --test tests/*.test.js"
+    "check": "node --check public/app.js && node --check public/celestial-sky.js && node --check public/glass-toggle.js && node --check server.js && node --test tests/*.test.js"
   },
-  "engines": {"node": ">=20"}
+  "engines": {
+    "node": ">=20"
+  }
 }
