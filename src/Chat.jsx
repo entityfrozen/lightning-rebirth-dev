@@ -36,6 +36,7 @@ export function Chat({user,onAuth,live}){
   const visibleMessages=dmUser?dmRows.map(row=>({id:row.id,by:row.author,userId:row.from,message:row.text,at:row.createdAt})):messages;
   const member=server?.members?.some(m=>m.id===user?.id);
   const [memberSearch,setMemberSearch]=useState('');
+  const [rosterOpen,setRosterOpen]=useState(false);
   const onlineIds=useMemo(()=>new Set(live.online.map(person=>person.id)),[live.online]);
   const fullRoster=useMemo(()=>(server?.members||[]).slice().sort((a,b)=>{
     const aOn=onlineIds.has(a.id),bOn=onlineIds.has(b.id);
@@ -106,7 +107,8 @@ export function Chat({user,onAuth,live}){
       <div className="forest-chat-main"><header className="forest-chat-titlebar"><span>{dmUser?'@':'#'}</span><strong>{dmUser?dmUser.username:active?.name||'general'}</strong>
         <small>{dmUser?'PRIVATE CONVERSATION':active?.category||'COMMUNITY'}</small>
         {dmUser&&<button className="forest-dm-back" onClick={()=>setDmUser(null)}>← Channels</button>}
-        <b>{dmUser?'PRIVATE':live.connected?'● LIVE':'○ OFFLINE'}</b></header>
+        <b>{dmUser?'PRIVATE':live.connected?'● LIVE':'○ OFFLINE'}</b>
+        <button className="celestial-chat-roster-toggle" onClick={()=>setRosterOpen(value=>!value)} aria-expanded={rosterOpen}>{rosterOpen?'Close':'Members'} ({fullRoster.length})</button></header>
         <div className="forest-chat-feed" ref={feed} role="log" aria-live="polite">
           {!dmUser&&!live.connected&&!live.servers.length&&<div className="forest-chat-empty">Connecting to Celestial Live…</div>}
           {(dmUser?visibleMessages.length===0:live.connected&&visibleMessages.length===0)&&<div className="forest-chat-empty"><span>✧</span><h2>{dmUser?'A private conversation.':'The beginning of #'+(active?.name||'general')+'.'}</h2><p>Say something worth remembering.</p></div>}
@@ -118,7 +120,7 @@ export function Chat({user,onAuth,live}){
         {reply&&!dmUser&&<div className="forest-reply-strip">Replying to {reply.by}: {reply.message?.slice(0,50)} <button onClick={()=>setReply(null)}>×</button></div>}{error&&<div className="forest-chat-error">{error}</div>}
         <form className="forest-chat-compose" onSubmit={send}><span>✧</span><input value={draft} onChange={e=>setDraft(e.target.value)} maxLength={1500} aria-label="Message channel" placeholder={dmUser?'Message @'+dmUser.username:'Message #'+(active?.name||'general')} disabled={!dmUser&&(!member||active?.readOnly)}/><button disabled={!draft.trim()||(!dmUser&&(!live.connected||!member||active?.readOnly))} type="submit"><Icon name="send" size={18}/></button></form>
       </div>
-      <aside className="forest-chat-members celestial-chat-directory">
+      <aside className={"forest-chat-members celestial-chat-directory "+(rosterOpen?"is-open":"")}>
         <div className="celestial-members-heading"><span className="chat-group-label">MEMBERS — {fullRoster.length}</span>
           <small><i/> {onlineCount} online</small>
         </div>
