@@ -2,8 +2,9 @@
 
 Celestial opens into a **split homepage** after sign-in: the original
 main page and browser search remain on the left, while a compact, fully
-functional **Celestial AI sidebar** stays visible on the right. The Browser,
-Arcade, Chat and full AI workspaces remain accessible in the navigation.
+functional **Celestial AI sidebar** is optional on the right. Close it from
+its header for a full-width homepage, or restore it from the Show Celestial AI
+button / Appearance settings. Browser, Apps, Chat and full AI have their own routes.
 A Celestial account is required before the workspace can be opened.
 
 The interface mirrors the supplied Xylora shell rather than a card dashboard:
@@ -13,7 +14,8 @@ assistant lives in its own glass side panel, not over the scenery. The default
 backdrop is a pine forest under violet-blue northern lights,
 with icy teal glass controls.
 
-The dock still opens Games, Browser, Chat and AI, and Settings controls appearance. The Credits and Community buttons that previously sat in the bottom corner have been removed; the account/profile control remains.
+The dock opens Home, Apps, Browser, AI, Music and Chat, with Settings at the bottom.
+The bottom Credits/Community pills are removed; the account control remains.
 
 The project was rebuilt using **Celestial v8** as a base, with substantial
 feature logic reviewed and ported from the connected
@@ -48,31 +50,34 @@ engine may download and cache its own runtime assets during bootstrap.
 - Address field, web search, bookmark bar, back/forward, reload
 - Bolt's **Scramjet** proxy controller with Wisp transport for signed-in users
 - Popup/escaped-link routing into Celestial tabs
-- For guests, normal iframe fallback and an external-open link
+- Explicit proxy-loading/error/retry state, plus an external-open link if a site won't work; no misleading silent iframe fallback
+- Search engine choices, compact tabs, saved history and session restoration
+- Ctrl/Cmd+L for the address bar and Ctrl/Cmd+T for a new tab
 
 The web proxy is subject to network/provider, service-worker and browser
 capabilities; some websites still require a direct tab. The proxy is an
 advanced integration, not a full Chromium process. All proxy access requires a
 valid Celestial account session.
 
-### Arcade
+### Apps
 
-- **Chess** — server-authoritative legal moves, bot play and matchmaking
-- **Rock Paper Scissors** — hidden decisions, bot/online games and tournaments
-- **WorldPvP** — server-managed territories, nations, battles and resources
-- **2048** — complete local tile merge game, keyboard and button controls
-- **Minesweeper** — first-click safety, flags and win/loss state
-- **Uma Versus** — creator-hosted third-party game with direct-open fallback
+The former Games navigation and crowded game-card gallery were replaced with
+a proper App Library. It has functioning launchers for Browser, Chat, AI and
+Music and three built-in utilities: **Notes**, **Calculator** and **Focus Timer**.
+Notes stay on this device, and the focus timer runs only while Celestial is open.
 
-The multiplayer engines and world map are drawn from Bolt's known working
-implementation. The React presentation is new and intentionally lighter.
-A real account is required for multiplayer games.
+The old Arcade/game source files and multiplayer logic are retained in the
+repository for compatibility, but games are no longer linked from the UI.
+No server databases or saved game records were deleted.
 
 ### Chat
 
 - Authenticated live WebSocket connection with reconnect
 - Community servers and multiple text channels
-- Online roster, reactions, replies, message editing/deletion
+- Full approved-member directory, including offline users and live status
+- Verified platform and community role tags in message headers and member list:
+  [ADMIN] blue, staff violet, moderators green, owners gold
+- Reactions, replies, message editing/deletion
 - Server creation, membership and channel management
 - Private direct-message threads using the existing Celestial account IDs
 - First-login migration of prior Celestial public messages where possible
@@ -84,11 +89,13 @@ staff-moderation tools are not yet ported into the new UI.**
 
 ### AI
 
-- **Right-side assistant:** the main page remains a working browser/search
-  homepage, while Celestial AI handles real conversation threads on the right
+- **Optional right-side assistant:** the main page remains a working browser/search
+  homepage, while Celestial AI can be shown or hidden on the right
 - The sidebar includes new chats, a compact conversation history, starter
   prompts, follow-up messages and a persistent composer; it stacks below
   the main page on narrow screens
+- Close it with ×, restore it from Home or the Appearance setting; its visibility
+  is saved locally and included in Settings export/import
 - **Mandatory sign-in:** guests cannot open the workspace or call the AI API
 - The server does not reveal provider names or model identifiers in AI status
   responses, and the UI does not display setup/readiness labels
@@ -101,6 +108,19 @@ staff-moderation tools are not yet ported into the new UI.**
 
 Bolt's model failover code is imported; its screenshot parsing and web search
 extensions are **not yet included** in Celestial's AI endpoint.
+
+## Settings and cloaking
+
+Settings is now its own page, organized into Appearance, Browser, Privacy &
+Cloaking, and Account & Data. It includes background palettes, animations,
+AI sidebar visibility, search engine, tab behavior, tab title/favicon presets,
+and an optional `about:blank` wrapper. The wrapper only changes the tab
+appearance, **not** network activity or browsing history, and may be blocked
+by popup/embed restrictions.
+
+Settings can be exported/imported as JSON; exports intentionally omit login
+credentials, private chats and browser history. Preferences are stored on the
+device.
 
 ## Manual account approval and legacy data
 
@@ -166,8 +186,9 @@ Sample `.env.example`:
 Do not commit actual keys. Put them in Railway's service environment.
 
 For local testing when Scramjet/Wisp downloads are not available, use
-`DISABLE_WEB_PROXY=1`; the standard browser view remains usable with iframe
-limitations.
+`DISABLE_WEB_PROXY=1`; the browser will show a clear unavailable state and
+a link to open the requested website in a normal tab. There is no silent
+iframe fallback, as many modern sites reject embedding.
 
 ## Visual design
 
@@ -175,8 +196,10 @@ limitations.
   visual layer. The shell is intentionally flat and edge-mounted, not a
   floating card. It overrides the older forest stylesheet without replacing
   the functional app-specific styles.
-- `src/main.jsx`: handles the original dock pattern, collapse button,
-  account controls, Apps launcher and appearance modal.
+- `src/main.jsx`: navigation, the optional AI home sidebar, account and workspace
+- `src/Apps.jsx`: functional app library and built-in tools
+- `src/Settings.jsx`: full settings experience including tab cloaking
+- `src/qol.css`: Apps, Settings, Browser and Chat styling
 - `src/Browser.jsx`: centered search, five shortcut pills and browser tabs.
 - `src/ForestParticles.jsx`: optional low-power WebGL fireflies. Motion can
   be reduced under Settings.
