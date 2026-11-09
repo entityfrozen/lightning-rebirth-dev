@@ -223,6 +223,7 @@ async function handleAPI(req,res,url) {
 
 
   if(req.method==='GET' && pathname==='/api/events') {
+    if(!user)return fail(res,401,'Sign in required');
     res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});
     res.write(': connected\n\n'); listeners.add(res);
     const timer=setInterval(()=>{try{res.write(': heartbeat\n\n');}catch{}},25000);
@@ -230,13 +231,16 @@ async function handleAPI(req,res,url) {
     return;
   }
   if(req.method==='GET' && pathname==='/api/messages') {
+    if(!user)return fail(res,401,'Sign in required');
     const channel=channels.has(url.searchParams.get('channel'))?url.searchParams.get('channel'):'general';
     return respond(res,200,{messages:db.messages.filter(m=>m.channel===channel).slice(-140)});
   }
   if(req.method==='GET' && pathname==='/api/drops') {
+    if(!user)return fail(res,401,'Sign in required');
     return respond(res,200,{drops:db.drops.map(d=>publicDrop(d,user)).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))});
   }
   if(req.method==='GET' && /^\/api\/drops\/[^/]+\/download$/.test(pathname)) {
+    if(!user)return fail(res,401,'Sign in required');
     const drop=db.drops.find(d=>d.id===pathname.split('/')[3]);
     if(!drop)return fail(res,404,'Drop not found');
     drop.downloads=(drop.downloads||0)+1;
@@ -250,7 +254,7 @@ async function handleAPI(req,res,url) {
   const body=req.method==='POST'?await bodyJSON(req):{};
   if(pathname==='/api/register' && req.method==='POST') {
     if(limited(req,'register',7,600000))return fail(res,429,'Too many sign-up attempts');
-    const username=cleanLine(body.username,30);const password=body.password;
+    const username=cleanLine(body.username,40);const password=body.password;
     if(!/^[a-zA-Z0-9_]{3,20}$/.test(username))return fail(res,400,'Username must be 3–20 letters, numbers or underscores');
     if(typeof password!=='string' || password.length<8 || password.length>128)return fail(res,400,'Password must be 8–128 characters');
     if(db.users.some(u=>u.username.toLowerCase()===username.toLowerCase()))return fail(res,409,'Username is already taken');
@@ -265,7 +269,7 @@ async function handleAPI(req,res,url) {
   }
   if(pathname==='/api/login' && req.method==='POST') {
     if(limited(req,'login',15,600000))return fail(res,429,'Too many sign-in attempts');
-    const username=cleanLine(body.username,30);const password=body.password;
+    const username=cleanLine(body.username,40);const password=body.password;
     const found=db.users.find(u=>u.username.toLowerCase()===username.toLowerCase());
     if(typeof password!=='string'||!found)return fail(res,401,'Incorrect username or password');
     let valid=false;
