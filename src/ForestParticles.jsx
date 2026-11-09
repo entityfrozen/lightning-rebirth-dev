@@ -2,7 +2,6 @@ import React,{useMemo,useRef} from 'react';
 import {Canvas,useFrame} from '@react-three/fiber';
 import * as THREE from 'three';
 
-const VERTEX=String.raw;
 const vertex=String.raw`
   attribute float aPhase;
   uniform float uTime;
