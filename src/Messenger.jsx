@@ -328,8 +328,7 @@ export function Messenger({user,live,compact=false,onClose,onOpenChat}){
             <div className="messenger-message-content">
               <div className="messenger-message-meta">
                 <strong>{name}</strong><RoleBadge member={person} server={server}/>
-                <time dateTime={new Date(dmUser?message.createdAt:message.at).toISOString?.()}>
-                  {clock(dmUser?message.createdAt:message.at)}</time>
+                <time>{clock(dmUser?message.createdAt:message.at)}</time>
                 {message.editedAt&&<small>edited</small>}
               </div>
               {message.replyTo&&!dmUser&&<small className="messenger-reply-context">↳ Replying in thread</small>}
