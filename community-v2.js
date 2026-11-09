@@ -20,7 +20,7 @@ const channels=[
   {id:"introductions",name:"introductions",category:"COMMUNITY"}
 ];
 const makeMain=()=>({
- id:MAIN_SERVER_ID,name:"Lightning",icon:"bolt",description:"The home of every Lightning member.",
+ id:MAIN_SERVER_ID,name:"Celestial",icon:"✦",description:"The Celestial community.",
  owner:null,permanent:true,members:[],roles:[{id:"member",name:"Member",color:"#C5BCA9"}],
  memberRoles:{},profiles:{},channels:channels.map(c=>({...c})),messages:{},createdAt:Date.now()
 });
@@ -55,6 +55,7 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
  let main=servers.find(s=>s.id===MAIN_SERVER_ID);
  let migrated=false;
  if(!main){main=makeMain();servers.unshift(main);migrated=true;}
+ if(main.name==="Lightning"){main.name="Celestial";main.icon="✦";main.description="The Celestial community.";migrated=true;}
  if(!Array.isArray(main.roles)){main.roles=[{id:"member",name:"Member",color:"#C5BCA9"}];migrated=true;}
  if(!main.roles.some(r=>r.id==="member")){main.roles.unshift({id:"member",name:"Member",color:"#C5BCA9"});migrated=true;}
  for(const s of servers){
@@ -191,14 +192,14 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
   }
   if(!member)return err(u,"Join this server before using its channels.");
   if(type==="v2Leave"){
-   if(s.permanent)return err(u,"The Lightning server is home to every account and cannot be left.");
+   if(s.permanent)return err(u,"The Celestial server is home to every account and cannot be left.");
    if(s.owner===u.id)return err(u,"The server owner cannot leave.");
    s.members=s.members.filter(memberId=>memberId!==u.id);delete s.memberRoles[u.id];delete s.profiles[u.id];save();
    sendToUser(u.id,{type:"v2State",...snapshot(u),selected:MAIN_SERVER_ID});
    serverChanged(s);return;
   }
   if(["v2AddChannel","v2EditChannel","v2DeleteChannel","v2CreateRole","v2EditRole","v2DeleteRole","v2AssignRole","v2EditServer","v2SetPrivacy","v2RotateInvite"].includes(type)){
-   if(!authorized(u,s))return err(u,"Only the server owner or a Lightning admin can manage this server.");
+   if(!authorized(u,s))return err(u,"Only the server owner or a Celestial admin can manage this server.");
   }
   if(type==="v2AddChannel"){
    if(s.channels.length>=LIMITS.channels)return err(u,"This server has reached its channel limit.");
@@ -224,7 +225,7 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
   if(type==="v2DeleteChannel"){
    const c=s.channels.find(c=>c.id===clean(data.channel,40));
    if(!c)return err(u,"Channel not found.");
-   if(c.protected)return err(u,"This is a required Lightning channel.");
+   if(c.protected)return err(u,"This is a required Celestial channel.");
    s.channels=s.channels.filter(ch=>ch.id!==c.id);
    delete s.messages[c.id];save();serverChanged(s);return;
   }
