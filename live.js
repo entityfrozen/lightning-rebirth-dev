@@ -302,7 +302,7 @@ export function attachLightningLive({server,sessionFromHeaders,dataDir,getDispla
    from:move.from,to:move.to,promotion:move.promotion||""
   }));
  }
- const chessPlayers=game=>game.ids.map(id=>id==="npc:chess"?"Lightning Bot":
+ const chessPlayers=game=>game.ids.map(id=>id==="npc:chess"?"Celestial Bot":
   clientOf(id)[0]?.[1]?.name||id);
  function chessSnapshot(game,userId,type="chessState"){
   const turn=game.engine.turn();
@@ -366,7 +366,7 @@ export function attachLightningLive({server,sessionFromHeaders,dataDir,getDispla
    if(!move)return;
    try{
     const applied=game.engine.move({from:move.from,to:move.to,promotion:move.promotion||"q"});
-    if(applied)chessMoveNow(game,applied,player==="npc:chess"?"Lightning Bot":
+    if(applied)chessMoveNow(game,applied,player==="npc:chess"?"Celestial Bot":
      clientOf(player)[0]?.[1]?.name||"Ghost Pilot");
    }catch(error){console.warn("Chess AI move rejected:",error?.message||error);}
   },player==="npc:chess"?570:430);
@@ -408,7 +408,7 @@ export function attachLightningLive({server,sessionFromHeaders,dataDir,getDispla
    return safeSend(u.ws,{type:"error",message:"Chess match is no longer active."});
   game.over=true;
   const other=game.ids.find(id=>id!==u.id);
-  const victor=other==="npc:chess"?"Lightning Bot":clientOf(other)[0]?.[1]?.name||"Opponent";
+  const victor=other==="npc:chess"?"Celestial Bot":clientOf(other)[0]?.[1]?.name||"Opponent";
   game.result=u.name+" resigned · "+victor+" wins";
   sendChessState(game);
   cleanChess(game);
@@ -435,7 +435,7 @@ export function attachLightningLive({server,sessionFromHeaders,dataDir,getDispla
  const RPS_ROUND_MS=45000;
  const RPS_REVEAL_MS=2500;
  const RPS_TARGET=3;
- const rpsName=id=>id==="npc:rps"?"Lightning Bot":clientOf(id)[0]?.[1]?.name||id;
+ const rpsName=id=>id==="npc:rps"?"Celestial Bot":clientOf(id)[0]?.[1]?.name||id;
  const rpsScore=g=>({...g.score});
  function rpsView(g,userId){
   const other=g.ids.find(id=>id!==userId);
