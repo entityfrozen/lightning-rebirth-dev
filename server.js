@@ -324,7 +324,7 @@ export function createServer(){
   if(proxyBackend)server.on('upgrade',(req,socket,head)=>{
     if(req.url?.startsWith('/live'))return;
     if(!liveIdentity(req.headers)){
-      socket.write('HTTP/1.1 401 Unauthorized\\r\\nConnection: close\\r\\n\\r\\n');
+      socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
       socket.destroy();return;
     }
     try{proxyBackend.routeUpgrade(req,socket,head);}
