@@ -103,6 +103,8 @@ export function Browser({user,onAuth,compact=false}){
   const onLocation=useCallback((id,url)=>{
     modify(id,tab=>{
       if(tab.url===url)return tab;
+      const previous=tab.history.lastIndexOf(url);
+      if(previous>=0)return {...tab,url,cursor:previous};
       const history=[...tab.history.slice(0,tab.cursor+1),url].slice(-30);
       return {...tab,url,history,cursor:history.length-1};
     });
@@ -114,10 +116,11 @@ export function Browser({user,onAuth,compact=false}){
     setTabs(remaining);if(id===activeId)setActive(remaining[remaining.length-1].id);
   };
   const goHistory=direction=>{
-    const controlsFor=controls.current.get(activeId);
-    if(direction<0&&current.cursor<=0||direction>0&&current.cursor>=current.history.length-1)return;
-    modify(activeId,tab=>{const cursor=tab.cursor+direction;return {...tab,url:tab.history[cursor],cursor};});
-    if(controlsFor)direction<0?controlsFor.back():controlsFor.forward();
+    if(!current || current.cursor+direction<0 || current.cursor+direction>=current.history.length)return;
+    modify(activeId,tab=>{
+      const cursor=tab.cursor+direction;
+      return {...tab,url:tab.history[cursor],cursor};
+    });
   };
   const toggleBookmark=()=>{
     if(!visibleUrl)return;
