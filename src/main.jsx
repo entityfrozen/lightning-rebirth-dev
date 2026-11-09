@@ -244,8 +244,14 @@ function App() {
     <div className="celestial-workspace">
       <main className="celestial-stage" id="main-content">
         <Suspense fallback={<div className="celestial-loading">Opening Celestial…</div>}>
-          {view==='home'?<AI key="celestial-home" home user={user} onAuth={setModal}
-            onShortcut={openDock}/>:
+          {view==='home'?<div className="celestial-home-split">
+            <section className="celestial-home-main" aria-label="Main page">
+              <Browser user={user} onAuth={setModal} onShortcut={openDock} homeMode/>
+            </section>
+            <aside className="celestial-home-rail" aria-label="Celestial AI sidebar">
+              <AI key="celestial-home-sidebar" sidebar user={user} onAuth={setModal}/>
+            </aside>
+          </div>:
           view==='browser'?<Browser user={user} onAuth={setModal} onShortcut={openDock}
             launch={activeDock==='music'?browserLaunch:null}/>:
           view==='arcade'?<Arcade user={user} onAuth={setModal} live={live}/>:
