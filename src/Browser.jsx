@@ -5,7 +5,7 @@ import {
 } from '@fluentui/react-icons';
 import {api,readLocal,saveLocal} from './constants.js';
 import {browserAddress,browserPreferences} from './Preferences.js';
-import {createProxyFrame,getProxyController} from './BoltProxy.js';
+import {createProxyFrame,disposeProxyFrame} from './BoltProxy.js';
 
 const shortcuts=[
   {id:'apps',name:'apps',icon:Grid20Filled},
@@ -58,7 +58,7 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
         if(!cancelled){setState('error');setError(failure.message||'Unable to open this site.');}
       }
     })();
-    return()=>{cancelled=true;register(tab.id,null);frame.current=null;};
+    return()=>{cancelled=true;register(tab.id,null);disposeProxyFrame(frame.current);frame.current=null;};
   },[tab.id,Boolean(user),retryKey]);
   useEffect(()=>{
     if(!tab.url||!frame.current||tab.url===lastUrl.current)return;
@@ -91,10 +91,10 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
   const [prefs,setPrefs]=useState(browserPreferences);
   const [bookmarks,setBookmarks]=useState(()=>readLocal('forest-browser-bookmarks',[]));
   const [retry,setRetry]=useState({});
-  const controls=useRef(new Map()),box=useRef(null),lastLaunch=useRef(null),lastFocused=useRef('');
+  const controls=useRef(new Map()),box=useRef(null),lastLaunch=useRef(null);
   const current=useMemo(()=>tabs.find(t=>t.id===activeId)||tabs[0], [tabs,activeId]);
   const currentId=current?.id,visibleUrl=current?.url||'';
-  const pendingNavigate=useRef(null);
+
   useEffect(()=>{
     const listener=event=>setPrefs(event.detail);
     window.addEventListener('celestial:browser-preferences',listener);
