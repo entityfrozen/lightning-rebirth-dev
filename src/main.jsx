@@ -4,8 +4,7 @@ import {createRoot} from 'react-dom/client';
 import {
   Home24Filled, Games24Filled, Grid24Filled, Globe24Filled,
   Cloud24Filled, MusicNote224Filled, Chat24Filled, Settings24Filled,
-  ChevronLeft24Filled, Heart20Filled, PeopleCommunity20Filled,
-  Person20Filled, CheckmarkCircle20Filled, Sparkle20Filled
+  ChevronLeft24Filled, Person20Filled, CheckmarkCircle20Filled, Sparkle20Filled
 } from '@fluentui/react-icons';
 import {DialRoot} from 'dialkit';
 import 'dialkit/styles.css';
@@ -17,6 +16,7 @@ import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
 import {SceneBoundary} from './SceneBoundary.jsx';
+import {AccountReview} from './AccountReview.jsx';
 
 const Browser=React.lazy(()=>import('./Browser.jsx').then(mod=>({default:mod.Browser})));
 const Arcade=React.lazy(()=>import('./Arcade.jsx').then(mod=>({default:mod.Arcade})));
@@ -49,6 +49,7 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
   const [method,setMethod]=useState(mode);
   const [error,setError]=useState('');
   const [busy,setBusy]=useState(false);
+  const [requested,setRequested]=useState(false);
   async function submit(event){
     event.preventDefault();
     const body=Object.fromEntries(new FormData(event.currentTarget));
@@ -57,6 +58,11 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
       const result=await api(method==='register'?'/api/register':'/api/login',{
         method:'POST',body:JSON.stringify({username:body.username,password:body.password})
       });
+      if(method==='register'&&result.status==='pending'){
+        setRequested(true);
+        return;
+      }
+      if(!result.user)throw Error('Unable to sign in right now');
       onLoggedIn(result.user);close();
     }catch(err){setError(err.message);}
     finally{setBusy(false);}
@@ -74,17 +80,23 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
       <div className="auth-fields">
         {!locked&&<button className="auth-close" onClick={close} aria-label="Close account dialog">×</button>}
         <span className="eyebrow">CELESTIAL / ACCOUNT</span>
-        <h2>{method==='register'?'Join the network.':'Welcome back.'}</h2>
-        <p>{method==='register'?'Create an account to participate in Chat and AI.':'Sign in to continue your conversation.'}</p>
-        <form onSubmit={submit}>
-          <label>USERNAME<input autoFocus required name="username" autoComplete="username" pattern="[A-Za-z0-9_]{3,20}" minLength={3} maxLength={20} placeholder="Choose a username"/></label>
+        <h2>{requested?'Request received.':method==='register'?'Join the network.':'Welcome back.'}</h2>
+        <p>{requested?'An administrator will review your account. You can sign in once they approve it.':
+          method==='register'?'Request an account. Approval is required before you can sign in.':'Sign in to continue your conversation.'}</p>
+        {requested?<button className="primary-btn full" onClick={()=>{setRequested(false);setMethod('login');setError('');}}>
+          Return to sign in <Icon name="arrow" size={16}/>
+        </button>:<><form onSubmit={submit}>
+          <label>USERNAME<input autoFocus required name="username" autoComplete="username"
+            pattern={method==='register'?'[A-Za-z0-9_]{3,20}':'[a-zA-Z0-9._-]{3,32}'}
+            minLength={3} maxLength={method==='register'?20:32}
+            placeholder={method==='register'?'Choose a username':'Username'}/></label>
           <label>PASSWORD<input required name="password" type="password" minLength={8} maxLength={128} autoComplete={method==='register'?'new-password':'current-password'} placeholder="At least 8 characters"/></label>
           {error&&<div className="form-error" role="alert">{error}</div>}
-          <button className="primary-btn full" disabled={busy}>{busy?'Connecting…':method==='register'?'Create account':'Sign in'} <Icon name="arrow" size={16}/></button>
+          <button className="primary-btn full" disabled={busy}>{busy?'Connecting…':method==='register'?'Request account':'Sign in'} <Icon name="arrow" size={16}/></button>
         </form>
         <button className="auth-swap" onClick={()=>{setMethod(method==='register'?'login':'register');setError('');}}>
           {method==='register'?'Already have an account? Sign in':'New to Celestial? Create an account'}
-        </button>
+        </button></>}
 
       </div>
     </section>
@@ -286,9 +298,9 @@ function App() {
         </button>
       </div>
       <div className="celestial-corner-actions">
-        <button type="button" onClick={()=>setModal('credits')}><Heart20Filled/> credits</button>
-        <button type="button" onClick={()=>openDock('chat')}><PeopleCommunity20Filled/> community</button>
-        <button type="button" onClick={()=>setModal(user?'profile':'login')}><Person20Filled/> {user?'profile':'sign in'}</button>
+        <button type="button" onClick={()=>setModal('profile')}>
+          <Person20Filled/> {user.username}
+        </button>
       </div>
     </div>
     {(modal==='login'||modal==='register')&&<AuthSheet mode={modal} close={()=>setModal(null)}
@@ -298,6 +310,7 @@ function App() {
         <h2>{actor}</h2><p>Signed in to Celestial.</p>
         <button className="celestial-sheet-action" onClick={()=>{setModal(null);logout();}}>Sign out</button>
       </div>
+      {['admin','account_manager'].includes(user.role)&&<AccountReview/>}
     </Modal>}
     {modal==='settings'&&<Appearance palette={palette} setPalette={setPalette} backdrop={backdrop}
       setBackdrop={setBackdrop} reduced={reduced} setReduced={setReduced} close={()=>setModal(null)}/>}
@@ -309,14 +322,6 @@ function App() {
           <FilledIcon/><span><b>{item.label}</b><small>{item.description}</small></span><span className="celestial-app-arrow">↗</span>
         </button>;
       })}</div>
-    </Modal>}
-    {modal==='credits'&&<Modal title="Credits" close={()=>setModal(null)}>
-      <h2>About Celestial.</h2>
-      <p>Celestial brings your games, browser, chat and AI together with a compact dock,
-        a custom color palette and an aurora backdrop.</p>
-      <p>The northern-lights photograph is by Troy Olson, available under the Unsplash License.</p>
-      <a className="celestial-credit-link" href="https://unsplash.com/photos/aurora-borealis-lights-up-the-night-sky-over-forest-9h8pkF_N0FE"
-        rel="noopener noreferrer" target="_blank">View background photo ↗</a>
     </Modal>}
     {toast&&<div className="celestial-toast" role="status"><Sparkle20Filled/> {toast}</div>}
     <DialRoot productionEnabled={new URLSearchParams(location.search).has('tune')}/>
