@@ -11,6 +11,7 @@ import { Chat } from './Chat.jsx';
 import { AI } from './AI.jsx';
 import { api, navigation, readLocal, saveLocal } from './constants.js';
 import { Icon } from './icons.jsx';
+import { SceneBoundary } from './SceneBoundary.jsx';
 
 const allowed=new Set(['arcade','browser','chat','ai']);
 const fromHash=()=>{
@@ -129,7 +130,7 @@ function App(){
   const actor=user?.username||'Guest';
   const effectiveReduced=reduced||(typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   return <>
-    <Atmosphere reduced={effectiveReduced}/>
+    <SceneBoundary><Atmosphere reduced={effectiveReduced}/></SceneBoundary>
     <div className="workspace-shell">
       <aside className="launcher glass">
         <button className="brand-mark" onClick={()=>navigate('arcade')} aria-label="Celestial Arcade"><img src="/assets/celestial-star.svg" alt=""/></button>
