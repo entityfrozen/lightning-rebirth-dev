@@ -39,6 +39,8 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.match(await cssAsset.text(),/browser-window/);
     const guestAiStatus=await call('/api/ai/status');
     assert.equal(guestAiStatus.response.status,401);
+    const guestAiMessage=await call('/api/ai','POST',{messages:[{role:'user',content:'Hello'}]});
+    assert.equal(guestAiMessage.response.status,401);
     const starAsset=await fetch(url+'/assets/celestial-star.svg');
     assert.equal(starAsset.status,200);
     assert.match(await starAsset.text(),/<svg/);
@@ -54,6 +56,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.deepEqual(Object.keys(aiStatus.data),['configured']);
     const aiRequest=await call('/api/ai','POST',{messages:[{role:'user',content:'Hello'}]});
     assert.equal(aiRequest.response.status,503);
+    assert.doesNotMatch(aiRequest.data.error,/nvidia|openai|provider|api key|model/i);
     result=await call('/api/messages','POST',{channel:'general',text:'Hello from API test'});assert.equal(result.response.status,201);
     result=await call('/api/messages?channel=general');assert.equal(result.data.messages.at(-1).text,'Hello from API test');
     const browserStatus=await call('/api/browser/status');
