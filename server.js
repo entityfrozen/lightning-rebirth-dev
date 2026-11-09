@@ -285,14 +285,14 @@ async function handleAPI(req,res,url) {
       const data=await upstream.json().catch(()=>({}));
       if(!upstream.ok){
         console.warn('AI provider response:',upstream.status,data?.error?.type||'unknown');
-        return fail(res,502,'AI provider is unavailable. Check server configuration or try again.');
+        return fail(res,502,'Celestial is temporarily unavailable. Please try again.');
       }
       const text=(data.output||[]).flatMap(item=>item.type==='message'?item.content||[]:[]).filter(part=>part.type==='output_text').map(part=>part.text).join('\n').trim();
-      if(!text)return fail(res,502,'The AI provider returned no text');
+      if(!text)return fail(res,502,'Celestial could not complete that request.');
       return respond(res,200,{text:text.slice(0,10000)});
     }catch(error){
       console.warn('AI request failed:',error?.name||'unknown');
-      return fail(res,502,'Could not reach the AI provider.');
+      return fail(res,502,'Celestial is temporarily unavailable. Please try again.');
     }
   }
   if(pathname==='/api/messages' && req.method==='POST') {
