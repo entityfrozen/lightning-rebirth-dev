@@ -72,8 +72,18 @@ const validateTheme=(theme)=>{
   cleaned.radius=Math.max(4,Math.min(28,Number(theme.radius)||16));
   cleaned.petals=Boolean(theme.petals);return cleaned;
 };
+const legacyDefaultDark = theme =>
+  theme?.accent?.toLowerCase()==='#bb80ff' &&
+  theme?.background?.toLowerCase()==='#100a1b' &&
+  theme?.surface?.toLowerCase()==='#241631';
+function loadPalette(mode) {
+  const base=mode==='light'?defaultLightTheme:defaultTheme;
+  const stored=restore(mode==='light'?'themeLight':'theme',null);
+  if(!stored || (mode==='dark'&&legacyDefaultDark(stored)))return {...base};
+  return {...base,...stored};
+}
 const initialMode = restore('appearance','dark') === 'light' ? 'light' : 'dark';
-const state={view:'home',communityTab:'chat',channel:'general',filter:'all',sort:'new',search:'',user:null,stats:{members:0,drops:0,messages:0},drops:[],messages:[],loaded:false,motion:restore('motion',true),mode:initialMode,theme:{...(initialMode==='light'?defaultLightTheme:defaultTheme),...restore(initialMode==='light'?'themeLight':'theme',initialMode==='light'?defaultLightTheme:defaultTheme)},themeName:restore('themeName','My Celestial theme'),myThemes:restore('myThemes',[]),savedDrops:restore('savedDrops',[]),notes:restore('notes',''),guestSeen:restore('guestSeen',false)};
+const state={view:'home',communityTab:'chat',channel:'general',filter:'all',sort:'new',search:'',user:null,stats:{members:0,drops:0,messages:0},drops:[],messages:[],loaded:false,motion:restore('motion',true),mode:initialMode,theme:loadPalette(initialMode),themeName:restore('themeName','My Celestial theme'),myThemes:restore('myThemes',[]),savedDrops:restore('savedDrops',[]),notes:restore('notes',''),guestSeen:restore('guestSeen',false)};
 let eventSource=null;
 let sky=null;
 let appearanceControl=null;
@@ -111,8 +121,7 @@ function setAppearance(next){
   const mode=next==='light'?'light':'dark';
   if(mode===state.mode)return;
   state.mode=mode;
-  const base=mode==='light'?defaultLightTheme:defaultTheme;
-  state.theme={...base,...restore(mode==='light'?'themeLight':'theme',base)};
+  state.theme=loadPalette(mode);
   store('appearance',mode);
   applyTheme();
   appearanceControl?.setMode(mode,true);
@@ -259,6 +268,14 @@ async function handleAction(action,button){const id=button.dataset.id;switch(act
   case 'logout':await send('/api/logout',{});state.user=null;state.guestSeen=false;store('guestSeen',false);render();renderLogin('login',true);toast('Signed out');break;
 
 }}
+
+document.addEventListener('pointermove',event=>{
+  const card=event.target.closest?.('.home-action, .drop-card');
+  if(!card)return;
+  const rect=card.getBoundingClientRect();
+  card.style.setProperty('--card-x',((event.clientX-rect.left)/rect.width*100).toFixed(1)+'%');
+  card.style.setProperty('--card-y',((event.clientY-rect.top)/rect.height*100).toFixed(1)+'%');
+},{passive:true});
 
 document.addEventListener('click',async event=>{
   const nav=event.target.closest('[data-nav]');if(nav){navigate(nav.dataset.nav);return;}
