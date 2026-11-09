@@ -1,21 +1,61 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {Icon} from './icons.jsx';
+import {api} from './constants.js';
 const MAIN='lightning-main';
 const clock=stamp=>{const n=Number(stamp)||Date.parse(stamp);if(!n)return '';const d=Date.now()-n;return d<60000?'now':d<3600000?Math.floor(d/60000)+'m':d<86400000?Math.floor(d/3600000)+'h':new Date(n).toLocaleDateString();};
 const reactions=['❤️','😂','🔥','✨','💚','👍'];
 export function Chat({user,onAuth,live}){
   const [sid,setSid]=useState(MAIN),[channel,setChannel]=useState('general'),[draft,setDraft]=useState(''),[reply,setReply]=useState(null),[error,setError]=useState('');
   const feed=useRef(null);
+  const [dmUser,setDmUser]=useState(null);
+  const [dmRows,setDmRows]=useState([]);
+  const [dmThreads,setDmThreads]=useState([]);
+
   const server=live.servers.find(s=>s.id===sid)||live.servers[0];
   const channels=server?.channels||[];
   const active=channels.find(c=>c.id===channel)||channels[0];
   const messages=server?.messages?.[active?.id]||[];
+  const visibleMessages=dmUser?dmRows.map(row=>({id:row.id,by:row.author,userId:row.from,message:row.text,at:row.createdAt})):messages;
   const member=server?.members?.some(m=>m.id===user?.id);
   useEffect(()=>{if(server&&!channels.some(c=>c.id===channel))setChannel(channels[0]?.id||'general');},[server?.id,channels.length]);
   useEffect(()=>{if(feed.current)feed.current.scrollTop=feed.current.scrollHeight;},[messages.length,active?.id]);
-  useEffect(()=>{if(live.error)setError(live.error);},[live.error]);
-  const send=e=>{e.preventDefault();const message=draft.trim();if(!user){onAuth('login');return;}if(!message||!server||!active)return;
-    if(!live.send({type:'v2Message',serverId:server.id,channel:active.id,message,replyTo:reply?.id||''})){setError('Reconnecting. Try again.');return;}
+  useEffect(()=>{if(live.error&&!dmUser)setError(live.error);},[live.error]);
+  useEffect(()=>{
+    if(!user)return;
+    let cancelled=false;
+    const refresh=async()=>{
+      try{
+        const threads=await api('/api/dms');
+        if(!cancelled)setDmThreads(threads.threads||[]);
+        if(dmUser?.id){
+          const detail=await api('/api/dms/'+dmUser.id);
+          if(!cancelled)setDmRows(detail.messages||[]);
+        }
+      }catch(e){if(!cancelled&&dmUser)setError(e.message);}
+    };
+    refresh();
+    const timer=setInterval(refresh,4500);
+    return()=>{cancelled=true;clearInterval(timer);};
+  },[user?.id,dmUser?.id]);
+
+  const send=async e=>{
+    e.preventDefault();
+    const message=draft.trim();
+    if(!user){onAuth('login');return;}
+    if(!message)return;
+    if(dmUser){
+      try{
+        await api('/api/dms/'+dmUser.id,{method:'POST',body:JSON.stringify({text:message})});
+        const fresh=await api('/api/dms/'+dmUser.id);
+        setDmRows(fresh.messages||[]);
+        setDraft('');setError('');
+      }catch(err){setError(err.message);}
+      return;
+    }
+    if(!server||!active)return;
+    if(!live.send({type:'v2Message',serverId:server.id,channel:active.id,message,replyTo:reply?.id||''})){
+      setError('Reconnecting. Try again.');return;
+    }
     setDraft('');setReply(null);setError('');
   };
   const sendAction=(type,row,extra={})=>live.send({type,serverId:server.id,channel:active.id,messageId:row.id,...extra});
@@ -27,21 +67,27 @@ export function Chat({user,onAuth,live}){
   return <section className="forest-app forest-chat">
     <div className="forest-app-head"><span className="eyebrow">COMMUNITY / LIVE</span><h1>Community <em>chat.</em></h1><p>Meet people, make friends, join channels, play together.</p><span className="forest-chat-presence"><i/>{live.online.length} online · {live.connected?'connected':'reconnecting'}</span></div>
     <div className="forest-chat-layout">
-      <aside className="forest-chat-servers"><span className="chat-group-label">SERVERS</span>{live.servers.map(s=><button key={s.id} title={s.name} className={'forest-server-icon '+(s.id===server?.id?'active':'')} onClick={()=>{setSid(s.id);setChannel(s.channels[0]?.id||'general')}}>{s.permanent?'✦':s.name?.[0]}</button>)}<button title="Create server" className="forest-server-add" onClick={create}>+</button></aside>
-      <aside className="forest-chat-channels"><div className="forest-chat-server-title"><span>{server?.name||'Celestial'}</span><small>{server?.memberCount||0} members</small></div><span className="chat-group-label">TEXT CHANNELS {server?.canManage&&<button title="Add channel" onClick={addChannel}>+</button>}</span><div className="forest-channel-list">{channels.map(c=><button key={c.id} className={'forest-channel-link '+(active?.id===c.id?'active':'')} onClick={()=>{setChannel(c.id);setReply(null)}}><span>#</span>{c.name}{c.readOnly&&<small>◆</small>}</button>)}</div>{server&&!member&&<button className="forest-join-server" onClick={()=>live.send({type:'v2Join',serverId:server.id})}>Join server ↗</button>}<div className="forest-chat-channel-footer">✦ {user.username}</div></aside>
-      <div className="forest-chat-main"><header className="forest-chat-titlebar"><span>#</span><strong>{active?.name||'general'}</strong><small>{active?.category||'COMMUNITY'}</small><b>{live.connected?'● LIVE':'○ OFFLINE'}</b></header>
+      <aside className="forest-chat-servers"><span className="chat-group-label">SERVERS</span>{live.servers.map(s=><button key={s.id} title={s.name} className={'forest-server-icon '+(s.id===server?.id?'active':'')} onClick={()=>{setDmUser(null);setSid(s.id);setChannel(s.channels[0]?.id||'general')}}>{s.permanent?'✦':s.name?.[0]}</button>)}<button title="Create server" className="forest-server-add" onClick={create}>+</button></aside>
+      <aside className="forest-chat-channels"><div className="forest-chat-server-title"><span>{server?.name||'Celestial'}</span><small>{server?.memberCount||0} members</small></div><span className="chat-group-label">TEXT CHANNELS {server?.canManage&&<button title="Add channel" onClick={addChannel}>+</button>}</span><div className="forest-channel-list">{channels.map(c=><button key={c.id} className={'forest-channel-link '+(active?.id===c.id?'active':'')} onClick={()=>{setDmUser(null);setChannel(c.id);setReply(null)}}><span>#</span>{c.name}{c.readOnly&&<small>◆</small>}</button>)}</div><div className="forest-dm-block"><span className="chat-group-label">DIRECT MESSAGES</span>
+        {dmThreads.map(thread=><button key={thread.user.id} className={'forest-dm-link '+(dmUser?.id===thread.user.id?'active':'')}
+          onClick={()=>{setDmUser(thread.user);setError('')}}><span>◉</span>{thread.user.username}</button>)}
+        </div>{server&&!member&&<button className="forest-join-server" onClick={()=>live.send({type:'v2Join',serverId:server.id})}>Join server ↗</button>}<div className="forest-chat-channel-footer">✦ {user.username}</div></aside>
+      <div className="forest-chat-main"><header className="forest-chat-titlebar"><span>{dmUser?'@':'#'}</span><strong>{dmUser?dmUser.username:active?.name||'general'}</strong>
+        <small>{dmUser?'PRIVATE CONVERSATION':active?.category||'COMMUNITY'}</small>
+        {dmUser&&<button className="forest-dm-back" onClick={()=>setDmUser(null)}>← Channels</button>}
+        <b>{dmUser?'PRIVATE':live.connected?'● LIVE':'○ OFFLINE'}</b></header>
         <div className="forest-chat-feed" ref={feed} role="log" aria-live="polite">
-          {!live.connected&&!live.servers.length&&<div className="forest-chat-empty">Connecting to Celestial Live…</div>}
-          {live.connected&&messages.length===0&&<div className="forest-chat-empty"><span>✧</span><h2>The beginning of #{active?.name}.</h2><p>Say something worth remembering.</p></div>}
-          {messages.map(row=><article className={'forest-message '+(row.userId===user.id?'own':'')} key={row.id}>
-            <div className="forest-message-avatar">{row.by?.[0]?.toUpperCase()||'?'}</div><div className="forest-message-body"><div className="forest-message-meta"><strong>{row.by}</strong><time>{clock(row.at)}</time>{row.editedAt&&<small>edited</small>}{row.pinnedAt&&<small>PINNED</small>}</div>{row.replyTo&&<div className="forest-message-reply">↳ Reply in thread</div>}<p>{row.message}</p><div className="forest-message-reactions">{Object.entries(row.reactions||{}).map(([emoji,ids])=><button key={emoji} onClick={()=>sendAction('v2React',row,{emoji})}>{emoji} {ids.length}</button>)}</div></div>
-            <div className="forest-message-actions"><button title="Reply" onClick={()=>setReply(row)}>↩</button>{reactions.slice(0,3).map(emoji=><button key={emoji} title={'React '+emoji} onClick={()=>sendAction('v2React',row,{emoji})}>{emoji}</button>)}{row.userId===user.id&&<><button title="Edit" onClick={()=>edit(row)}>✎</button><button title="Delete" onClick={()=>remove(row)}>×</button></>}</div>
+          {!dmUser&&!live.connected&&!live.servers.length&&<div className="forest-chat-empty">Connecting to Celestial Live…</div>}
+          {(dmUser?visibleMessages.length===0:live.connected&&visibleMessages.length===0)&&<div className="forest-chat-empty"><span>✧</span><h2>{dmUser?'A private conversation.':'The beginning of #'+(active?.name||'general')+'.'}</h2><p>Say something worth remembering.</p></div>}
+          {visibleMessages.map(row=><article className={'forest-message '+(row.userId===user.id?'own':'')} key={row.id}>
+            <div className="forest-message-avatar">{row.by?.[0]?.toUpperCase()||'?'}</div><div className="forest-message-body"><div className="forest-message-meta"><strong>{row.by}</strong><time>{clock(row.at)}</time>{row.editedAt&&<small>edited</small>}{row.pinnedAt&&<small>PINNED</small>}</div>{row.replyTo&&<div className="forest-message-reply">↳ Reply in thread</div>}<p>{row.message}</p>{!dmUser&&<div className="forest-message-reactions">{Object.entries(row.reactions||{}).map(([emoji,ids])=><button key={emoji} onClick={()=>sendAction('v2React',row,{emoji})}>{emoji} {ids.length}</button>)}</div>}</div>
+            {!dmUser&&<div className="forest-message-actions"><button title="Reply" onClick={()=>setReply(row)}>↩</button>{reactions.slice(0,3).map(emoji=><button key={emoji} title={'React '+emoji} onClick={()=>sendAction('v2React',row,{emoji})}>{emoji}</button>)}{row.userId===user.id&&<><button title="Edit" onClick={()=>edit(row)}>✎</button><button title="Delete" onClick={()=>remove(row)}>×</button></>}</div>}
           </article>)}
         </div>
-        {reply&&<div className="forest-reply-strip">Replying to {reply.by}: {reply.message?.slice(0,50)} <button onClick={()=>setReply(null)}>×</button></div>}{error&&<div className="forest-chat-error">{error}</div>}
-        <form className="forest-chat-compose" onSubmit={send}><span>✧</span><input value={draft} onChange={e=>setDraft(e.target.value)} maxLength={1500} aria-label="Message channel" placeholder={'Message #'+(active?.name||'general')} disabled={!member||active?.readOnly}/><button disabled={!draft.trim()||!live.connected||!member||active?.readOnly} type="submit"><Icon name="send" size={18}/></button></form>
+        {reply&&!dmUser&&<div className="forest-reply-strip">Replying to {reply.by}: {reply.message?.slice(0,50)} <button onClick={()=>setReply(null)}>×</button></div>}{error&&<div className="forest-chat-error">{error}</div>}
+        <form className="forest-chat-compose" onSubmit={send}><span>✧</span><input value={draft} onChange={e=>setDraft(e.target.value)} maxLength={1500} aria-label="Message channel" placeholder={dmUser?'Message @'+dmUser.username:'Message #'+(active?.name||'general')} disabled={!dmUser&&(!member||active?.readOnly)}/><button disabled={!draft.trim()||(!dmUser&&(!live.connected||!member||active?.readOnly))} type="submit"><Icon name="send" size={18}/></button></form>
       </div>
-      <aside className="forest-chat-members"><span className="chat-group-label">ONLINE — {live.online.length}</span>{live.online.map(u=><div className="forest-online-member" key={u.id}><span className="forest-member-avatar">{u.name?.[0]?.toUpperCase()||'?'}</span><strong>{u.name}</strong><i/></div>)}<div className="forest-chat-about"><span>✧</span><p>Powered by the live Bolt community engine. Play and talk in real time.</p></div></aside>
+      <aside className="forest-chat-members"><span className="chat-group-label">ONLINE — {live.online.length}</span>{live.online.map(u=><button className="forest-online-member" key={u.id} disabled={u.id===user.id} onClick={()=>{setDmUser({id:u.id,username:u.username||u.name});setError('')}} title={'Message '+u.name}><span className="forest-member-avatar">{u.name?.[0]?.toUpperCase()||'?'}</span><strong>{u.name}</strong><i/></button>)}<div className="forest-chat-about"><span>✧</span><p>Powered by the live Bolt community engine. Play and talk in real time.</p></div></aside>
     </div>
   </section>;
 }
