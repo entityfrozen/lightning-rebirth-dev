@@ -329,3 +329,119 @@ button,textarea,input{accent-color:#a7efc4}
 .auth-guest{color:#bfd8c6}
 .profile-big-avatar{background:linear-gradient(140deg,#d8fad8,#85d5a1);color:#1b3d27}
 .toast{background:#092d1ced;border-color:#c8ffd353;color:#f3fff4}
+
+/* Overlays collapse gracefully on touch screens. The forest stays the backdrop. */
+@media(max-width:1300px){
+ .forest-chat-layout{grid-template-columns:58px 190px minmax(0,1fr) 157px}
+ .forest-chat-members{padding:15px 9px}
+ .forest-app{padding-right:32px}
+}
+@media(max-width:1080px){
+ .forest-chat-layout{grid-template-columns:53px 175px minmax(0,1fr)}
+ .forest-chat-members{display:none}
+ .forest-game-gallery{grid-template-columns:repeat(2,minmax(0,1fr));max-width:850px}
+ .forest-app-head h1{font-size:45px}
+ .forest-app-head .forest-chat-presence{position:static;margin-top:12px}
+}
+@media(max-width:800px){
+ .launcher{left:6px;width:42px;padding:7px 3px;border-radius:14px}
+ .launcher-link{width:35px;height:39px;min-height:39px}
+ .forest-app{padding:66px 16px 50px 60px}
+ .ai-screen{padding:66px 16px 50px 60px}
+ .forest-chat{padding-right:12px}
+ .forest-chat-layout{height:min(720px,calc(100dvh - 199px));grid-template-columns:47px 158px minmax(0,1fr)}
+ .forest-chat-channels{padding:14px 7px}
+ .forest-chat-servers{padding:11px 4px}
+ .forest-server-icon,.forest-server-add{width:35px;height:35px}
+ .forest-chat-server-title{padding:0 4px 15px}
+ .forest-channel-link{padding:9px 6px;font-size:11px}
+ .forest-chat-titlebar{padding:0 12px}
+ .forest-chat-titlebar small{display:none}
+ .forest-chat-feed{padding:16px 11px}
+ .forest-chat-main{min-width:0}
+ .forest-browser-chrome{margin-left:56px;margin-top:53px}
+ .forest-browser.is-browsing .forest-browser-stage{margin-left:56px}
+ .ai-layout{grid-template-columns:1fr}
+ .ai-side{display:none}
+ .app-topbar .topbar-actions{gap:5px}
+ .online-pill{top:8px;left:8px}
+}
+@media(max-width:580px){
+ .forest-backdrop{background-position:center;animation:none}
+ .forest-backdrop::before{background:radial-gradient(ellipse at center,transparent 22%,#00100873 91%),linear-gradient(#04120925,#03110a75)}
+ .workspace-shell{padding:0;display:block}
+ .launcher{top:auto;bottom:8px;left:50%;transform:translateX(-50%);width:min(290px,calc(100vw - 20px));min-height:55px;height:55px;flex-direction:row;border-radius:16px;padding:4px 7px}
+ .launcher-nav{display:flex;flex-direction:row;justify-content:space-around;gap:4px}
+ .launcher-link{width:54px;height:42px;min-height:42px;display:flex;flex-direction:column;gap:3px}
+ .launcher-link span{display:block;font-size:9px;font-weight:700}
+ .launcher-link svg{height:17px;width:17px}
+ .main-shell{inset:0}
+ .app-topbar{top:8px;left:8px;right:8px}
+ .profile-menu{height:32px}
+ .profile-menu>span:last-child{display:none}
+ .icon-button{width:31px;height:31px}
+ .online-pill{font-size:10px;height:27px}
+ .app-status{display:none}
+ .forest-browser-home{width:min(450px,100%);padding:20px;transform:translateY(-17%);margin-bottom:0}
+ .forest-wordmark{font-size:47px}
+ .forest-main-search{height:46px}
+ .forest-shortcuts{gap:5px}
+ .forest-shortcuts button{font-size:10px;padding:8px 10px}
+ .forest-bookmarks{margin-top:11px}
+ .forest-browser.is-browsing .forest-browser-chrome{margin:47px 7px 0;border-radius:12px 12px 0 0}
+ .forest-browser.is-browsing .forest-browser-stage{margin:0 7px 70px;border-radius:0 0 10px 10px}
+ .forest-toolbar{padding:5px;gap:1px}
+ .forest-toolbar>button,.forest-toolbar>a{width:27px;height:29px}
+ .forest-toolbar form{min-width:0}
+ .forest-browser-tip{font-size:9px}
+ .forest-app,.ai-screen{padding:62px 12px 85px;min-height:100%;overflow-x:hidden}
+ .forest-app-head{margin-bottom:17px}
+ .forest-app-head h1{font-size:38px}
+ .forest-app-head p{font-size:11px}
+ .forest-game-gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .forest-game-card{min-height:180px;padding:14px;border-radius:13px}
+ .forest-card-number{font-size:7px;left:14px;top:12px}
+ .forest-card-symbol{font-size:55px;right:14px;top:40px}
+ .forest-game-card strong{font-size:16px;max-width:95%}
+ .forest-game-card small{font-size:9px;max-width:95%}
+ .forest-card-play{font-size:9px;margin-top:11px}
+ .forest-game-stage{padding:14px;gap:12px;min-height:340px}
+ .forest-game-heading h2{font-size:22px}
+ .forest-game-heading span{font-size:9px}
+ .forest-chess-layout,.forest-world-layout{grid-template-columns:1fr;gap:16px}
+ .forest-chess-board{max-width:100%}
+ .forest-chess-square{font-size:26px}
+ .forest-rps-choices button{min-width:85px;font-size:29px}
+ .forest-world-layout canvas{width:100%}
+ .forest-chat{padding-bottom:80px}
+ .forest-chat-layout{height:min(720px,calc(100dvh - 197px));min-height:420px;display:grid;grid-template-columns:40px minmax(0,1fr);grid-template-rows:52px minmax(0,1fr);border-radius:13px}
+ .forest-chat-servers{grid-column:1;grid-row:1/3;padding:7px 3px;gap:7px}
+ .forest-chat-servers .chat-group-label{display:none}
+ .forest-server-icon,.forest-server-add{width:31px;height:31px;font-size:15px}
+ .forest-chat-channels{grid-column:2;grid-row:1;display:flex;flex-direction:row;align-items:center;gap:5px;overflow-x:auto;border-right:0;border-bottom:1px solid #b1ffcb36;padding:5px}
+ .forest-chat-server-title,.forest-chat-channels>.chat-group-label,.forest-chat-channel-footer,.forest-join-server{display:none}
+ .forest-channel-list{flex:1;margin:0;display:flex;flex-direction:row;gap:3px;overflow-x:auto}
+ .forest-channel-link{flex:0 0 auto;width:auto;padding:8px;font-size:10px;white-space:nowrap}
+ .forest-chat-main{grid-row:2;grid-column:2}
+ .forest-chat-titlebar{height:44px}
+ .forest-chat-titlebar b{font-size:8px}
+ .forest-message-actions{right:-3px;top:-25px}
+ .forest-message-actions button{padding:5px}
+ .forest-message-meta{gap:6px}
+ .forest-message-body p{font-size:11px}
+ .forest-chat-compose{padding:6px;gap:4px}
+ .forest-chat-compose input{height:38px;font-size:11px}
+ .forest-chat-compose button{height:34px;width:34px}
+ .forest-auth-invitation{padding:22px}
+ .ai-layout{height:min(740px,calc(100dvh - 182px));min-height:400px}
+ .ai-message-list{padding:17px 13px}
+ .ai-welcome h2{font-size:28px}
+ .ai-core{width:80px;height:80px;font-size:67px}
+ .ai-message{font-size:12px;max-width:90%}
+ .ai-composer{margin:0 9px 11px}
+ .auth-sheet{max-width:450px}
+}
+@media(prefers-reduced-motion:reduce){
+ .forest-backdrop,.forest-fireflies{animation:none!important}
+ .forest-app *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
