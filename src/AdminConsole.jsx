@@ -67,7 +67,7 @@ export function AdminConsole({user}){
       <div>
         <span className="celestial-console-eyebrow"><i/> CELESTIAL / CONTROL ROOM</span>
         <h2>Member management<span>.</span></h2>
-        <p>Review requests, check who has access, and keep the community moving.</p>
+        <p>Approve new accounts and see who already has access.</p>
       </div>
       <button type="button" onClick={refresh} disabled={loading||!!busy}
         className="celestial-console-refresh"><span aria-hidden="true">↻</span> Refresh</button>
