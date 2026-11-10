@@ -833,3 +833,9 @@
   .celestial-messenger.full .messenger-room-emblem{width:45px;height:45px;flex-basis:45px;font-size:26px}
   .celestial-messenger.full .messenger-room-intro h2{font-size:23px}
 }
+
+/* The tab title follows the custom tab surface, never native button chrome. */
+.forest-browser.celestial-browser-v2 .forest-tab>button[role="tab"]{
+  height:100%;padding:0;background:transparent;border:0;
+  border-radius:0;cursor:pointer;appearance:none;
+}
