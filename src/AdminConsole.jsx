@@ -106,7 +106,7 @@ export function AdminConsole({user}){
         tab==='requests'?<div className="celestial-console-rows" role="tabpanel">
           <div className="celestial-console-row-label"><span>REQUESTING ACCOUNT</span><span>SUBMITTED</span><span>REVIEW</span></div>
           {matchingQueue.length===0?<div className="celestial-console-empty">
-            <span>✓</span><strong>{query?'No matching requests':'You're all caught up.'}</strong>
+            <span>✓</span><strong>{query?'No matching requests':"You're all caught up."}</strong>
             <p>{query?'Try a different name.':'New accounts will show up here for manual approval.'}</p>
           </div>:matchingQueue.map(account=><article className="celestial-console-request" key={account.id}>
             <div className="celestial-console-request-member"><Initial name={account.username}/>
