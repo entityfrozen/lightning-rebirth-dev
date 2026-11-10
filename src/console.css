@@ -655,3 +655,9 @@
   .celestial-settings-page .celestial-settings-nav>button,
   .celestial-console-request,.celestial-console-member-row{transition:none}
 }
+
+/* Settings already has account status; remove duplicate floating widgets. */
+.celestial-workspace:has(.celestial-settings-page) .celestial-online,
+.celestial-workspace:has(.celestial-settings-page) .celestial-corner-actions{
+  display:none!important;
+}
