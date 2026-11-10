@@ -135,10 +135,11 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
     </div>}
   </div>;
 }
-export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
+export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null,onOpenBrowser,onCloseBrowser}){
   const [tabs,setTabs]=useState(savedTabs);
   const [activeId,setActiveId]=useState(null);
   const [input,setInput]=useState('');
+  const [homeQuery,setHomeQuery]=useState('');
   const [prefs,setPrefs]=useState(browserPreferences);
   const [bookmarks,setBookmarks]=useState(()=>readLocal('forest-browser-bookmarks',[]));
   const [retry,setRetry]=useState({});
@@ -148,7 +149,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
   const [menuOpen,setMenuOpen]=useState(false);
   const [notice,setNotice]=useState('');
   const root=useRef(null);
-  const controls=useRef(new Map()),box=useRef(null),lastLaunch=useRef(null);
+  const controls=useRef(new Map()),box=useRef(null),homeBox=useRef(null),lastLaunch=useRef(null);
   const current=useMemo(()=>tabs.find(t=>t.id===activeId)||tabs[0], [tabs,activeId]);
   const currentId=current?.id,visibleUrl=current?.url||'';
   const hasTabs=true; // The browser always has tabs and an address bar.
@@ -265,7 +266,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
       const key=event.key.toLowerCase();
       const editing=event.target instanceof HTMLInputElement||
         event.target instanceof HTMLTextAreaElement||event.target?.isContentEditable;
-      if(ctrl&&key==='l'){event.preventDefault();box.current?.focus();box.current?.select();return;}
+      if(ctrl&&key==='l'){event.preventDefault();const target=homeMode?homeBox.current:box.current;target?.focus();target?.select();return;}
       if(ctrl&&key==='t'){event.preventDefault();addTab();return;}
       if(ctrl&&event.shiftKey&&key==='f'){
         event.preventDefault();toggleFullscreen();return;
@@ -306,27 +307,34 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
     if(clean)modify(id,tab=>tab.title===clean?tab:{...tab,title:clean});
   },[modify]);
   const submit=event=>{event.preventDefault();navigate(input);};
-  return <section className={'forest-browser '+(hasTabs?'has-tabs ':'')+(visibleUrl?'is-browsing':'new-tab')+(prefs.compactTabs?' compact-tabs':'')}
+  const submitHome=event=>{
+    event.preventDefault();
+    if(!homeQuery.trim())return;
+    navigate(homeQuery);
+    setHomeQuery('');
+    onOpenBrowser?.();
+  };
+  const leaveBrowser=()=>{
+    if(document.fullscreenElement===root.current)document.exitFullscreen().catch(()=>{});
+    onCloseBrowser?.();
+  };
+  return <section className={'forest-browser '+(hasTabs?'has-tabs ':'')+
+    (homeMode?'home-mode ':'')+(visibleUrl&&!homeMode?'is-browsing':'new-tab')+
+    (prefs.compactTabs?' compact-tabs':'')}
     aria-label="Celestial Browser" ref={root} data-fullscreen={fullScreen?'on':'off'}>
-    {hasTabs&&<div className="forest-browser-chrome">
+    {!homeMode&&hasTabs&&<div className="forest-browser-chrome">
       <div className="celestial-browser-topline">
         <span className="celestial-browser-identity"><span className="celestial-browser-star">✦</span> CELESTIAL <em>/ BROWSER</em></span>
         <div className="celestial-browser-top-actions">
           <span className="celestial-browser-session" role="status">{notice||`${tabs.length} ${tabs.length===1?'tab':'tabs'} open`}</span>
+          <button type="button" className="celestial-browser-close" aria-label="Close browser and return Home"
+            onClick={leaveBrowser}>× <span>Close browser</span></button>
           <button type="button" className="celestial-browser-top-button" onClick={toggleFullscreen}
             title={fullScreen?'Exit fullscreen (Esc)':'Fullscreen (Ctrl+Shift+F)'}
             aria-label={fullScreen?'Exit browser fullscreen':'Enter browser fullscreen'}
             aria-pressed={fullScreen}>{fullScreen?'▣':'⛶'} <span>{fullScreen?'Exit fullscreen':'Fullscreen'}</span></button>
         </div>
       </div>
-      <div className="forest-tabs">{tabs.map(tab=><div key={tab.id}
-        className={'forest-tab '+(tab.id===currentId?'active':'')}>
-        <button onClick={()=>setActiveId(tab.id)} title={tab.url||'New tab'}>
-          <span className="celestial-browser-tab-mark" aria-hidden="true">{tab.url?'◉':'✦'}</span>
-          {tab.title|| (tab.url?new URL(tab.url).hostname:'New tab')}</button>
-        <button className="forest-tab-close" onClick={()=>closeTab(tab.id)} aria-label="Close tab">×</button>
-      </div>)}
-      <button className="forest-add-tab" onClick={()=>addTab()} aria-label="New tab">＋</button></div>
       <div className="forest-toolbar">
         <button disabled={current?.cursor<=0} onClick={()=>goHistory(-1)} aria-label="Back"><Icon name="back" size={16}/></button>
         <button disabled={current?.cursor>=current?.history?.length-1} onClick={()=>goHistory(1)} aria-label="Forward">→</button>
@@ -370,19 +378,25 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
       </div>}
     </div>}
     <div className="forest-browser-stage">
-      {!visibleUrl&&<div className="forest-browser-home">
+      {(homeMode||!visibleUrl)&&<div className="forest-browser-home">
         {window.self!==window.top&&!window.crossOriginIsolated&&
           <div className="celestial-embedded-browser-notice" role="note">
             <strong>Browser needs its own tab</strong>
             <span>The launcher can show Celestial, but Scramjet needs a standalone browser window.</span>
             <a href={location.origin+'/#browser'} target="_blank" rel="noopener noreferrer">Open full browser ↗</a>
           </div>}
-        <div className="forest-wordmark" aria-label="Celestial">celes<span>tial</span></div>
-        <form className="forest-main-search" onSubmit={submit}>
+        <div className="flare-home-symbol" aria-hidden="true">✦</div>
+        <h1 className="forest-wordmark" aria-label="Celestial">celestial<span>.</span></h1>
+        <p className="flare-home-hint">{homeMode?'Your web, one search away.':'New tab'}</p>
+        <form className="forest-main-search" onSubmit={homeMode?submitHome:submit}>
           <Icon name="browser" size={19}/>
-          <input ref={box} value={input} onChange={e=>setInput(e.target.value)}
-            placeholder="search or enter a url" aria-label="Search or enter a URL" autoComplete="off" spellCheck={false}/>
-          <button type="submit" aria-label="Search"><Icon name="arrow" size={20}/></button>
+          {homeMode?<input ref={homeBox} value={homeQuery} onChange={e=>setHomeQuery(e.target.value)}
+            placeholder="Search the web or enter a URL" aria-label="Search or enter a URL"
+            autoComplete="off" spellCheck={false}/>:
+            <input ref={box} value={input} onChange={e=>setInput(e.target.value)}
+              placeholder="Search the web or enter a URL" aria-label="Search or enter a URL"
+              autoComplete="off" spellCheck={false}/>}
+          <button type="submit" aria-label="Search">Search <Icon name="arrow" size={18}/></button>
         </form>
         {homeMode?<div className="celestial-home-starter">
           <p className="celestial-home-starter-title">Where to?</p>
@@ -412,5 +426,15 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
           if(control)controls.current.set(id,control);else controls.current.delete(id);
         }}/>:null)}
     </div>
+    {!homeMode&&<div className="flare-browser-bottom-tabs" aria-label="Open browser tabs">
+        <div className="forest-tabs">{tabs.map(tab=><div key={tab.id}
+          className={'forest-tab '+(tab.id===currentId?'active':'')}>
+          <button onClick={()=>setActiveId(tab.id)} title={tab.url||'New tab'}>
+            <span className="celestial-browser-tab-mark" aria-hidden="true">{tab.url?'◉':'✦'}</span>
+            {tab.title|| (tab.url?new URL(tab.url).hostname:'New tab')}</button>
+          <button className="forest-tab-close" onClick={()=>closeTab(tab.id)} aria-label="Close tab">×</button>
+        </div>)}
+        <button className="forest-add-tab" onClick={()=>addTab()} aria-label="New tab">＋</button></div>
+    </div>}
   </section>;
 }
