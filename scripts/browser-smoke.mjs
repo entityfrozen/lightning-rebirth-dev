@@ -160,6 +160,15 @@ try{
   // Full chat and the member roster must be usable too.
   await page.getByRole('button',{name:'Chat',exact:true}).first().click();
   await page.locator('.celestial-messenger.full').waitFor({timeout:15000});
+  const composer=page.locator('.celestial-messenger.full .messenger-composer');
+  await composer.locator('input').fill('Celestial chat smoke test');
+  const sendButton=composer.getByRole('button',{name:'Send message'});
+  await sendButton.waitFor({state:'visible',timeout:10000});
+  assert.equal(await sendButton.isDisabled(),false,
+    'The default community room must allow approved accounts to send chat messages');
+  await sendButton.click();
+  await page.locator('.celestial-messenger.full .messenger-message-text')
+    .filter({hasText:'Celestial chat smoke test'}).waitFor({timeout:15000});
   await page.screenshot({path:path.join(screenshots,'full-chat.png'),fullPage:true});
 
   console.log(JSON.stringify({
