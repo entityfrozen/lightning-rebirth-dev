@@ -107,6 +107,27 @@ try{
   await mobile.getByRole('button',{name:'Create account',exact:true}).click();
   await mobile.locator('input[name="confirmPassword"]').waitFor({timeout:5000});
   await mobile.screenshot({path:path.join(screenshots,'signup-mobile.png'),fullPage:true});
+  await mobile.getByRole('button',{name:'Sign in',exact:true}).click();
+  await mobile.locator('input[name="username"]').fill('SmokeAdmin');
+  await mobile.locator('input[name="password"]').fill(password);
+  await mobile.locator('.auth-fields form button[type="submit"]').click();
+  await mobile.locator('nav[aria-label="Main navigation"] .dock-link').first()
+    .waitFor({timeout:25000});
+  const mobileNav=await mobile.evaluate(()=>{
+    const root=document.querySelector('nav[aria-label="Main navigation"]');
+    const rect=root?.getBoundingClientRect();
+    return {
+      bottom:rect?.bottom,
+      labels:[...root.querySelectorAll('.dock-link')].map(button=>
+        button.querySelector('.dock-link-label')?.textContent),
+      canReadLabels:[...root.querySelectorAll('.dock-link-label')].every(label=>
+        getComputedStyle(label).display!=='none')
+    };
+  });
+  assert.deepEqual(mobileNav.labels,['Home','Browser','Apps','Chat','AI','Settings']);
+  assert.equal(mobileNav.canReadLabels,true,'Mobile tabs need visible text');
+  assert.ok(Math.abs(mobileNav.bottom-844)<5,'Mobile navigation must be at the bottom');
+  await mobile.screenshot({path:path.join(screenshots,'navigation-mobile.png'),fullPage:true});
   await mobile.close();
 
   const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
@@ -136,6 +157,24 @@ try{
   await page.locator('.auth-fields form button[type="submit"]').click();
   await page.locator('.forest-browser-home input[aria-label="Search or enter a URL"]')
     .waitFor({timeout:25000});
+
+  const primaryLabels=await page.locator('nav[aria-label="Main navigation"] .dock-link')
+    .evaluateAll(buttons=>buttons.map(button=>button.getAttribute('aria-label')));
+  assert.deepEqual(primaryLabels,['Home','Browser','Apps','Chat','AI','Settings']);
+  await page.getByRole('button',{name:'Compact navigation'}).click();
+  const compactWidth=await page.locator('.dock-shell').evaluate(element=>element.getBoundingClientRect().width);
+  assert.ok(compactWidth<90,'Compact navigation should keep icons accessible without taking space');
+  await page.getByRole('button',{name:'Expand navigation'}).click();
+  await page.getByRole('button',{name:'Quick switch (Ctrl+K)'}).click();
+  await page.getByRole('dialog',{name:'Switch to a page'})
+    .getByRole('textbox',{name:'Find a page'}).fill('apps');
+  await page.getByRole('dialog',{name:'Switch to a page'})
+    .getByRole('button',{name:/Apps/}).click();
+  await page.locator('.celestial-apps-page').waitFor({timeout:15000});
+  await page.getByRole('button',{name:'Browser',exact:true}).first().click();
+  await page.locator('.forest-browser-home input[aria-label="Search or enter a URL"]')
+    .waitFor({timeout:25000});
+  await page.screenshot({path:path.join(screenshots,'navigation-desktop.png'),fullPage:true});
 
   const isolation=await page.evaluate(()=>window.crossOriginIsolated);
   assert.equal(isolation,true,'Celestial must be cross-origin isolated for Scramjet');
