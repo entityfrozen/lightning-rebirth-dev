@@ -31,6 +31,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(homepage.headers.get('cross-origin-embedder-policy'),'credentialless');
     assert.equal(homepage.headers.get('x-frame-options'),null);
     assert.doesNotMatch(homepage.headers.get('content-security-policy')||'',/frame-ancestors/);
+    assert.equal(homepage.headers.get('cross-origin-resource-policy'),'cross-origin');
 
     const html=await homepage.text();
     assert.match(html,/<title>Celestial/);
@@ -43,6 +44,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(cssAsset.status,200);
     assert.equal(cssAsset.headers.get('cross-origin-opener-policy'),'same-origin');
     assert.equal(cssAsset.headers.get('cross-origin-embedder-policy'),'credentialless');
+    assert.equal(cssAsset.headers.get('cross-origin-resource-policy'),'same-origin');
     const loader=await fetch(url+'/proxy-entry.js');
     assert.equal(loader.status,200);
     const loaderCode=await loader.text();

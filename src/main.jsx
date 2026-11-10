@@ -17,6 +17,7 @@ import './workspace.css';
 import './messenger.css';
 import './studio.css';
 import './refinement.css';
+import './auth.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
@@ -47,63 +48,157 @@ const routeFromHash=()=>{
 };
 
 function AuthSheet({mode,close,onLoggedIn,locked=false}){
-  const [method,setMethod]=useState(mode);
+  const [method,setMethod]=useState(mode==='register'?'register':'login');
   const [error,setError]=useState('');
   const [busy,setBusy]=useState(false);
   const [requested,setRequested]=useState(false);
+  const [showPassword,setShowPassword]=useState(false);
+  const [showConfirm,setShowConfirm]=useState(false);
+  const registering=method==='register';
+
+  useEffect(()=>{
+    setMethod(mode==='register'?'register':'login');
+    setError('');
+    setRequested(false);
+  },[mode]);
+
+  function switchMethod(next){
+    if(busy)return;
+    setMethod(next);
+    setError('');
+    setRequested(false);
+    setShowPassword(false);
+    setShowConfirm(false);
+  }
+
   async function submit(event){
     event.preventDefault();
-    const body=Object.fromEntries(new FormData(event.currentTarget));
-    setBusy(true);setError('');
+    if(busy)return;
+    const fields=Object.fromEntries(new FormData(event.currentTarget));
+    if(registering&&fields.password!==fields.confirmPassword){
+      setError('Those passwords don\'t match. Try again.');
+      return;
+    }
+    setBusy(true);
+    setError('');
     try{
-      const result=await api(method==='register'?'/api/register':'/api/login',{
-        method:'POST',body:JSON.stringify({username:body.username,password:body.password})
+      const result=await api(registering?'/api/register':'/api/login',{
+        method:'POST',body:JSON.stringify({username:fields.username,password:fields.password})
       });
-      if(method==='register'&&result.status==='pending'){
+      if(registering&&result.status==='pending'){
         setRequested(true);
         return;
       }
-      if(!result.user)throw Error('Unable to sign in right now');
-      onLoggedIn(result.user);close();
-    }catch(err){setError(err.message);}
-    finally{setBusy(false);}
+      if(!result.user)throw Error('Could not sign in. Please try again.');
+      onLoggedIn(result.user);
+      close();
+    }catch(err){
+      setError(err.message||'Something went wrong. Please try again.');
+    }finally{
+      setBusy(false);
+    }
   }
-  return <div className={'overlay '+(locked?'auth-locked':'')} onMouseDown={e=>{
-    if(!locked&&e.target===e.currentTarget)close();
-  }}>
-    <section className="auth-sheet glass" role="dialog" aria-modal="true" aria-label="Celestial account">
-      <div className="auth-art"><img src="/assets/celestial-star.svg" alt=""/>
-        <span className="micro">THE CELESTIAL NETWORK</span>
-        <h2>Your place<br/><em>among the stars.</em></h2>
-        <p>Play. Explore. Create connections. All from one extraordinary space.</p>
-        <div className="auth-halo">✧</div>
-      </div>
-      <div className="auth-fields">
-        {!locked&&<button className="auth-close" onClick={close} aria-label="Close account dialog">×</button>}
-        <span className="eyebrow">CELESTIAL / ACCOUNT</span>
-        <h2>{requested?'Request received.':method==='register'?'Join the network.':'Welcome back.'}</h2>
-        <p>{requested?'An administrator will review your account. You can sign in once they approve it.':
-          method==='register'?'Request an account. Approval is required before you can sign in.':'Sign in to continue your conversation.'}</p>
-        {requested?<button className="primary-btn full" onClick={()=>{setRequested(false);setMethod('login');setError('');}}>
-          Return to sign in <Icon name="arrow" size={16}/>
-        </button>:<><form onSubmit={submit}>
-          <label>USERNAME<input autoFocus required name="username" autoComplete="username"
-            pattern={method==='register'?'[A-Za-z0-9_]{3,20}':undefined}
-            minLength={3} maxLength={method==='register'?20:32}
-            placeholder={method==='register'?'Choose a username':'Username'}/></label>
-          <label>PASSWORD<input required name="password" type="password" minLength={8} maxLength={128} autoComplete={method==='register'?'new-password':'current-password'} placeholder="At least 8 characters"/></label>
-          {error&&<div className="form-error" role="alert">{error}</div>}
-          <button className="primary-btn full" disabled={busy}>{busy?'Connecting…':method==='register'?'Request account':'Sign in'} <Icon name="arrow" size={16}/></button>
-        </form>
-        <button className="auth-swap" onClick={()=>{setMethod(method==='register'?'login':'register');setError('');}}>
-          {method==='register'?'Already have an account? Sign in':'New to Celestial? Create an account'}
-        </button></>}
 
+  return <div className={'overlay celestial-auth '+(locked?'auth-locked':'')} onMouseDown={event=>{
+    if(!locked&&event.target===event.currentTarget)close();
+  }}>
+    <section className="auth-sheet auth-sheet--v2 glass" role="dialog" aria-modal="true"
+      aria-label={registering?'Create a Celestial account':'Sign in to Celestial'}>
+      <div className="auth-art">
+        <div className="auth-brand">
+          <img src="/assets/celestial-star.svg" alt="" />
+          <span>celestial<span className="auth-brand-dot">.</span></span>
+        </div>
+        <div className="auth-constellation" aria-hidden="true">
+          <div className="auth-orbit auth-orbit--outer"><span/></div>
+          <div className="auth-orbit auth-orbit--middle"><span/></div>
+          <div className="auth-orbit auth-orbit--inner"/>
+          <div className="auth-core">
+            <span className="auth-core-glint"/>
+            <img src="/assets/celestial-star.svg" alt="" />
+          </div>
+          <i className="auth-spark auth-spark--one"/>
+          <i className="auth-spark auth-spark--two"/>
+          <i className="auth-spark auth-spark--three"/>
+          <i className="auth-spark auth-spark--four"/>
+        </div>
+        <div className="auth-art-copy">
+          <span className="auth-kicker"><span className="auth-kicker-dot"/> YOUR SPACE, YOUR PACE</span>
+          <h2>Everything in<br/>one place<span>.</span></h2>
+          <p>Hang out, play something, or just explore. Celestial keeps it all together.</p>
+        </div>
+        <div className="auth-art-footer"><span>CELESTIAL NETWORK</span><span>EST. 2026</span></div>
+      </div>
+
+      <div className="auth-fields">
+        {!locked&&<button type="button" className="auth-close" onClick={close} aria-label="Close account dialog">×</button>}
+        <div className="auth-mobile-mark"><img src="/assets/celestial-star.svg" alt=""/> celestial.</div>
+        <div className="auth-form-content">
+          {requested?<div className="auth-requested" role="status">
+            <div className="auth-success-mark" aria-hidden="true">✓</div>
+            <span className="auth-overline">REQUEST SENT</span>
+            <h1>You're on the list.</h1>
+            <p>Your account request is in. An admin needs to approve it before you can sign in.</p>
+            <button type="button" className="auth-submit" onClick={()=>switchMethod('login')}>
+              Back to sign in <Icon name="arrow" size={16}/>
+            </button>
+          </div>:<>
+            <div className="auth-form-intro">
+              <span className="auth-overline">ACCOUNT ACCESS</span>
+              <h1>{registering?'Make yourself at home.':'Good to see you again.'}</h1>
+              <p>{registering?'Pick a username and password to request your account.':'Sign in to pick up where you left off.'}</p>
+            </div>
+            <div className="auth-mode-switch" role="group" aria-label="Account action">
+              <button type="button" className={!registering?'is-active':''}
+                aria-pressed={!registering} disabled={busy} onClick={()=>switchMethod('login')}>Sign in</button>
+              <button type="button" className={registering?'is-active':''}
+                aria-pressed={registering} disabled={busy} onClick={()=>switchMethod('register')}>Create account</button>
+            </div>
+            <form key={method} className="auth-form" onSubmit={submit}>
+              <label className="auth-field" htmlFor="auth-username">Username
+                <input id="auth-username" required name="username" autoComplete="username"
+                  pattern={registering?'[A-Za-z0-9_]{3,20}':undefined}
+                  minLength={3} maxLength={registering?20:32}
+                  placeholder={registering?'Choose a username':'Enter your username'}/>
+              </label>
+              <div className="auth-field"><label htmlFor="auth-password">Password</label>
+                <span className="auth-password-wrap">
+                  <input id="auth-password" required name="password"
+                    type={showPassword?'text':'password'} minLength={8} maxLength={128}
+                    autoComplete={registering?'new-password':'current-password'}
+                    placeholder={registering?'At least 8 characters':'Enter your password'}/>
+                  <button type="button" className="auth-reveal" disabled={busy}
+                    aria-label={showPassword?'Hide password':'Show password'}
+                    onClick={()=>setShowPassword(value=>!value)}>{showPassword?'Hide':'Show'}</button>
+                </span>
+              </div>
+              {registering&&<div className="auth-field"><label htmlFor="auth-confirm">Confirm password</label>
+                <span className="auth-password-wrap">
+                  <input id="auth-confirm" required name="confirmPassword"
+                    type={showConfirm?'text':'password'} minLength={8} maxLength={128}
+                    autoComplete="new-password" placeholder="Enter it one more time"/>
+                  <button type="button" className="auth-reveal" disabled={busy}
+                    aria-label={showConfirm?'Hide confirmation password':'Show confirmation password'}
+                    onClick={()=>setShowConfirm(value=>!value)}>{showConfirm?'Hide':'Show'}</button>
+                </span>
+              </div>}
+              {error&&<div className="form-error" role="alert">{error}</div>}
+              <button className="auth-submit" type="submit" disabled={busy}>
+                <span>{busy?'One moment…':registering?'Request an account':'Enter Celestial'}</span>
+                <span className="auth-submit-arrow"><Icon name="arrow" size={17}/></span>
+              </button>
+            </form>
+            {registering?
+              <p className="auth-form-note"><span aria-hidden="true">✳</span> New accounts are approved by an admin.</p>:
+              <p className="auth-form-note">Don't have an account? <button type="button"
+                onClick={()=>switchMethod('register')}>Create one</button></p>}
+          </>}
+        </div>
+        <div className="auth-bottom-line"><span>© CELESTIAL</span><span>PLAY · BROWSE · CONNECT</span></div>
       </div>
     </section>
   </div>;
 }
-
 
 function Modal({title,close,children}) {
   return <div className="celestial-modal-overlay" onMouseDown={event=>{
