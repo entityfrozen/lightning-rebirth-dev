@@ -36,13 +36,17 @@ function BrowserGlyph({name,size=17}){
     stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
     aria-hidden="true">{icons[name]||icons.star}</svg>;
 }
+const safeWebAddress=value=>{
+  try{return ['http:','https:'].includes(new URL(value).protocol);}
+  catch{return false;}
+};
 const blank=()=>({id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),url:'',history:[],cursor:-1});
 const savedTabs=()=> {
   const prefs=browserPreferences();
   if(!prefs.restoreTabs)return [blank()];
   const list=readLocal('forest-browser-tabs',[]);
   return Array.isArray(list)&&list.length?list.filter(tab=>tab&&typeof tab.id==='string'&&
-    (!tab.url||/^https?:\/\//.test(tab.url))).slice(-12).map(tab=>({
+    (!tab.url||safeWebAddress(tab.url))).slice(-12).map(tab=>({
       ...tab,history:Array.isArray(tab.history)?tab.history.slice(-30):[],
       cursor:typeof tab.cursor==='number'?tab.cursor:-1
     })):[blank()];
@@ -151,9 +155,15 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
   const [activeId,setActiveId]=useState(null);
   const [input,setInput]=useState('');
   const [prefs,setPrefs]=useState(browserPreferences);
-  const [bookmarks,setBookmarks]=useState(()=>readLocal('forest-browser-bookmarks',[]));
+  const [bookmarks,setBookmarks]=useState(()=>{
+    const saved=readLocal('forest-browser-bookmarks',[]);
+    return Array.isArray(saved)?saved.filter(row=>safeWebAddress(row?.url)).slice(-30):[];
+  });
   const [retry,setRetry]=useState({});
-  const [recent,setRecent]=useState(()=>readLocal('celestial-browser-recent',[]));
+  const [recent,setRecent]=useState(()=>{
+    const saved=readLocal('celestial-browser-recent',[]);
+    return Array.isArray(saved)?saved.filter(row=>safeWebAddress(row?.url)).slice(0,24):[];
+  });
   const [closedTabs,setClosedTabs]=useState([]);
   const [libraryOpen,setLibraryOpen]=useState(false);
   const [libraryQuery,setLibraryQuery]=useState('');
@@ -177,12 +187,13 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
     }else{saveLocal('forest-browser-tabs',[blank()]);}
   },[tabs,prefs.restoreTabs,prefs.saveHistory]);
   useEffect(()=>saveLocal('forest-browser-bookmarks',bookmarks),[bookmarks]);
-  useEffect(()=>saveLocal('celestial-browser-recent',recent),[recent]);
+  useEffect(()=>saveLocal('celestial-browser-recent',prefs.saveHistory?recent:[]),[recent,prefs.saveHistory]);
   useEffect(()=>{
-    if(!visibleUrl||!/^https?:\/\//i.test(visibleUrl))return;
+    if(!prefs.saveHistory){setRecent([]);return;}
+    if(!visibleUrl||!safeWebAddress(visibleUrl))return;
     setRecent(rows=>[{url:visibleUrl,label:new URL(visibleUrl).hostname,at:Date.now()},
       ...rows.filter(row=>row.url!==visibleUrl)].slice(0,24));
-  },[visibleUrl]);
+  },[visibleUrl,prefs.saveHistory]);
   useEffect(()=>{
     const clear=()=>{
       setTabs([blank()]);setActiveId(null);setInput('');
