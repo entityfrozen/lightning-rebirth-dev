@@ -171,6 +171,43 @@ try{
     .filter({hasText:'Celestial chat smoke test'}).waitFor({timeout:15000});
   await page.screenshot({path:path.join(screenshots,'full-chat.png'),fullPage:true});
 
+  // Settings is a real workspace with working navigation.
+  await page.locator('.dock').getByRole('button',{name:'Settings'}).click();
+  await page.locator('.celestial-settings-page').waitFor({timeout:15000});
+  await page.screenshot({path:path.join(screenshots,'settings.png'),fullPage:true});
+  await page.locator('.celestial-settings-nav').getByRole('button',{name:/Admin console/}).click();
+  await page.locator('.celestial-console').waitFor({timeout:15000});
+  await page.getByRole('tab',{name:/Directory/}).click();
+  await page.locator('.celestial-console-member-row').first().waitFor({timeout:15000});
+  await page.screenshot({path:path.join(screenshots,'admin-console.png'),fullPage:true});
+
+  // Browser fullscreen must be native (a real fullscreenElement) and reversible.
+  await page.locator('.dock').getByRole('button',{name:'Browser'}).click();
+  await page.locator('.forest-browser.has-tabs').waitFor({timeout:15000});
+  await page.getByRole('button',{name:'Enter fullscreen'}).click();
+  await page.waitForFunction(()=>document.fullscreenElement?.classList.contains('celestial-browser-v2'),
+    null,{timeout:10000});
+  await page.screenshot({path:path.join(screenshots,'browser-fullscreen.png'),fullPage:true});
+  await page.getByRole('button',{name:'Exit fullscreen'}).click();
+  await page.waitForFunction(()=>document.fullscreenElement===null,null,{timeout:10000});
+
+  // The new library must list websites actually visited in this session.
+  await page.getByRole('button',{name:'Library'}).click();
+  await page.locator('.celestial-browser-library').waitFor({timeout:10000});
+  await page.locator('.celestial-library-recent').first().waitFor({timeout:10000});
+  await page.screenshot({path:path.join(screenshots,'browser-library.png'),fullPage:true});
+  await page.getByRole('button',{name:'Close library'}).click();
+
+  // Fullscreen is also available for real playable Apps, not just webpages.
+  await page.locator('.dock').getByRole('button',{name:'Apps'}).click();
+  await page.locator('.celestial-app-tile').filter({hasText:'2048'}).click();
+  await page.getByRole('button',{name:'Play fullscreen'}).click();
+  await page.waitForFunction(()=>document.fullscreenElement?.classList.contains('celestial-tool-shell'),
+    null,{timeout:10000});
+  await page.screenshot({path:path.join(screenshots,'game-fullscreen.png'),fullPage:true});
+  await page.getByRole('button',{name:'Exit game fullscreen'}).click();
+  await page.waitForFunction(()=>document.fullscreenElement===null,null,{timeout:10000});
+
   console.log(JSON.stringify({
     ok:true,worker,state,scriptPaths:[...scriptPaths],
     consoleErrors:events.slice(-12),screenshots
