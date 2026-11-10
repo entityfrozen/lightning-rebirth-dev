@@ -19,6 +19,7 @@ import './studio.css';
 import './refinement.css';
 import './auth.css';
 import './navigation.css';
+import './flare-shell.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
@@ -190,7 +191,7 @@ function App() {
   const [dockOpen,setDockOpen]=useState(()=>readLocal('navigation-expanded',true)!==false);
   const [jumpOpen,setJumpOpen]=useState(false);
   const [jumpQuery,setJumpQuery]=useState('');
-  const [showHomeAI,setShowHomeAI]=useState(()=>readLocal('home-ai-sidebar',true)!==false);
+  const [showHomeAI,setShowHomeAI]=useState(()=>readLocal('home-ai-sidebar',false)===true);
   const [chatOpen,setChatOpen]=useState(()=>readLocal('workspace-chat-open',false)===true);
   const [palette,setPalette]=useState(()=>readLocal('celestial-palette','aurora'));
   const [backdrop,setBackdrop]=useState(()=>readLocal('celestial-backdrop','aurora'));
@@ -312,20 +313,24 @@ function App() {
         <div className={'celestial-activity-layout '+(showCompanion?'with-chat':'')}>
           <div className="celestial-activity-main">
             <Suspense fallback={<div className="celestial-loading">Opening Celestial…</div>}>
-              {view==='home'?<div className={'celestial-home-split '+(!showHomeAI||showCompanion?'ai-hidden':'')}>
+              {['home','browser'].includes(view)?<div className={'celestial-home-split '+(
+                view==='browser'||!showHomeAI||showCompanion?'ai-hidden':'')}>
                 <section className="celestial-home-main" aria-label="Main page">
-                  <Browser user={user} onAuth={setModal} onShortcut={openDock} homeMode/>
-                  {!showHomeAI&&!showCompanion&&<button type="button" className="celestial-show-home-ai"
-                    aria-label="Show Celestial AI sidebar" title="Restore Celestial AI"
-                    onClick={()=>setShowHomeAI(true)}><span aria-hidden="true">✧</span> Show Celestial AI</button>}
+                  <Browser user={user} onAuth={setModal} onShortcut={openDock}
+                    homeMode={view==='home'} onOpenBrowser={()=>selectSection('browser')}
+                    onCloseBrowser={()=>selectSection('home')}
+                    launch={activeDock==='music'?browserLaunch:null}/>
+                  {view==='home'&&!showHomeAI&&!showCompanion&&
+                    <button type="button" className="celestial-show-home-ai"
+                      aria-label="Show Celestial AI sidebar" title="Open AI beside Home"
+                      onClick={()=>setShowHomeAI(true)}>✧ Open AI panel</button>}
                 </section>
-                {showHomeAI&&!showCompanion&&<aside className="celestial-home-rail" aria-label="Celestial AI sidebar">
-                  <AI key="celestial-home-sidebar" sidebar user={user} onAuth={setModal}
-                    onHide={()=>setShowHomeAI(false)}/>
-                </aside>}
+                {view==='home'&&showHomeAI&&!showCompanion&&
+                  <aside className="celestial-home-rail" aria-label="Celestial AI sidebar">
+                    <AI key="celestial-home-sidebar" sidebar user={user} onAuth={setModal}
+                      onHide={()=>setShowHomeAI(false)}/>
+                  </aside>}
               </div>:
-              view==='browser'?<Browser user={user} onAuth={setModal} onShortcut={openDock}
-                launch={activeDock==='music'?browserLaunch:null}/>:
               view==='apps'?<Apps user={user} live={live} onAuth={setModal}
                 onNavigate={selectSection} onMusic={()=>openDock('music')}/>:
               view==='settings'?<Settings user={user} palette={palette} setPalette={setPalette}
