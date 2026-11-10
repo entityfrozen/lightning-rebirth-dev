@@ -1,13 +1,14 @@
 import {readLocal,saveLocal} from './constants.js';
 
 export const cloakPresets={
+  study:{label:'Study Portal',title:'Study Portal | Research Workspace',icon:'/assets/study-portal.svg'},
   celestial:{label:'Celestial',title:'Celestial',icon:'/assets/celestial-star.svg'},
   workspace:{label:'Workspace',title:'Workspace',icon:'/assets/celestial-star.svg'},
   notes:{label:'My Notes',title:'My Notes',icon:'/assets/celestial-star.svg'},
   blank:{label:'Untitled',title:'Untitled',icon:'/assets/celestial-star.svg'},
   custom:{label:'Custom',title:'',icon:''}
 };
-const original={title:'Celestial',icon:'/assets/celestial-star.svg'};
+const original={title:'Study Portal | Research Workspace',icon:'/assets/study-portal.svg'};
 
 export function getCloakSettings(){
   const saved=readLocal('cloak-settings',{});

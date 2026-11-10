@@ -34,8 +34,8 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(homepage.headers.get('cross-origin-resource-policy'),'cross-origin');
 
     const html=await homepage.text();
-    assert.match(html,/<title>Celestial/);
-    assert.match(html,/celestial-star\.svg/);
+    assert.ok(html.includes('<title>Study Portal | Research Workspace</title>'));
+    assert.match(html,/study-portal\.svg/);
     assert.doesNotMatch(html,/lightning-chan|mascotSprite|lightning-mark/);
     const appAsset=await fetch(url+'/bundle/main.js');
     assert.equal(appAsset.status,200);
@@ -67,6 +67,9 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     const starAsset=await fetch(url+'/assets/celestial-star.svg');
     assert.equal(starAsset.status,200);
     assert.match(await starAsset.text(),/<svg/);
+    const studyAsset=await fetch(url+'/assets/study-portal.svg');
+    assert.equal(studyAsset.status,200);
+    assert.match(await studyAsset.text(),/<svg/);
     const retiredAsset=await fetch(url+'/assets/lightning-chan-idle.png');
     assert.equal(retiredAsset.status,404);
     let result=await call('/api/me');assert.equal(result.response.status,200);assert.equal(result.data.user,null);

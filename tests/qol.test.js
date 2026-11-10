@@ -29,8 +29,8 @@ test('Games navigation is replaced with Apps, but core Chat and Browser routes r
   assert.match(shell,/view==='apps'\?<Apps/);
   assert.match(shell,/view==='settings'\?<Settings/);
   assert.match(shell,/view==='chat'\?<Chat/);
-  assert.match(shell,/view==='browser'\?<Browser/);
-  assert.match(shell,/view==='home'\?<div className=\{[\s\S]*?celestial-home-split/);
+  assert.match(shell,/\['home','browser'\]\.includes\(view\)\?<div/);
+  assert.match(shell,/homeMode=\{view==='home'\}/);
   assert.match(shell,/return sections\.has\(route\)\?route:route==='community'\?'chat':route==='arcade'\?'apps':'home'/);
 });
 
@@ -81,7 +81,7 @@ test('Browser, games and community Chat can stay mounted together',()=>{
   assert.match(main,/celestial-activity-layout/);
   assert.match(main,/WorkspaceChat user=\{user\} live=\{live\}/);
   assert.match(main,/view==='apps'\?<Apps user=\{user\} live=\{live\}/);
-  assert.match(main,/view==='browser'\?<Browser/);
+  assert.match(main,/\['home','browser'\]\.includes\(view\)\?<div/);
   assert.match(side,/Messenger compact/);
   assert.match(messenger,/type:'v2Message'/);
   assert.match(messenger,/\/api\/dms\//);
