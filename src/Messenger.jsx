@@ -307,6 +307,13 @@ export function Messenger({user,live,compact=false,onClose,onOpenChat}){
         <button onClick={()=>{setDmUser(null);setError('');}}>Back to channels</button>
       </div>}
       <div className="messenger-message-list" ref={feed} role="log" aria-live="polite">
+        {!compact&&!dmUser&&!messageSearch&&<div className="messenger-room-intro">
+          <div className="messenger-room-emblem" aria-hidden="true"><span>✦</span></div>
+          <span className="messenger-room-label">{server?.name||'Celestial'} / CHANNEL</span>
+          <h2>#{activeChannel?.name||'general'}</h2>
+          <p>A place for everyone in this channel to talk.</p>
+          <div className="messenger-room-rule"><span>CONVERSATION</span></div>
+        </div>}
         {(!live.connected&&!dmUser&&!messages.length)&&<p className="messenger-state">Connecting to your channels…</p>}
         {visibleMessages.length===0&&
           <div className="messenger-empty">
