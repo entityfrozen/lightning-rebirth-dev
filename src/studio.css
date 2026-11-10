@@ -1,0 +1,793 @@
+/*
+  CELESTIAL / STUDIO
+  A proper desktop workspace. Expressive where it matters; restrained where
+  text is read. Crisp edges, luminous mineral tones, quiet spatial depth.
+*/
+:root{
+  --studio-accent:#9acfee;
+  --studio-accent-strong:#b5e7f8;
+  --studio-tint:rgba(100,191,221,.14);
+  --studio-background:#080e19;
+  --studio-panel:#101a28;
+  --studio-panel-soft:#152132;
+  --studio-outline:rgba(169,207,228,.16);
+  --studio-fg:#eef5fc;
+  --studio-muted:#91a7ba;
+  --studio-muted-2:#678195;
+  --studio-shadow:0 24px 70px rgba(2,5,14,.45);
+}
+:root[data-palette="jade"]{
+  --studio-accent:#9be7c9;--studio-accent-strong:#c6ffdd;
+  --studio-tint:rgba(106,219,170,.16);
+}
+:root[data-palette="amethyst"]{
+  --studio-accent:#d2b5fa;--studio-accent-strong:#ead8ff;
+  --studio-tint:rgba(178,121,229,.17);
+}
+
+/* App-level furniture. The active page is the focus, not the scenery. */
+.celestial-workspace .dock{
+  background:linear-gradient(155deg,rgba(16,28,42,.97),rgba(9,17,28,.98));
+  border:1px solid rgba(186,220,236,.14);
+  border-left:0;
+  border-radius:0 16px 16px 0;
+  box-shadow:10px 18px 40px #02061255, inset 0 1px rgba(255,255,255,.065);
+  gap:7px;padding:12px 4px;
+}
+.celestial-workspace .dock-shell{z-index:33}
+.celestial-workspace .dock::before,
+.celestial-workspace .dock::after,
+.celestial-workspace .dock-toggle::before,
+.celestial-workspace .dock-toggle::after{display:none}
+.celestial-workspace .dock-link{
+  width:36px;height:36px;border-radius:10px;color:#819cac;
+  transition:background .19s ease,color .19s ease,transform .19s ease;
+}
+.celestial-workspace .dock-link svg{width:18px;height:18px}
+.celestial-workspace .dock-link.active{
+  background:linear-gradient(140deg,rgba(105,185,212,.25),rgba(121,173,210,.11));
+  color:var(--studio-accent-strong);
+  box-shadow:inset 0 0 0 1px rgba(136,208,222,.2);
+}
+.celestial-workspace .dock-link:hover{color:#effbff;background:rgba(130,193,218,.13);transform:translateX(2px)}
+.celestial-workspace .dock-toggle{
+  background:#162535;color:#a4bbc9;
+  border:1px solid rgba(186,220,236,.15);border-left:0;
+  border-radius:0 11px 11px 0;
+}
+.celestial-workspace .dock-link:focus-visible{outline:2px solid var(--studio-accent)}
+.celestial-workspace .celestial-chat-toggle{
+  top:13px;right:19px;height:36px;padding:0 13px;
+  border:1px solid rgba(163,207,223,.23);border-radius:10px;
+  color:#e0f3fa;font-size:11px;font-weight:700;
+  background:linear-gradient(120deg,rgba(25,46,63,.94),rgba(13,28,42,.95));
+  box-shadow:0 8px 23px #0107163d,inset 0 1px rgba(240,255,255,.09);
+}
+.celestial-workspace .celestial-chat-toggle svg{color:var(--studio-accent)}
+.celestial-workspace .celestial-chat-toggle:hover{
+  border-color:var(--studio-accent);background:#21394b;
+}
+.celestial-workspace .celestial-chat-toggle.beside-ai{
+  right:calc(var(--celestial-sidebar-width) + 14px);
+}
+.celestial-workspace:has(.celestial-activity-layout.with-chat) .celestial-chat-toggle{
+  right:13px;top:13px;
+}
+.celestial-activity-chat{
+  background:#0a121e!important;
+  border-left:1px solid rgba(167,198,216,.19);
+  box-shadow:-18px 0 65px #03071461;
+}
+.celestial-activity-layout.with-chat .celestial-activity-main{
+  background:rgba(4,10,19,.13);
+}
+
+/* Browser window: top chrome and a true canvas for the site. */
+.forest-browser.celestial-browser-v2{
+  --window-surface:#0e1a29;
+  --window-edge:#30485c;
+  --window-fg:#dbeaf4;
+  --window-muted:#899faf;
+  position:absolute;inset:0;
+  display:flex!important;flex-direction:column;
+  color:var(--window-fg);
+  background:transparent;
+  overflow:hidden;
+  min-height:0;
+}
+.forest-browser.celestial-browser-v2.is-browsing{background:transparent}
+.forest-browser.celestial-browser-v2.has-tabs .forest-browser-chrome{
+  position:relative;z-index:7;flex:0 0 auto;
+  margin:60px 19px 0 71px!important;
+  border:1px solid rgba(170,213,230,.22)!important;
+  border-bottom:0!important;
+  border-radius:14px 14px 0 0!important;
+  background:linear-gradient(160deg,#122336f5,#0b1929fa)!important;
+  box-shadow:0 18px 42px rgba(1,4,15,.5),inset 0 1px rgba(228,252,255,.07)!important;
+  backdrop-filter:blur(22px);
+  overflow:visible;
+}
+.forest-browser.celestial-browser-v2.has-tabs .forest-browser-stage{
+  margin:0 19px 17px 71px!important;
+  min-width:0;min-height:0;flex:1;
+  border:1px solid rgba(170,213,230,.2)!important;
+  border-top:0!important;
+  border-radius:0 0 13px 13px!important;
+  overflow:hidden;
+  background:#f7fbff;
+  box-shadow:0 30px 55px rgba(0,4,13,.55);
+}
+.forest-browser.celestial-browser-v2.has-tabs .forest-tabs{
+  height:47px;display:flex;align-items:center;
+  gap:0;overflow:visible;
+  padding:6px 9px 0 12px;
+  background:transparent!important;
+  border-bottom:1px solid rgba(150,192,211,.12);
+}
+.celestial-browser-brand{
+  display:inline-flex;flex:0 0 auto;align-items:center;gap:6px;
+  margin-right:15px;padding:0 3px 5px 1px;
+  font-size:12px;letter-spacing:-.03em;
+  white-space:nowrap;
+}
+.celestial-browser-brand-star{font-size:24px;color:var(--studio-accent);line-height:1}
+.celestial-browser-brand strong{font-weight:780;color:#effcff;letter-spacing:-.04em}
+.celestial-browser-brand-divider{
+  height:19px;width:1px;margin-left:13px;background:rgba(186,217,226,.2);
+}
+.celestial-browser-tab-track{
+  flex:1;min-width:0;display:flex;align-items:center;gap:5px;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding-right:8px;
+  height:100%;
+}
+.celestial-browser-tab-track::-webkit-scrollbar{display:none}
+.forest-browser.celestial-browser-v2 .forest-tab{
+  flex:0 1 178px;min-width:94px;max-width:220px;height:35px;
+  display:flex;align-items:center;gap:5px;padding:0 6px 0 9px;
+  border:1px solid transparent;border-bottom:0;
+  border-radius:10px 10px 0 0;
+  background:rgba(20,39,57,.35);
+  transition:background .2s ease,box-shadow .2s ease;
+}
+.forest-browser.celestial-browser-v2 .forest-tab:hover{
+  background:rgba(52,83,110,.4);
+}
+.forest-browser.celestial-browser-v2 .forest-tab.active{
+  position:relative;
+  border-color:rgba(137,191,216,.3);
+  background:linear-gradient(135deg,#263e53,#1d3146);
+  box-shadow:inset 0 1px rgba(240,254,255,.09);
+}
+.forest-browser.celestial-browser-v2 .forest-tab.active::after{
+  content:"";position:absolute;left:7px;right:7px;bottom:0;height:2px;
+  border-radius:2px;background:var(--studio-accent);opacity:.85;
+}
+.celestial-tab-monogram{
+  display:grid;place-items:center;flex:0 0 20px;width:20px;height:20px;
+  border-radius:6px;background:rgba(126,195,216,.13);
+  color:#bce0ee;font-size:10px;font-weight:800;
+}
+.forest-browser.celestial-browser-v2 .forest-tab>button[role="tab"]{
+  flex:1;min-width:0;padding:0;text-align:left;
+  color:#95aebf;font-size:11px;font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.forest-browser.celestial-browser-v2 .forest-tab.active>button[role="tab"]{
+  color:#eff7fb;font-weight:710;
+}
+.forest-browser.celestial-browser-v2 .forest-tab-close{
+  flex:0 0 19px;width:19px;height:19px;
+  padding:0;display:grid;place-items:center;
+  color:#89a6b7;background:transparent;border:0;border-radius:5px;
+  opacity:.72;
+}
+.forest-browser.celestial-browser-v2 .forest-tab-close:hover{
+  color:#fff;background:rgba(220,238,250,.17);opacity:1;
+}
+.forest-browser.celestial-browser-v2 .forest-add-tab{
+  display:grid;place-items:center;flex:0 0 29px;
+  width:29px;height:29px;margin-left:1px;padding:0;
+  color:#aac6d6;border-radius:7px;border:0;background:transparent;
+}
+.forest-browser.celestial-browser-v2 .forest-add-tab:hover{color:#fff;background:#30475d}
+.celestial-browser-tab-actions{
+  display:flex;flex:0 0 auto;align-items:center;gap:3px;
+  padding:0 0 5px 10px;border-left:1px solid rgba(188,218,231,.16);
+}
+.celestial-browser-tab-actions button{
+  display:grid;place-items:center;width:29px;height:28px;
+  border:1px solid transparent;border-radius:7px;
+  background:transparent;color:#94aebe;
+}
+.celestial-browser-tab-actions button:hover{color:#f0fdff;background:#2b4358}
+.celestial-browser-tab-actions button:disabled{opacity:.28;cursor:default}
+.forest-browser.celestial-browser-v2.has-tabs .forest-toolbar{
+  display:flex;align-items:center;gap:12px;
+  height:54px;min-height:54px;flex:0 0 54px;
+  padding:8px 12px!important;
+  border-top:0;
+  background:linear-gradient(175deg,#182b3df8,#102236fa)!important;
+}
+.celestial-browser-transport,.celestial-browser-tools{
+  display:flex;align-items:center;gap:3px;flex:0 0 auto;
+}
+.celestial-browser-transport button,.celestial-browser-tools button,
+.celestial-browser-tools a{
+  display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;
+  border:1px solid transparent;border-radius:8px;
+  background:transparent;color:#a6bfce;text-decoration:none;
+  transition:color .16s,background .16s,border-color .16s;
+}
+.celestial-browser-transport button:hover,.celestial-browser-tools button:hover,
+.celestial-browser-tools a:hover,.celestial-browser-tools button.active{
+  color:#e8faff;background:rgba(149,207,229,.14);
+  border-color:rgba(148,201,219,.11);
+}
+.celestial-browser-transport button:disabled,.celestial-browser-tools button:disabled{
+  opacity:.31;cursor:default;
+}
+.celestial-browser-tools button.favorite{
+  color:var(--studio-accent-strong);
+  background:var(--studio-tint);
+}
+.forest-browser.celestial-browser-v2.has-tabs .forest-toolbar form.celestial-browser-address{
+  display:flex;align-items:center;gap:8px;
+  flex:1;min-width:90px;height:37px;
+  border:1px solid rgba(170,210,227,.2);border-radius:10px;
+  padding:0 7px 0 11px;
+  background:#091726!important;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.2);
+  transition:border-color .16s,box-shadow .16s;
+}
+.forest-browser.celestial-browser-v2 .celestial-browser-address:focus-within{
+  border-color:#88bcd4!important;
+  box-shadow:0 0 0 3px rgba(118,190,225,.095)!important;
+}
+.celestial-address-security{
+  display:grid;place-items:center;flex:0 0 19px;
+  width:19px;height:22px;color:#7f9eaf;
+}
+.celestial-address-security.secure{color:#94d5c1}
+.forest-browser.celestial-browser-v2 .celestial-browser-address input{
+  flex:1;min-width:0;padding:0;border:0;background:transparent;
+  outline:0;color:#e3f3fa;font-size:12px;font-weight:530;
+}
+.celestial-browser-address input::placeholder{color:#6c8a9b}
+.celestial-browser-address kbd{
+  flex:0 0 auto;color:#5f8093;font-size:10px;font-family:inherit;
+  padding:3px 5px;border:1px solid rgba(158,203,224,.12);border-radius:5px;
+}
+.forest-browser.celestial-browser-v2 .celestial-browser-address button{
+  display:grid;place-items:center;flex:0 0 26px;
+  height:25px;width:26px;padding:0;
+  border:0;border-radius:6px;background:#253f54;
+  color:#bceaff;font-size:18px;
+}
+.forest-browser.celestial-browser-v2 .celestial-browser-address button:hover{
+  background:#3a657e;color:#fff;
+}
+.forest-browser.celestial-browser-v2.focus-mode .forest-tabs{
+  display:none;
+}
+.forest-browser.celestial-browser-v2.focus-mode .forest-toolbar{height:48px;flex-basis:48px}
+.forest-browser.celestial-browser-v2.focus-mode .celestial-browser-tools [aria-label="Library"],
+.forest-browser.celestial-browser-v2.focus-mode .celestial-browser-tools [aria-label="Copy link"]{
+  display:none;
+}
+/* The library is layered above site content, not an extra destination. */
+.celestial-browser-library{
+  position:absolute;z-index:20;top:161px;right:20px;bottom:20px;
+  display:flex;flex-direction:column;width:min(370px,calc(100% - 100px));
+  overflow-y:auto;scrollbar-width:thin;
+  padding:23px 17px;
+  color:#dfeef8;
+  border:1px solid rgba(157,208,224,.24);border-radius:14px;
+  background:linear-gradient(165deg,#16283af9,#0d1826fa);
+  box-shadow:-18px 20px 70px #010511a8,inset 0 1px #ffffff13;
+  backdrop-filter:blur(20px);
+}
+.celestial-browser-library header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:20px;gap:15px;
+}
+.celestial-browser-eyebrow{font-size:9px;letter-spacing:.21em;font-weight:790;color:#79aec6}
+.celestial-browser-library h2{margin:7px 0 0;font-size:25px;letter-spacing:-.05em;line-height:1.1}
+.celestial-browser-library header>button{
+  width:29px;height:29px;display:grid;place-items:center;
+  border:1px solid #355166;border-radius:8px;background:#22394d;color:#b8d3e3;
+}
+.celestial-library-search{
+  display:flex;align-items:center;gap:8px;padding:9px 10px;
+  min-height:37px;border:1px solid rgba(163,208,232,.18);
+  border-radius:9px;background:#0c1a2b;
+}
+.celestial-library-search>span{font-size:20px;color:#80a8be}
+.celestial-library-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:#e8f4f9;font-size:11px}
+.celestial-library-section{margin-top:22px}
+.celestial-library-section-head{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:0 3px 9px;color:#7e9bab;font-size:10px;letter-spacing:.13em;
+}
+.celestial-library-section-head span{color:#6f889b;letter-spacing:0}
+.celestial-library-section p{padding:8px 4px;color:#859eae;font-size:11px;line-height:1.5}
+.celestial-library-entry{display:flex;align-items:center;gap:4px;padding:1px;border-radius:9px}
+.celestial-library-entry:hover{background:#253c4e}
+.celestial-library-entry>button:first-child{
+  display:flex;align-items:center;flex:1;min-width:0;gap:10px;
+  padding:8px;border:0;background:transparent;text-align:left;color:#d8e9f1;
+}
+.celestial-library-glyph{
+  display:grid;place-items:center;flex:0 0 31px;width:31px;height:31px;
+  background:#28455b;border-radius:9px;color:#9bd8f0;font-size:15px;
+}
+.celestial-library-entry>button:first-child>span:last-child{
+  display:flex;flex-direction:column;min-width:0;gap:3px;
+}
+.celestial-library-entry strong,.celestial-library-entry small{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.celestial-library-entry strong{font-size:11px}
+.celestial-library-entry small{font-size:9px;color:#83a1b3}
+.celestial-library-remove{
+  flex:0 0 24px;width:24px;height:24px;
+  border:0;border-radius:6px;background:transparent;color:#8ba5b6;font-size:18px;
+}
+.celestial-library-remove:hover{background:#4b343c;color:#ffd3d3}
+.celestial-library-recent{
+  display:flex;align-items:center;gap:10px;
+  width:100%;min-height:38px;padding:8px;border:0;
+  border-radius:8px;background:transparent;
+  color:#a8c0ce;text-align:left;font-size:11px;
+}
+.celestial-library-recent:hover{background:#253a4c;color:#fff}
+.celestial-library-recent svg{color:#6c94a9}
+.celestial-library-recent span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.celestial-browser-notice{
+  position:absolute;z-index:30;bottom:35px;left:50%;transform:translateX(-50%);
+  padding:10px 15px;border:1px solid #5d8ca8;border-radius:9px;
+  background:#203a50f5;color:#e8f9fc;font-size:12px;
+  box-shadow:0 10px 26px #0007;
+}
+
+/* A new tab should feel like a destination in its own right. */
+.forest-browser.celestial-browser-v2.new-tab .forest-browser-stage{
+  background:
+    radial-gradient(ellipse 55% 55% at 50% 44%,rgba(45,84,125,.23),transparent 75%),
+    radial-gradient(circle at 51% 33%,rgba(76,129,187,.15),transparent 23%),
+    linear-gradient(145deg,rgba(8,18,34,.84),rgba(11,27,47,.71) 53%,rgba(9,16,31,.82));
+}
+.forest-browser.celestial-browser-v2.new-tab .forest-browser-stage::before{
+  content:"";pointer-events:none;position:absolute;
+  width:min(600px,72vw);aspect-ratio:1;top:50%;left:50%;
+  transform:translate(-50%,-55%);
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 45% 35%,rgba(150,200,238,.12),transparent 38%),
+    radial-gradient(circle at 60% 68%,rgba(78,109,178,.14),transparent 57%),
+    radial-gradient(circle at 33% 25%,rgba(151,221,233,.08),transparent 65%);
+  box-shadow:inset 0 0 60px rgba(93,158,188,.07),0 0 100px rgba(105,166,203,.08);
+  border:1px solid rgba(164,206,232,.09);
+  opacity:.75;
+}
+.forest-browser.celestial-browser-v2.new-tab .forest-browser-stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.46;
+  background-image:
+    radial-gradient(circle at 18% 22%,#c4dcff 0 1px,transparent 1.3px),
+    radial-gradient(circle at 85% 32%,#b6dfff 0 1px,transparent 1.3px),
+    radial-gradient(circle at 34% 77%,#d6f1ff 0 1px,transparent 1.3px),
+    radial-gradient(circle at 72% 84%,#bfdbff 0 1px,transparent 1.3px),
+    radial-gradient(circle at 49% 14%,#a3dded 0 1px,transparent 1.3px),
+    radial-gradient(circle at 7% 63%,#dcecff 0 .8px,transparent 1.2px);
+}
+.forest-browser.celestial-browser-v2 .forest-browser-home{
+  width:min(610px,calc(100% - 30px))!important;
+  padding:14px 20px 36px;
+  transform:translateY(-3%)!important;
+  position:relative;z-index:2;
+}
+.celestial-browser-start-kicker{
+  display:flex;align-items:center;gap:9px;
+  color:#8aafca;font-size:10px;letter-spacing:.22em;font-weight:790;
+  margin-bottom:22px;
+}
+.celestial-browser-start-kicker>span{font-size:20px;color:#b5dceb}
+.forest-browser.celestial-browser-v2 .forest-wordmark{
+  font-size:clamp(46px,6vw,76px);
+  letter-spacing:-.088em;font-weight:770;
+  line-height:1.04;margin-bottom:12px;
+  color:#f3faff;
+  text-shadow:0 10px 30px rgba(5,10,25,.26);
+}
+.forest-browser.celestial-browser-v2 .forest-wordmark>span{
+  color:var(--studio-accent-strong);
+  text-shadow:0 0 36px rgba(137,208,237,.19);
+}
+.celestial-browser-start-caption{
+  margin:0 0 28px;color:#9fb5c9;
+  font-size:12px;letter-spacing:.01em;line-height:1.6;
+}
+.forest-browser.celestial-browser-v2 .forest-main-search{
+  width:100%;height:56px;
+  padding:5px 6px 5px 17px;gap:12px;
+  border-radius:13px;border:1px solid rgba(181,224,244,.33);
+  background:linear-gradient(115deg,rgba(18,37,58,.96),rgba(21,47,69,.94));
+  box-shadow:0 20px 55px #02061585,inset 0 1px rgba(240,255,255,.12);
+  backdrop-filter:blur(14px);
+}
+.forest-browser.celestial-browser-v2 .forest-main-search:focus-within{
+  border-color:var(--studio-accent);
+  box-shadow:0 20px 58px #02061585,0 0 0 4px var(--studio-tint);
+}
+.forest-browser.celestial-browser-v2 .forest-main-search>svg{
+  color:#a6cfe1;
+}
+.forest-browser.celestial-browser-v2 .forest-main-search input{
+  font-size:13px;color:#f0f8fd;
+}
+.forest-browser.celestial-browser-v2 .forest-main-search input::placeholder{
+  color:#90aebf;
+}
+.forest-browser.celestial-browser-v2 .forest-main-search button{
+  width:42px;height:42px;border-radius:9px;
+  background:#b2dcea;color:#102939;box-shadow:none;
+  transition:background .18s ease,transform .18s ease;
+}
+.forest-browser.celestial-browser-v2 .forest-main-search button:hover{
+  background:#dcf3fa;transform:none;
+}
+.forest-browser.celestial-browser-v2 .forest-shortcuts{
+  gap:8px;margin-top:20px;
+}
+.forest-browser.celestial-browser-v2 .forest-shortcuts button{
+  display:flex;align-items:center;gap:7px;
+  min-height:34px;padding:8px 13px;
+  border:1px solid rgba(160,207,228,.2);
+  border-radius:9px;
+  background:rgba(19,44,65,.55);color:#b9cedb;
+  backdrop-filter:blur(15px);
+  box-shadow:none;
+  font-weight:640;font-size:11px;
+}
+.forest-browser.celestial-browser-v2 .forest-shortcuts button svg{
+  width:14px;height:14px;color:#98cbde;
+}
+.forest-browser.celestial-browser-v2 .forest-shortcuts button::before{display:none}
+.forest-browser.celestial-browser-v2 .forest-shortcuts button:hover{
+  border-color:rgba(195,234,246,.4);background:rgba(41,79,105,.65);
+  color:#ecfbff;
+}
+.celestial-browser-start-links{width:100%;margin-top:31px;max-width:555px}
+.celestial-start-links-label{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:10px;letter-spacing:.15em;font-weight:820;color:#7498b0;
+  padding:0 3px 11px;border-bottom:1px solid rgba(164,206,225,.16);
+}
+.celestial-start-links-label button{
+  display:flex;align-items:center;gap:4px;
+  background:transparent;border:0;color:#b2d9e9;
+  font-size:11px;font-weight:620;letter-spacing:0;
+}
+.celestial-start-links-label button:hover{color:#fff}
+.celestial-start-link-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:11px;
+}
+.celestial-start-link-grid button{
+  display:flex;align-items:center;gap:10px;min-width:0;
+  min-height:52px;padding:9px 12px;border:1px solid rgba(157,205,226,.17);
+  border-radius:10px;background:rgba(15,34,51,.62);
+  color:#cfdfec;font-size:11px;text-align:left;
+}
+.celestial-start-link-grid button:hover{
+  border-color:rgba(181,226,243,.32);background:rgba(34,61,84,.75);
+}
+.celestial-start-link-avatar{
+  display:grid;place-items:center;flex:0 0 29px;width:29px;height:29px;
+  border-radius:8px;background:#294b65;color:#b0e2f3;font-size:12px;font-weight:800;
+}
+.celestial-start-link-grid button>span:nth-child(2){
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.celestial-start-link-grid button svg{color:#739fb3;flex:0 0 auto}
+
+/* Fullscreen is browser-native and scoped to the browser surface. */
+.forest-browser.celestial-browser-v2:fullscreen{
+  position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+  overflow:hidden;border:0;background:#07101b;
+}
+.forest-browser.celestial-browser-v2:fullscreen .forest-browser-chrome{
+  margin:0!important;border:0!important;border-radius:0!important;
+}
+.forest-browser.celestial-browser-v2:fullscreen .forest-browser-stage{
+  margin:0!important;border:0!important;border-radius:0!important;
+  box-shadow:none!important;
+}
+.forest-browser.celestial-browser-v2:fullscreen .celestial-browser-library{
+  top:106px;right:12px;bottom:12px;
+}
+
+/* Messenger: polished but familiar. Navigation and content always win. */
+.celestial-messenger{
+  --msg-bg:#0b1421;
+  --msg-panel:#152132;
+  --msg-raised:#203246;
+  --msg-sidebar:#111d2d;
+  --msg-line:#273b4d;
+  --msg-line-soft:#1b2e41;
+  --msg-text:#e9f3fc;
+  --msg-muted:#95adbd;
+  --msg-label:#708d9f;
+  --msg-accent:var(--studio-accent);
+  --msg-accent-bg:var(--studio-tint);
+  background:#0b1421;
+}
+.celestial-messenger.full{
+  grid-template-columns:62px 240px minmax(0,1fr) 224px;
+}
+.celestial-messenger .messenger-server-rail{
+  padding:18px 10px;gap:9px;
+  background:linear-gradient(180deg,#0b1726,#101e30 62%,#0b1522);
+  border-right:1px solid rgba(167,202,222,.12);
+}
+.celestial-messenger .messenger-rail-star{
+  width:42px;height:42px;border-radius:14px;
+  color:#e9faff;font-size:25px;
+  background:linear-gradient(140deg,#375d79,#203a59);
+  border:1px solid rgba(166,219,238,.34);
+  box-shadow:0 10px 30px rgba(80,164,210,.15),inset 0 1px #ffffff18;
+}
+.celestial-messenger .messenger-guild{
+  background:#1b3045;color:#9bb8cb;
+  border-radius:12px;
+}
+.celestial-messenger .messenger-guild.selected{
+  color:#f5fdff;background:linear-gradient(140deg,#365d79,#25445e);
+  border-color:#6486a0;
+  box-shadow:0 5px 18px rgba(9,19,37,.32);
+}
+.celestial-messenger .messenger-guild.selected::before{background:#b9ebfa}
+.celestial-messenger .messenger-sidebar{
+  background:linear-gradient(180deg,#132132,#0f1d2e 57%,#101a29);
+  border-color:rgba(166,199,218,.12);
+}
+.celestial-messenger .messenger-server-heading{
+  min-height:77px;padding:17px 17px 11px;
+}
+.celestial-messenger .messenger-server-select{
+  color:#ecf8fc;font-size:14px;font-weight:770;
+}
+.celestial-messenger .messenger-channel-heading{
+  padding:22px 16px 9px;color:#819aad;font-size:10px;letter-spacing:.14em;
+}
+.celestial-messenger .messenger-channel-list,
+.celestial-messenger .messenger-dm-list{padding:0 10px}
+.celestial-messenger .messenger-channel{
+  min-height:39px;padding:8px 10px;border-radius:8px;
+  color:#91aabd;font-size:12px;transition:background .15s,color .15s;
+}
+.celestial-messenger .messenger-channel:hover{background:#1f3448;color:#e5f4fb}
+.celestial-messenger .messenger-channel.selected{
+  background:linear-gradient(90deg,rgba(71,125,160,.32),rgba(47,93,125,.16));
+  color:#e8faff;border-color:rgba(159,214,239,.18);
+  box-shadow:inset 3px 0 var(--studio-accent);
+}
+.celestial-messenger .messenger-channel.selected .messenger-hash{color:#b3e0f5}
+.celestial-messenger .messenger-toolbar{
+  background:linear-gradient(135deg,#162539,#121f30);
+  min-height:77px;flex-basis:77px;padding:0 28px;
+  border-color:rgba(174,215,233,.14);
+}
+.celestial-messenger .messenger-toolbar-title strong{
+  font-size:15px;font-weight:780;color:#f4faff;
+}
+.celestial-messenger .messenger-channel-sign{color:#8dbbd5}
+.celestial-messenger .messenger-connection.connected{color:#9fd9c4}
+.celestial-messenger .messenger-message-list{
+  background:
+    radial-gradient(ellipse 56% 43% at 60% 20%,rgba(46,75,104,.115),transparent 95%),
+    linear-gradient(160deg,#0a1421,#0d1827);
+  padding:29px clamp(20px,4vw,58px) 22px;
+  scrollbar-color:#385268 transparent;
+}
+.celestial-messenger .messenger-message{
+  margin-left:-10px;margin-right:-10px;padding:10px;
+  border-radius:9px;
+}
+.celestial-messenger .messenger-message:hover{background:rgba(45,69,89,.23)}
+.celestial-messenger .messenger-avatar{
+  background-image:linear-gradient(140deg,#ffffff19,transparent 70%);
+  border:1px solid rgba(184,223,239,.12);
+  box-shadow:inset 0 1px #ffffff15;
+}
+.celestial-messenger .messenger-message-meta strong{
+  color:#eaf8fd;font-size:12px;font-weight:760;
+}
+.celestial-messenger .messenger-message.mine .messenger-message-meta strong{
+  color:#b7e8fa;
+}
+.celestial-messenger .messenger-message-text{
+  color:#c9d9e6;line-height:1.68;font-size:12px;
+}
+.celestial-messenger .messenger-role.admin{
+  border-color:#437fae;background:#1a3a55;color:#a9daff;
+}
+.celestial-messenger .messenger-members{
+  background:linear-gradient(180deg,#112134,#0d1928);
+  border-left:1px solid rgba(169,207,230,.12);
+}
+.celestial-messenger .messenger-members>header{
+  min-height:77px;flex-basis:77px;border-color:rgba(169,207,230,.12);
+}
+.celestial-messenger .messenger-composer{
+  background:#1b2b3d;margin:12px clamp(18px,3.4vw,44px) 5px;
+  border:1px solid rgba(166,217,239,.23);
+  min-height:53px;border-radius:12px;
+  box-shadow:0 8px 25px rgba(1,5,15,.2),inset 0 1px rgba(230,252,255,.035);
+}
+.celestial-messenger .messenger-composer:focus-within{
+  border-color:var(--studio-accent);
+  box-shadow:0 0 0 3px var(--studio-tint),0 8px 25px #0003;
+}
+.celestial-messenger .messenger-composer>button{background:#a9d9ec;color:#0d2939}
+.celestial-messenger .messenger-composer>button:hover{background:#d3f3fc}
+.celestial-messenger .messenger-current-user{
+  background:#17293c;border-color:#2a4355;
+}
+.celestial-messenger .messenger-member-search{background:#17283a;border-color:#355165}
+.celestial-messenger .messenger-member:hover{background:#243d52}
+.celestial-messenger .messenger-members-button{
+  border-color:#36546c;background:#203448;color:#bad5e2;
+}
+.celestial-messenger .messenger-members-button:hover{border-color:#638ead}
+.celestial-messenger .messenger-empty>span{
+  background:linear-gradient(145deg,#284a69,#193449);
+  color:#bce5f5;border:1px solid #47728d;
+}
+.celestial-messenger .messenger-empty strong{
+  font-size:24px;letter-spacing:-.047em;color:#f1f8fe;
+}
+.celestial-messenger.compact{
+  background:#0e1b2b;
+}
+.celestial-messenger.compact .messenger-toolbar{
+  min-height:68px;flex-basis:68px;padding:0 13px;
+}
+.celestial-messenger.compact .messenger-message-list{
+  background:linear-gradient(155deg,#0d1929,#101e2f);
+  padding:18px 13px;
+}
+.celestial-messenger.compact .messenger-compact-navigation{
+  padding:9px 11px;background:#142538;border-color:#2a455b;
+}
+.celestial-messenger.compact .messenger-compact-channels button.selected{
+  background:rgba(76,134,170,.31);border-color:rgba(128,204,233,.22);
+}
+.celestial-messenger.compact .messenger-composer{
+  margin:10px 11px 14px;min-height:47px;
+}
+.celestial-messenger.compact .messenger-empty{
+  margin:auto 0;text-align:left;
+}
+.celestial-messenger.compact .messenger-empty>span{width:44px;height:44px}
+.celestial-messenger.compact .messenger-empty strong{font-size:17px}
+.celestial-messenger.compact .messenger-empty p{font-size:11px}
+.celestial-messenger.compact .messenger-toolbar-title>strong{font-size:12px}
+.celestial-messenger.compact .messenger-members{
+  background:#142439;
+}
+.celestial-workspace:has(.celestial-messenger.full) .celestial-corner-actions{
+  display:none!important;
+}
+
+/* Apps and games are treated as real programs. */
+.celestial-apps-page{
+  color:#e7f1f9;
+  background:linear-gradient(150deg,rgba(9,18,34,.88),rgba(12,25,43,.87));
+}
+.celestial-apps-heading h1{letter-spacing:-.065em;color:#eff7fb}
+.celestial-apps-heading p{color:#98aebf}
+.celestial-app-tile{
+  background:linear-gradient(140deg,#182a3e,#122134);
+  border:1px solid rgba(170,206,231,.15);
+  box-shadow:0 8px 25px #03091656;
+}
+.celestial-app-tile:hover{
+  border-color:var(--studio-accent);
+  box-shadow:0 18px 32px #0006;
+}
+.celestial-tool-shell{border-color:rgba(171,211,230,.2);background:#0e1c2d}
+.celestial-game-toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:49px;padding:8px 16px;
+  border-bottom:1px solid rgba(150,204,230,.15);
+  background:linear-gradient(120deg,#1b3045,#112337);
+}
+.celestial-game-toolbar>span{
+  display:flex;align-items:center;gap:9px;color:#8ebad0;
+  font-size:10px;letter-spacing:.14em;font-weight:820;
+}
+.celestial-game-toolbar>span i{width:7px;height:7px;background:#83d1b3;border-radius:50%}
+.celestial-game-toolbar button{
+  display:flex;align-items:center;gap:8px;min-height:31px;
+  padding:7px 12px;background:#294760;color:#e4f8fd;
+  border:1px solid #3c627c;border-radius:8px;
+  font-size:11px;font-weight:720;
+}
+.celestial-game-toolbar button span{font-size:17px;line-height:1}
+.celestial-game-toolbar button:hover{background:#35617f;border-color:#89bbd9}
+.celestial-game-error{padding:8px;color:#f4b6ac;font-size:11px}
+.celestial-tool-shell:fullscreen{
+  display:flex;flex-direction:column;
+  width:100vw!important;height:100dvh!important;max-width:none!important;
+  border:0!important;border-radius:0!important;
+  background:#0b1726!important;overflow:auto;
+}
+.celestial-tool-shell:fullscreen .celestial-embedded-game{
+  flex:1;display:flex;align-items:stretch;justify-content:center;
+}
+.celestial-tool-shell:fullscreen .forest-game-stage{
+  max-width:1500px;width:100%;min-height:100%!important;
+}
+.celestial-tool-shell:fullscreen .celestial-game-toolbar{
+  flex:0 0 56px;min-height:56px;padding:10px 24px;
+}
+@media(max-width:1250px){
+  .celestial-browser-brand strong{display:none}
+  .celestial-browser-brand-divider{margin-left:5px}
+  .celestial-browser-brand{margin-right:5px}
+  .celestial-browser-transport,.celestial-browser-tools{gap:1px}
+  .forest-browser.celestial-browser-v2.has-tabs .forest-toolbar{gap:5px}
+  .celestial-messenger.full{grid-template-columns:58px 202px minmax(0,1fr) 194px}
+}
+@media(max-width:1050px){
+  .celestial-messenger.full{grid-template-columns:56px 206px minmax(0,1fr)}
+  .celestial-messenger.full .messenger-members.open{display:flex}
+  .forest-browser.celestial-browser-v2.has-tabs .forest-browser-chrome{margin-left:57px!important}
+  .forest-browser.celestial-browser-v2.has-tabs .forest-browser-stage{margin-left:57px!important}
+  .celestial-browser-address kbd{display:none}
+  .celestial-browser-tools [aria-label="Copy link"]{display:none}
+}
+@media(max-width:750px){
+  .forest-browser.celestial-browser-v2.has-tabs .forest-browser-chrome{
+    margin:78px 7px 0 53px!important;border-radius:10px 10px 0 0!important;
+  }
+  .forest-browser.celestial-browser-v2.has-tabs .forest-browser-stage{
+    margin:0 7px 12px 53px!important;border-radius:0 0 10px 10px!important;
+  }
+  .forest-browser.celestial-browser-v2.has-tabs .forest-tabs{height:41px;padding:5px 5px 0}
+  .celestial-browser-brand{display:none}
+  .forest-browser.celestial-browser-v2.has-tabs .forest-toolbar{height:48px;min-height:48px;flex-basis:48px;padding:5px!important;gap:4px}
+  .celestial-browser-tools button,.celestial-browser-tools a,
+  .celestial-browser-transport button{width:27px;height:28px;flex-basis:27px}
+  .forest-browser.celestial-browser-v2 .forest-tab{min-width:70px;max-width:125px;padding:0 4px;gap:3px}
+  .celestial-tab-monogram{display:none}
+  .celestial-browser-tab-actions button{height:26px;width:26px}
+  .celestial-browser-tools [aria-label="Copy link"],
+  .celestial-browser-tools [aria-label="Focus mode"]{display:none}
+  .celestial-browser-library{top:173px;right:8px;bottom:12px;width:min(330px,calc(100% - 66px))}
+  .celestial-browser-v2.new-tab .forest-browser-home{padding:15px!important}
+  .celestial-browser-start-links{margin-top:19px}
+  .celestial-messenger.full{grid-template-columns:52px minmax(0,1fr);padding-left:46px}
+  .celestial-messenger.full .messenger-toolbar{min-height:65px;flex-basis:65px;padding:0 12px}
+  .celestial-workspace .celestial-chat-toggle{top:42px;right:8px;height:32px}
+  .celestial-workspace .celestial-chat-toggle.beside-ai{right:8px}
+}
+@media(max-width:500px){
+  .celestial-browser-tools [aria-label="Bookmark"],
+  .celestial-browser-tools [aria-label="Remove bookmark"]{display:none}
+  .celestial-browser-transport button:nth-child(2){display:none}
+  .forest-browser.celestial-browser-v2.has-tabs .forest-browser-chrome{margin-left:46px!important}
+  .forest-browser.celestial-browser-v2.has-tabs .forest-browser-stage{margin-left:46px!important}
+  .celestial-browser-address input{font-size:11px!important}
+  .forest-browser.celestial-browser-v2 .forest-wordmark{font-size:47px}
+  .forest-browser.celestial-browser-v2 .forest-main-search{height:49px}
+  .celestial-start-link-grid{grid-template-columns:1fr}
+  .celestial-browser-start-links{max-width:350px}
+  .celestial-browser-library{width:calc(100% - 55px)}
+  .celestial-messenger.compact .messenger-toolbar{padding:0 8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .celestial-workspace .dock-link,
+  .celestial-browser-transport button,.celestial-browser-tools button,
+  .forest-browser.celestial-browser-v2 .forest-tab,
+  .celestial-browser-v2 .forest-main-search button{transition:none!important}
+}
