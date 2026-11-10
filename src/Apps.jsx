@@ -119,8 +119,8 @@ export function Apps({onNavigate,onMusic,user,live,onAuth}){
           {selected.game?<Arcade embedded gameId={selected.id} live={live} user={user} onAuth={onAuth}/>:selected.id==='notes'?<Notes/>:selected.id==='calculator'?<Calculator/>:<Focus/>}
         </div>
       </>:<>
-        <header className="celestial-apps-heading"><span className="celestial-section-kicker">YOUR SPACE / YOUR TOOLS</span><h1>Everything, <em>in one place.</em></h1>
-          <p>Only what you use. No clutter, no fake launch buttons.</p></header>
+        <header className="celestial-apps-heading"><span className="celestial-section-kicker">YOUR SPACE / YOUR TOOLS</span><h1>Apps<em>.</em></h1>
+          <p>Tools and games. Pick one.</p></header>
         <div className="celestial-apps-search"><span>⌕</span><input aria-label="Find an app" placeholder="Find an app…" value={query} onChange={e=>setQuery(e.target.value)}/><kbd>APPS</kbd></div>
         {['ESSENTIAL','PLAY','TOOLS'].map(group=>{
           const items=filtered.filter(app=>app.category===group);
