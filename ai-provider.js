@@ -47,7 +47,8 @@ export async function completeAi({
   messages,stream=true,signal,fetcher=fetch,onStatus=()=>{},
   onDelta=()=>{},onReasoning=()=>{},budgets=[18000,23000],maxTokens=1200
 }){
-  const configured=[model,backupModel].filter((name,index,array)=>name&&array.indexOf(name)===index);
+  // Prefer the configured model, but always try a known hosted text model before the multimodal backup.
+  const configured=[model,TEXT_MODEL,backupModel].filter((name,index,array)=>name&&array.indexOf(name)===index);
   // Once a model times out, start subsequent chats with the working alternative.
   // A failed model is tried again later, rather than permanently disabled.
   const now=Date.now();
@@ -111,8 +112,11 @@ export async function completeAi({
       failures.push(name+": "+problem);
       console.warn("Lightning AI model attempt failed:",name,problem);
       if(status===410||status===404)modelCooldowns.set(name,Date.now()+24*60*60*1000);
+      else if(status===403)modelCooldowns.set(name,Date.now()+15*60*1000);
       else if(timeoutFailure||status>=500||status===429)modelCooldowns.set(name,Date.now()+5*60*1000);
-      if(emitted||status===401||status===403)break;
+      // A 403 can be specific to one model. Try other hosted models before
+      // telling the user their API key has no usable model access.
+      if(emitted||status===401)break;
     }finally{
       clearTimeout(timeout);
       signal?.removeEventListener("abort",onAbort);
