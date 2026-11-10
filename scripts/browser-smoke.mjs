@@ -93,14 +93,12 @@ try{
 
   let worker;
   try{
-    await page.waitForFunction(async()=>{
-      const registration=await navigator.serviceWorker.getRegistration('/sw.js');
-      return Boolean(registration?.active);
+    const handle=await page.waitForFunction(async()=>{
+      const registrations=await navigator.serviceWorker.getRegistrations();
+      return registrations.map(registration=>registration.active?.scriptURL)
+        .find(url=>url&&new URL(url).pathname==='/sw.js')||false;
     },null,{timeout:40000});
-    worker=await page.evaluate(async()=>{
-      const registration=await navigator.serviceWorker.getRegistration('/sw.js');
-      return registration?.active?.scriptURL||null;
-    });
+    worker=await handle.jsonValue();
   }catch(error){
     throw Error('The service worker did not activate. Requested: '+
       [...scriptPaths].join(', ')+'; browser errors: '+events.join(' | ')+
