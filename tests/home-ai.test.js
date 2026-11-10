@@ -12,12 +12,12 @@ const layout = readFileSync(path.join(root, 'src/home-split.css'), 'utf8');
 
 test('home splits the real main page and Celestial AI into side-by-side panels', () => {
   assert.match(main, /sections\.has\(route\).*:'home'/);
-  assert.match(main, /view==='home'\?<div className=\{[\s\S]*?celestial-home-split/);
+  assert.match(main, /\['home','browser'\]\.includes\(view\)\?<div className=\{[\s\S]*?celestial-home-split/);
   assert.match(main, /className="celestial-home-main"/);
-  assert.match(main, /<Browser user=\{user\} onAuth=\{setModal\} onShortcut=\{openDock\} homeMode/);
+  assert.match(main, /<Browser user=\{user\} onAuth=\{setModal\} onShortcut=\{openDock\}/);
   assert.match(main, /className="celestial-home-rail"/);
   assert.match(main, /<AI key="celestial-home-sidebar" sidebar/);
-  assert.match(browser, /search or enter a url/);
+  assert.match(browser, /Search the web or enter a URL/);
   assert.match(layout, /grid-template-columns:\s*minmax\(0, 1fr\) var\(--celestial-sidebar-width\)/);
 });
 
