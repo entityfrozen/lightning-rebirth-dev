@@ -80,6 +80,15 @@ try{
   await launcher.screenshot({path:path.join(screenshots,'about-blank-launcher.png')});
   await launcher.close();
 
+  const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});
+  await mobile.goto(base+'/',{waitUntil:'domcontentloaded',timeout:30000});
+  await mobile.locator('.auth-sheet--v2').waitFor({timeout:25000});
+  await mobile.screenshot({path:path.join(screenshots,'login-mobile.png'),fullPage:true});
+  await mobile.getByRole('button',{name:'Create account',exact:true}).click();
+  await mobile.locator('input[name="confirmPassword"]').waitFor({timeout:5000});
+  await mobile.screenshot({path:path.join(screenshots,'signup-mobile.png'),fullPage:true});
+  await mobile.close();
+
   const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
   const scriptPaths=new Set();
   page.on('request',req=>{
@@ -95,9 +104,16 @@ try{
   });
   page.on('pageerror',error=>events.push('page: '+error.message.slice(0,500)));
   await page.goto(base+'/#browser',{waitUntil:'domcontentloaded',timeout:30000});
+  await page.locator('.auth-sheet--v2').waitFor({timeout:25000});
+  await page.screenshot({path:path.join(screenshots,'login-desktop.png'),fullPage:true});
+  await page.getByRole('button',{name:'Create account',exact:true}).click();
+  await page.locator('input[name="confirmPassword"]').waitFor({timeout:5000});
+  await page.screenshot({path:path.join(screenshots,'signup-desktop.png'),fullPage:true});
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await page.locator('input[name="confirmPassword"]').waitFor({state:'detached'});
   await page.locator('input[name="username"]').fill('SmokeAdmin');
   await page.locator('input[name="password"]').fill(password);
-  await page.locator('.auth-fields form button').click();
+  await page.locator('.auth-fields form button[type="submit"]').click();
   await page.locator('.forest-browser-home input[aria-label="Search or enter a URL"]')
     .waitFor({timeout:25000});
 
