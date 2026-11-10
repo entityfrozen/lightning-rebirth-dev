@@ -15,6 +15,7 @@ import './home-split.css';
 import './qol.css';
 import './workspace.css';
 import './messenger.css';
+import './studio.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
@@ -308,7 +309,10 @@ function App() {
         <h2>{actor}</h2><p>Signed in to Celestial.</p>
         <button className="celestial-sheet-action" onClick={()=>{setModal(null);logout();}}>Sign out</button>
       </div>
-      {['admin','account_manager'].includes(user.role)&&<AccountReview/>}
+      {['admin','account_manager'].includes(user.role)&&<button className="celestial-sheet-action"
+        onClick={()=>{saveLocal('celestial-settings-start-panel','administration');selectSection('settings');}}>
+        Open administration ↗
+      </button>}
     </Modal>}
     {toast&&<div className="celestial-toast" role="status"><Sparkle20Filled/> {toast}</div>}
     <DialRoot productionEnabled={new URLSearchParams(location.search).has('tune')}/>
