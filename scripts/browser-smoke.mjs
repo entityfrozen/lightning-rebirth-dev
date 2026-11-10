@@ -119,8 +119,11 @@ try{
   // being set. This uses example.com's public, static page as the smoke target.
   await page.waitForFunction(()=>{
     const frame=document.querySelector('iframe.portal-iframe');
-    try{return Boolean(frame?.contentDocument?.body?.innerText?.includes('Example Domain'));}
-    catch{return false;}
+    try{
+      const document=frame?.contentDocument;
+      return Boolean(document?.title==='Example Domain' &&
+        document?.body?.innerText?.length>80);
+    }catch{return false;}
   },null,{timeout:30000}).catch(async error=>{
     const snapshot=await page.evaluate(()=>{
       const frame=document.querySelector('iframe.portal-iframe');
