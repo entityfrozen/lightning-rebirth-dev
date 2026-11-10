@@ -191,7 +191,7 @@ function App() {
   const [dockOpen,setDockOpen]=useState(()=>readLocal('navigation-expanded',true)!==false);
   const [jumpOpen,setJumpOpen]=useState(false);
   const [jumpQuery,setJumpQuery]=useState('');
-  const [showHomeAI,setShowHomeAI]=useState(()=>readLocal('home-ai-sidebar',false)===true);
+  const [showHomeAI,setShowHomeAI]=useState(()=>readLocal('home-ai-sidebar-flare',false)===true);
   const [chatOpen,setChatOpen]=useState(()=>readLocal('workspace-chat-open',false)===true);
   const [palette,setPalette]=useState(()=>readLocal('celestial-palette','aurora'));
   const [backdrop,setBackdrop]=useState(()=>readLocal('celestial-backdrop','aurora'));
@@ -219,7 +219,10 @@ function App() {
     document.documentElement.dataset.motion=reduced?'reduced':'full';
   },[reduced]);
   useEffect(()=>saveLocal('navigation-expanded',dockOpen),[dockOpen]);
-  useEffect(()=>saveLocal('home-ai-sidebar',showHomeAI),[showHomeAI]);
+  useEffect(()=>{
+    saveLocal('home-ai-sidebar',showHomeAI);
+    saveLocal('home-ai-sidebar-flare',showHomeAI);
+  },[showHomeAI]);
   useEffect(()=>saveLocal('workspace-chat-open',chatOpen),[chatOpen]);
   useEffect(()=>{applyCloak();},[]);
   useEffect(()=>{
