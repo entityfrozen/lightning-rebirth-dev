@@ -86,6 +86,7 @@ try{
 
   const isolation=await page.evaluate(()=>window.crossOriginIsolated);
   assert.equal(isolation,true,'Celestial must be cross-origin isolated for Scramjet');
+  await page.screenshot({path:path.join(screenshots,'browser-start.png'),fullPage:true});
   await page.getByRole('textbox',{name:'Search or enter a URL'})
     .fill('https://example.com');
   await page.getByRole('textbox',{name:'Search or enter a URL'}).press('Enter');
