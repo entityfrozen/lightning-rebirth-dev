@@ -103,40 +103,12 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
     if(!locked&&event.target===event.currentTarget)close();
   }}>
     <section className="auth-sheet auth-sheet--v2 glass" role="dialog" aria-modal="true"
-      aria-label={registering?'Create a Celestial account':'Sign in to Celestial'}>
-      <div className="auth-art">
-        <div className="auth-brand">
-          <img src="/assets/celestial-star.svg" alt="" />
-          <span>celestial<span className="auth-brand-dot">.</span></span>
-        </div>
-        <div className="auth-constellation" aria-hidden="true">
-          <div className="auth-orbit auth-orbit--outer"><span/></div>
-          <div className="auth-orbit auth-orbit--middle"><span/></div>
-          <div className="auth-orbit auth-orbit--inner"/>
-          <div className="auth-core">
-            <span className="auth-core-glint"/>
-            <img src="/assets/celestial-star.svg" alt="" />
-          </div>
-          <i className="auth-spark auth-spark--one"/>
-          <i className="auth-spark auth-spark--two"/>
-          <i className="auth-spark auth-spark--three"/>
-          <i className="auth-spark auth-spark--four"/>
-        </div>
-        <div className="auth-art-copy">
-          <span className="auth-kicker"><span className="auth-kicker-dot"/> YOUR SPACE, YOUR PACE</span>
-          <h2>Everything in<br/>one place<span>.</span></h2>
-          <p>Hang out, play something, or just explore. Celestial keeps it all together.</p>
-        </div>
-        <div className="auth-art-footer"><span>CELESTIAL NETWORK</span><span>EST. 2026</span></div>
-      </div>
-
+      aria-label={registering?'Create an account':'Sign in'}>
       <div className="auth-fields">
         {!locked&&<button type="button" className="auth-close" onClick={close} aria-label="Close account dialog">×</button>}
-        <div className="auth-mobile-mark"><img src="/assets/celestial-star.svg" alt=""/> celestial.</div>
         <div className="auth-form-content">
           {requested?<div className="auth-requested" role="status">
             <div className="auth-success-mark" aria-hidden="true">✓</div>
-            <span className="auth-overline">REQUEST SENT</span>
             <h1>You're on the list.</h1>
             <p>Your account request is in. An admin needs to approve it before you can sign in.</p>
             <button type="button" className="auth-submit" onClick={()=>switchMethod('login')}>
@@ -144,9 +116,8 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
             </button>
           </div>:<>
             <div className="auth-form-intro">
-              <span className="auth-overline">ACCOUNT ACCESS</span>
-              <h1>{registering?'Make yourself at home.':'Good to see you again.'}</h1>
-              <p>{registering?'Pick a username and password to request your account.':'Sign in to pick up where you left off.'}</p>
+              <h1>{registering?'Create an account':'Sign in'}</h1>
+              <p>{registering?'Choose a username and password. An admin will approve your request.':'Enter your username and password.'}</p>
             </div>
             <div className="auth-mode-switch" role="group" aria-label="Account action">
               <button type="button" className={!registering?'is-active':''}
@@ -184,7 +155,7 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
               </div>}
               {error&&<div className="form-error" role="alert">{error}</div>}
               <button className="auth-submit" type="submit" disabled={busy}>
-                <span>{busy?'One moment…':registering?'Request an account':'Enter Celestial'}</span>
+                <span>{busy?'One moment…':registering?'Request account':'Sign in'}</span>
                 <span className="auth-submit-arrow"><Icon name="arrow" size={17}/></span>
               </button>
             </form>
@@ -194,7 +165,6 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
                 onClick={()=>switchMethod('register')}>Create one</button></p>}
           </>}
         </div>
-        <div className="auth-bottom-line"><span>© CELESTIAL</span><span>PLAY · BROWSE · CONNECT</span></div>
       </div>
     </section>
   </div>;
