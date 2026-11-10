@@ -15,11 +15,13 @@ import './home-split.css';
 import './qol.css';
 import './workspace.css';
 import './messenger.css';
+import './studio.css';
+import './console.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
 import {SceneBoundary} from './SceneBoundary.jsx';
-import {AccountReview} from './AccountReview.jsx';
+
 import {applyCloak} from './Cloak.js';
 
 const Browser=React.lazy(()=>import('./Browser.jsx').then(mod=>({default:mod.Browser})));
@@ -129,6 +131,7 @@ function App() {
   const [user,setUser]=useState(null);
   const [loading,setLoading]=useState(true);
   const [modal,setModal]=useState(null);
+  const [settingsPanel,setSettingsPanel]=useState('appearance');
   const [toast,setToast]=useState('');
   const [browserLaunch,setBrowserLaunch]=useState(null);
   const internalHashChange=useRef(false);
@@ -247,6 +250,7 @@ function App() {
               view==='settings'?<Settings user={user} palette={palette} setPalette={setPalette}
                 backdrop={backdrop} setBackdrop={setBackdrop} reduced={reduced} setReduced={setReduced}
                 showHomeAI={showHomeAI} setShowHomeAI={setShowHomeAI}
+                initialPanel={settingsPanel}
                 onBack={()=>selectSection('home')} onLogout={logout}/>:
               view==='chat'?<Chat user={user} onAuth={setModal} live={live}/>:
               <AI key="celestial-ai" user={user} onAuth={setModal}/>}
@@ -308,7 +312,10 @@ function App() {
         <h2>{actor}</h2><p>Signed in to Celestial.</p>
         <button className="celestial-sheet-action" onClick={()=>{setModal(null);logout();}}>Sign out</button>
       </div>
-      {['admin','account_manager'].includes(user.role)&&<AccountReview/>}
+      {['admin','account_manager'].includes(user.role)&&<button className="celestial-profile-admin-entry"
+        onClick={()=>{setSettingsPanel('admin');selectSection('settings');}}>
+        <span>✦</span> Open admin console <strong>↗</strong>
+      </button>}
     </Modal>}
     {toast&&<div className="celestial-toast" role="status"><Sparkle20Filled/> {toast}</div>}
     <DialRoot productionEnabled={new URLSearchParams(location.search).has('tune')}/>
