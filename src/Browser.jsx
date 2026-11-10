@@ -422,7 +422,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
       {!visibleUrl&&<div className="forest-browser-home">
         <div className="celestial-browser-start-kicker"><span>✦</span> CELESTIAL / EXPLORE</div>
         <div className="forest-wordmark" aria-label="Celestial">celes<span>tial</span></div>
-        <p className="celestial-browser-start-caption">One place for everything you're into.</p>
+        <p className="celestial-browser-start-caption">Search the web or open something you've saved.</p>
         <form className="forest-main-search" onSubmit={submit}>
           <Icon name="browser" size={19}/>
           <input ref={box} value={input} onChange={e=>setInput(e.target.value)}
