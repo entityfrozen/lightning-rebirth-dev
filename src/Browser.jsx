@@ -63,7 +63,9 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
       try{
         if(!user)throw Error('Sign in to browse in Celestial.');
         if(!window.isSecureContext)throw Error('The browser needs a secure HTTPS connection.');
-        if(!window.crossOriginIsolated)throw Error('Browser isolation is not enabled. Reload Celestial once; if this persists, the server needs a configuration update.');
+        if(!window.crossOriginIsolated)throw Error(window.self!==window.top
+          ? 'Scramjet needs its own isolated browser tab. Chat and Apps work here, but websites must open in standalone Celestial.'
+          : 'Browser isolation is not enabled. Reload Celestial once; if this persists, the server needs a configuration update.');
         const status=await api('/api/browser/status');
         if(!status.authenticated)throw Error('Sign in to browse in Celestial.');
         if(!status.proxy)throw Error('The browser engine is unavailable on this server.');
@@ -121,7 +123,9 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
       <h2>We couldn't open that page.</h2>
       <p>{error}</p>
       <div><button onClick={()=>register(tab.id,{retry:true})}>Try again</button>
-      <a href={tab.url} target="_blank" rel="noopener noreferrer">Open directly ↗</a></div>
+      {window.self!==window.top&&!window.crossOriginIsolated&&
+        <a href={location.origin+'/#browser'} target="_blank" rel="noopener noreferrer">Open full Celestial browser ↗</a>}
+      <a href={tab.url} target="_blank" rel="noopener noreferrer">Open site directly ↗</a></div>
     </div>}
   </div>;
 }
@@ -361,6 +365,12 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
     </div>}
     <div className="forest-browser-stage">
       {!visibleUrl&&<div className="forest-browser-home">
+        {window.self!==window.top&&!window.crossOriginIsolated&&
+          <div className="celestial-embedded-browser-notice" role="note">
+            <strong>Browser needs its own tab</strong>
+            <span>The launcher can show Celestial, but Scramjet needs a standalone browser window.</span>
+            <a href={location.origin+'/#browser'} target="_blank" rel="noopener noreferrer">Open full browser ↗</a>
+          </div>}
         <div className="forest-wordmark" aria-label="Celestial">celes<span>tial</span></div>
         <form className="forest-main-search" onSubmit={submit}>
           <Icon name="browser" size={19}/>

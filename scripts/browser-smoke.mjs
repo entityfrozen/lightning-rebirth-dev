@@ -63,6 +63,21 @@ try{
   await mkdir(screenshots,{recursive:true});
   await boot();
   browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage']});
+  // Reproduce the unmodified launcher: about:blank is the top-level document,
+  // with Celestial inside a cross-site iframe.
+  const launcher=await browser.newPage({viewport:{width:1180,height:780}});
+  await launcher.goto('about:blank');
+  await launcher.setContent(`<iframe title="Lightning launcher" src="${base}/#apps"
+    style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>`);
+  await launcher.frameLocator('iframe').locator('.celestial-apps-page')
+    .waitFor({timeout:25000});
+  const framed=await launcher.frameLocator('iframe').locator('body')
+    .evaluate(()=>({embedded:window.top!==window,selfIsolated:window.crossOriginIsolated}));
+  assert.equal(framed.embedded,true,'The launcher must display the Celestial application');
+  assert.equal(framed.selfIsolated,false,'about:blank does not provide cross-origin isolation');
+  await launcher.screenshot({path:path.join(screenshots,'about-blank-launcher.png')});
+  await launcher.close();
+
   const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
   const scriptPaths=new Set();
   page.on('request',req=>{
