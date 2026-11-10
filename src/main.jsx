@@ -222,7 +222,7 @@ function App() {
 
   return <>
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
-    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced}/></Suspense></SceneBoundary>
+    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced||['browser','chat','apps'].includes(view)}/></Suspense></SceneBoundary>
     <div className="celestial-workspace">
       <main className="celestial-stage" id="main-content">
         <div className={'celestial-activity-layout '+(showCompanion?'with-chat':'')}>
