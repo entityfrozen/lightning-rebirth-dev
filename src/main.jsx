@@ -310,7 +310,7 @@ function App() {
 
   return <>
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
-    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced||['browser','chat','apps','settings'].includes(view)}/></Suspense></SceneBoundary>
+    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced||['home','browser','chat','apps','settings'].includes(view)}/></Suspense></SceneBoundary>
     <div className={'celestial-workspace '+(dockOpen?'nav-wide':'nav-compact')}>
       <main className="celestial-stage" id="main-content">
         <div className={'celestial-activity-layout '+(showCompanion?'with-chat':'')}>
