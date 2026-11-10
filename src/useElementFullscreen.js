@@ -9,7 +9,7 @@ export function useElementFullscreen(elementRef){
   const [fullscreenError,setFullscreenError]=useState('');
 
   useEffect(()=>{
-    const sync=()=>setFullscreen(document.fullscreenElement===elementRef.current);
+    const sync=()=>setFullscreen(Boolean(elementRef.current && document.fullscreenElement===elementRef.current));
     document.addEventListener('fullscreenchange',sync);
     sync();
     return()=>document.removeEventListener('fullscreenchange',sync);
