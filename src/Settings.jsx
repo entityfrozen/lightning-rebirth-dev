@@ -102,8 +102,8 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
       </div>
       <header className="celestial-settings-heading">
         <div className="celestial-settings-heading-star" aria-hidden="true">✦</div>
-        <span>THE WORKSPACE</span><h1>Make it <em>yours.</em></h1>
-        <p>Set up Celestial the way you like it. Changes save as you go.</p>
+        <span>CELESTIAL / PERSONALIZATION</span><h1>Settings<em>.</em></h1>
+        <p>Theme, browser behavior, privacy, and your account.</p>
       </header>
       <div className="celestial-settings-layout">
         <nav className="celestial-settings-nav" aria-label="Settings categories">
