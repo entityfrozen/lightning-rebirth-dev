@@ -216,3 +216,25 @@
   .celestial-app-tile,.celestial-apps-filters button,
   .celestial-app-tile::after{transition:none!important}
 }
+
+/* The about:blank launcher cannot provide the isolation Scramjet requires. */
+.celestial-embedded-browser-notice{
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  width:min(440px,100%);margin:0 auto 28px;padding:16px 20px;
+  border:1px solid #52766e;border-radius:12px;
+  background:#1a3639;color:#b9d5ce;text-align:center;
+  font-size:11px;line-height:1.6;
+}
+.celestial-embedded-browser-notice strong{
+  color:#e0f7ed;font-size:13px;font-weight:720;
+}
+.celestial-embedded-browser-notice a{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:36px;margin-top:5px;padding:7px 14px;
+  border:1px solid #75ac9b;border-radius:8px;
+  color:#e4fff2;text-decoration:none;background:#31594e;
+  font-weight:700;
+}
+.celestial-embedded-browser-notice a:hover{
+  background:#426d60;
+}
