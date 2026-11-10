@@ -161,7 +161,7 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
                   minLength={3} maxLength={registering?20:32}
                   placeholder={registering?'Choose a username':'Enter your username'}/>
               </label>
-              <label className="auth-field" htmlFor="auth-password">Password
+              <div className="auth-field"><label htmlFor="auth-password">Password</label>
                 <span className="auth-password-wrap">
                   <input id="auth-password" required name="password"
                     type={showPassword?'text':'password'} minLength={8} maxLength={128}
@@ -171,8 +171,8 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
                     aria-label={showPassword?'Hide password':'Show password'}
                     onClick={()=>setShowPassword(value=>!value)}>{showPassword?'Hide':'Show'}</button>
                 </span>
-              </label>
-              {registering&&<label className="auth-field" htmlFor="auth-confirm">Confirm password
+              </div>
+              {registering&&<div className="auth-field"><label htmlFor="auth-confirm">Confirm password</label>
                 <span className="auth-password-wrap">
                   <input id="auth-confirm" required name="confirmPassword"
                     type={showConfirm?'text':'password'} minLength={8} maxLength={128}
@@ -181,7 +181,7 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
                     aria-label={showConfirm?'Hide confirmation password':'Show confirmation password'}
                     onClick={()=>setShowConfirm(value=>!value)}>{showConfirm?'Hide':'Show'}</button>
                 </span>
-              </label>}
+              </div>}
               {error&&<div className="form-error" role="alert">{error}</div>}
               <button className="auth-submit" type="submit" disabled={busy}>
                 <span>{busy?'One moment…':registering?'Request an account':'Enter Celestial'}</span>
