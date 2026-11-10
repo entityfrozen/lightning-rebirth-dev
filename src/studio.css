@@ -1,0 +1,869 @@
+/*
+ * CELESTIAL — STUDIO
+ * Browser, Messenger, Settings & Administration
+ * A calm, precise application surface. Depth comes from layout and light,
+ * not from applying glow and blur to every piece of interface.
+ */
+:root{
+  --studio-ink:#09131c;
+  --studio-ink-2:#101f2a;
+  --studio-ink-3:#192b36;
+  --studio-line:#253c48;
+  --studio-line-bright:#3a626d;
+  --studio-text:#e7f3f4;
+  --studio-soft:#a1b9c0;
+  --studio-faint:#718f9c;
+  --studio-teal:#9cddce;
+  --studio-teal-bright:#c2f4e5;
+  --studio-violet:#b9b4e5;
+}
+.celestial-workspace:has(.forest-browser.is-browsing) .celestial-ambient{opacity:.1}
+
+/* ---------- Browser: real desktop chrome with a generous page canvas ---------- */
+.forest-browser{
+  background:transparent!important;
+  color:var(--studio-text);
+}
+.forest-browser.has-tabs .forest-browser-chrome{
+  position:relative;
+  flex:0 0 auto;
+  margin:12px 14px 0 63px!important;
+  padding:0!important;
+  background:linear-gradient(180deg,#14232df5,#0e1b26fa)!important;
+  border:1px solid #47606d8a!important;
+  border-bottom:0!important;
+  border-radius:14px 14px 0 0!important;
+  box-shadow:0 24px 55px #0006,0 1px #ffffff0d inset!important;
+  backdrop-filter:none!important;
+  overflow:visible;
+}
+.celestial-browser-topline{
+  height:38px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:0 13px 0 17px;
+  border-bottom:1px solid #ffffff10;
+}
+.celestial-browser-identity{
+  display:flex;align-items:center;gap:8px;
+  color:#d5edef;font-size:10px;font-weight:820;
+  letter-spacing:.185em;white-space:nowrap;
+}
+.celestial-browser-star{
+  display:grid;place-items:center;width:19px;height:19px;
+  border-radius:6px;
+  font-size:15px;color:#18332e;background:#a1e1d3;
+  letter-spacing:0;
+}
+.celestial-browser-identity em{
+  color:#7899a4;font-style:normal;font-weight:640;letter-spacing:.12em;
+}
+.celestial-browser-top-actions{display:flex;align-items:center;gap:13px}
+.celestial-browser-session{
+  display:flex;align-items:center;gap:6px;color:#819ea8;font-size:10px;
+}
+.celestial-browser-session::before{
+  content:"";display:block;width:5px;height:5px;border-radius:50%;
+  background:#78c7b1;box-shadow:0 0 9px #65cbad60;
+}
+.celestial-browser-top-button{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  min-width:92px;height:26px;padding:4px 9px;
+  border-radius:7px;border:1px solid #395461!important;
+  background:#1e3440!important;color:#c5dbdf!important;
+  font-size:10px;font-weight:700;
+  transition:background .18s,border-color .18s;
+}
+.celestial-browser-top-button:hover,
+.celestial-browser-top-button[aria-pressed="true"]{
+  border-color:#6cafa6!important;background:#24464b!important;color:#e3fff7!important;
+}
+.forest-browser.has-tabs .forest-tabs{
+  display:flex!important;
+  height:43px!important;padding:7px 10px 0!important;gap:5px!important;
+  align-items:end;background:#101d27d6!important;border:0!important;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;
+  scrollbar-color:#36525e transparent;
+}
+.forest-browser.has-tabs .forest-tab{
+  display:flex!important;align-items:center;gap:0;
+  min-width:128px!important;max-width:238px!important;height:35px!important;
+  border:1px solid transparent!important;border-bottom:0!important;
+  border-radius:9px 9px 0 0!important;
+  background:transparent!important;
+  transition:background .16s ease,border-color .16s ease;
+}
+.forest-browser.has-tabs .forest-tab.active{
+  background:#263b47!important;border-color:#526b75a6!important;
+  box-shadow:inset 0 2px #94d3c4,0 2px #263b47;
+}
+.forest-browser.has-tabs .forest-tab:hover:not(.active){background:#21333ea1!important}
+.forest-browser.has-tabs .forest-tab>button:first-child{
+  display:flex;align-items:center;gap:8px;min-width:0;flex:1;
+  font-size:11px;font-weight:640;color:#93afb8!important;
+  text-align:left;padding:0 5px 0 11px!important;
+}
+.forest-browser.has-tabs .forest-tab.active>button:first-child{color:#e8f3f5!important}
+.celestial-browser-tab-mark{color:#82c6b5;font-size:11px;flex:0 0 auto}
+.forest-browser.has-tabs .forest-tab-close{
+  display:grid;place-items:center;flex:0 0 23px;
+  width:23px;height:23px;border-radius:6px;
+  margin:0 5px 0 0!important;font-size:16px;
+  color:#86a1ae!important;
+}
+.forest-browser.has-tabs .forest-tab-close:hover{background:#395662!important;color:#f3ffff!important}
+.forest-browser.has-tabs .forest-add-tab{
+  width:28px!important;height:28px!important;
+  margin-bottom:4px;flex:0 0 28px;border:1px solid transparent!important;
+  border-radius:8px!important;color:#afced4!important;
+  background:transparent!important;
+}
+.forest-browser.has-tabs .forest-add-tab:hover{background:#2b4854!important}
+.forest-browser.has-tabs .forest-toolbar{
+  display:flex!important;align-items:center;
+  height:55px!important;flex:0 0 55px!important;
+  gap:7px!important;padding:0 14px!important;
+  border-top:1px solid #47616b3c;
+  background:#263b47!important;
+  border-radius:0!important;
+}
+.forest-browser.has-tabs .forest-toolbar>button,
+.forest-browser.has-tabs .forest-toolbar>a{
+  display:grid;place-items:center;
+  flex:0 0 32px;width:32px;height:32px;
+  border:1px solid transparent!important;
+  border-radius:8px!important;
+  color:#bdd2d9!important;background:transparent!important;
+  font-size:18px;
+}
+.forest-browser.has-tabs .forest-toolbar>button:hover:not(:disabled),
+.forest-browser.has-tabs .forest-toolbar>a:hover{
+  border-color:#547380!important;background:#3b5663!important;color:white!important;
+}
+.forest-browser.has-tabs .forest-toolbar>button:disabled{
+  opacity:.3;cursor:default;
+}
+.forest-browser.has-tabs .forest-toolbar>button.favorite{color:#f0d29e!important}
+.forest-browser.has-tabs .forest-toolbar form{
+  height:37px!important;flex:1;min-width:0;display:flex;align-items:center;gap:9px;
+  border-radius:9px!important;border:1px solid #5b737f!important;
+  padding:0 7px 0 13px!important;background:#152833!important;
+  box-shadow:0 2px 8px #0002 inset!important;
+  transition:border-color .18s,box-shadow .18s;
+}
+.forest-browser.has-tabs .forest-toolbar form:focus-within{
+  border-color:#9bcccb!important;box-shadow:0 0 0 3px #9bcccb20!important;
+}
+.celestial-browser-lock{color:#a0d6c9;font-size:18px;line-height:1}
+.forest-browser.has-tabs .forest-toolbar form input{
+  min-width:0;flex:1;color:#e6f2f4!important;font-size:12px!important;
+  letter-spacing:-.01em;outline:0!important;
+}
+.forest-browser.has-tabs .forest-toolbar form input::placeholder{color:#718e9c!important}
+.forest-browser.has-tabs .forest-toolbar form button{
+  display:grid;place-items:center;width:28px;height:28px;
+  border-radius:6px;border:0;background:#36515d!important;
+  color:#d8eef0!important;font-size:17px;
+}
+.forest-browser.has-tabs .forest-toolbar form button:hover{background:#4a6e75!important}
+.forest-browser.has-tabs .forest-browser-stage{
+  margin:0 14px 14px 63px!important;
+  flex:1;min-width:0;min-height:0;
+  overflow:hidden;
+  border:1px solid #47616f90!important;border-top:0!important;
+  border-radius:0 0 13px 13px!important;
+  background:#ffffff!important;
+  box-shadow:0 17px 46px #0006!important;
+}
+.forest-browser.has-tabs.new-tab .forest-browser-stage{
+  background:radial-gradient(ellipse 42% 52% at 52% 40%,#20455163,transparent 100%),
+    linear-gradient(145deg,#112936f7,#0b1c26f8)!important;
+}
+.forest-browser.has-tabs.new-tab .forest-browser-home{
+  transform:translateY(-5%);width:min(600px,100%);
+}
+.forest-browser.has-tabs.new-tab .forest-wordmark{
+  font-size:clamp(42px,5vw,70px);font-weight:770;letter-spacing:-.068em;
+  color:#e6f6f4;margin-bottom:36px;text-shadow:0 6px 28px #0005;
+}
+.forest-browser.has-tabs.new-tab .forest-wordmark span{color:#a4ddce}
+.forest-browser.has-tabs.new-tab .forest-main-search{
+  width:100%;height:58px;border:1px solid #63898e99!important;border-radius:14px!important;
+  background:#142e3bcf!important;box-shadow:0 14px 42px #0004!important;
+}
+.forest-browser.has-tabs.new-tab .forest-main-search:focus-within{border-color:#afded5!important}
+.forest-browser.has-tabs.new-tab .forest-main-search input{font-size:13px!important}
+.forest-browser.has-tabs.new-tab .forest-main-search button{
+  width:40px;height:40px;border-radius:10px;background:#b2e7dc!important;
+}
+.forest-browser.has-tabs.new-tab .forest-shortcuts{margin-top:21px!important;gap:9px!important}
+.forest-browser.has-tabs.new-tab .forest-shortcuts button{
+  border-radius:9px!important;background:#183743a8!important;
+  border:1px solid #5579826f!important;color:#b5d0d3!important;
+  padding:10px 14px!important;transition:transform .17s,background .17s;
+}
+.forest-browser.has-tabs.new-tab .forest-shortcuts button:hover{
+  transform:translateY(-2px);background:#30545f!important;color:#efffff!important;
+}
+.celestial-browser-bookmark-tray{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  padding:9px 12px;border-top:1px solid #375663;background:#162a35;
+  position:relative;z-index:6;
+}
+.celestial-browser-bookmark-tray strong{
+  color:#a5c6c7;font-size:10px;letter-spacing:.1em;margin-right:7px;
+}
+.celestial-browser-bookmark-tray>span{font-size:11px;color:#90a6b2}
+.celestial-browser-bookmark-tray button{
+  padding:7px 10px;border:1px solid #3c5d68;border-radius:7px;
+  background:#233e49;color:#d1e5e5;font-size:10px;
+}
+.celestial-browser-bookmark-tray button:hover{background:#365766}
+.celestial-browser-bookmark-tray button:last-child{
+  margin-left:auto;font-size:17px;line-height:1;padding:5px 9px;
+}
+.celestial-browser-menu{
+  position:absolute;z-index:50;top:calc(100% - 1px);right:10px;
+  display:flex;flex-direction:column;gap:4px;width:min(285px,80vw);
+  padding:8px;border:1px solid #426575;border-radius:11px;
+  background:#152632;box-shadow:0 20px 55px #0009;
+}
+.celestial-browser-menu button{
+  display:flex;align-items:center;gap:12px;padding:11px;
+  border:0;border-radius:7px;background:transparent;
+  color:#d1e5e9;text-align:left;font-size:12px;font-weight:650;
+}
+.celestial-browser-menu button:hover:not(:disabled){background:#2b4857}
+.celestial-browser-menu button:disabled{opacity:.35}
+.celestial-browser-menu kbd{margin-left:auto;color:#819da9;font-size:9px}
+.celestial-browser-menu>span{
+  margin:4px 7px 2px;padding:10px 5px 3px;
+  border-top:1px solid #344b58;color:#7f9aa6;font-size:10px;
+}
+.forest-browser:fullscreen{
+  inset:0!important;width:100vw!important;height:100dvh!important;
+  border:0!important;border-radius:0!important;
+  background:#08131b!important;
+}
+.forest-browser:fullscreen .forest-browser-chrome{
+  margin:0!important;border-radius:0!important;
+}
+.forest-browser:fullscreen .forest-browser-stage{
+  margin:0!important;border-radius:0!important;border:0!important;
+}
+.forest-browser:fullscreen .celestial-browser-topline{
+  background:#121e28!important;
+}
+.forest-browser:fullscreen .forest-browser-chrome{
+  border-left:0!important;border-right:0!important;
+}
+.forest-browser:fullscreen .forest-browser-stage{box-shadow:none!important}
+.forest-browser .portal-iframe{width:100%;height:100%;display:block}
+.forest-browser .browser-frame{height:100%;min-height:0}
+.forest-browser .celestial-browser-loading{
+  background:#0e1e29f0!important;color:#c4e1e5;font-size:12px;letter-spacing:.025em;
+}
+.forest-browser .celestial-browser-failure{
+  background:#0d1d29f6!important;color:#e1f3f6;
+}
+.forest-browser .celestial-browser-failure-icon{border-radius:14px!important}
+
+/* ---------- Messenger: editorial, warm graphite and clear presence ---------- */
+.celestial-messenger{
+  --msg-bg:#0d1620!important;
+  --msg-panel:#14212b!important;
+  --msg-sidebar:#111d27!important;
+  --msg-raised:#1b303b!important;
+  --msg-line:#263b47!important;
+  --msg-line-soft:#1d303c!important;
+  --msg-text:#e8f3f4!important;
+  --msg-muted:#96aeb8!important;
+  --msg-label:#728e9b!important;
+  --msg-accent:#a1e0d2!important;
+  --msg-accent-bg:#20453e!important;
+  background:#0e1923!important;
+}
+.celestial-messenger.full{
+  background:linear-gradient(155deg,#0d1821,#09141e)!important;
+}
+.celestial-messenger .messenger-server-rail{
+  border-right:1px solid #38515e9e;background:#0a1721;
+}
+.celestial-messenger .messenger-rail-star{
+  border-radius:14px;background:#284f4a;border-color:#5e8f80;
+  box-shadow:inset 0 1px #ffffff22;color:#c9ffef;
+}
+.celestial-messenger .messenger-guild{
+  border-radius:13px;background:#1e323d;color:#b1ccd1;
+}
+.celestial-messenger .messenger-guild.selected{
+  border-radius:13px;background:#34675c;color:#dcfff4;border-color:#669e90;
+}
+.celestial-messenger .messenger-guild.selected::before{background:#b2f5dd}
+.celestial-messenger .messenger-sidebar{
+  background:#14232d!important;border-right:1px solid #314b57;
+}
+.celestial-messenger .messenger-server-heading{
+  min-height:77px;gap:4px;border-color:#2d4652;padding-left:16px;
+  background:#172a34;
+}
+.celestial-messenger .messenger-server-select{font-size:14px;letter-spacing:-.027em}
+.celestial-messenger .messenger-server-members{color:#8eb1b7}
+.celestial-messenger .messenger-channel-heading{
+  color:#809da7;letter-spacing:.14em;
+}
+.celestial-messenger .messenger-channel{min-height:39px;border-radius:8px}
+.celestial-messenger .messenger-channel.selected{
+  background:#2c4c53;border-color:#427175;color:#ecfffa;
+}
+.celestial-messenger .messenger-channel.selected .messenger-hash{color:#b1e7d9}
+.celestial-messenger .messenger-channel:hover:not(.selected){background:#223a45}
+.celestial-messenger .messenger-current-user{
+  background:#192d38;border-top-color:#37525c;min-height:70px;
+}
+.celestial-messenger .messenger-current-user strong{color:#e8f7f3}
+.celestial-messenger .messenger-main{background:#101d27!important}
+.celestial-messenger .messenger-toolbar{
+  height:76px;flex-basis:76px;
+  padding:0 25px;background:#182b36;border-color:#314957;
+}
+.celestial-messenger .messenger-toolbar-title>strong{font-size:15px}
+.celestial-messenger .messenger-channel-sign{color:#91d0c0}
+.celestial-messenger .messenger-members-button{
+  background:#223c46;border-color:#3c646c;color:#d5e8e7;
+}
+.celestial-messenger .messenger-members-button:hover{background:#31545c}
+.celestial-messenger .messenger-connection.connected{color:#95d9b8}
+.celestial-messenger .messenger-message-list{
+  background:
+    radial-gradient(ellipse 60% 80% at 90% 20%,#193b3b14,transparent),
+    #101d27;
+  padding-top:31px;padding-bottom:26px;
+}
+.celestial-messenger .messenger-message{border-radius:10px}
+.celestial-messenger .messenger-message:hover{background:#1b303a!important}
+.celestial-messenger .messenger-message-meta strong{color:#d7f0e9;font-weight:770}
+.celestial-messenger .messenger-message.mine .messenger-message-meta strong{color:#aee6d2}
+.celestial-messenger .messenger-message-text{
+  font-size:12.6px;line-height:1.72;letter-spacing:.002em;
+  color:#c8d8dc;
+}
+.celestial-messenger .messenger-message-meta time{color:#7e99a3}
+.celestial-messenger .messenger-avatar{border-radius:12px}
+.celestial-messenger .messenger-avatar.color-0{background:#36615d}
+.celestial-messenger .messenger-avatar.color-1{background:#655b72}
+.celestial-messenger .messenger-avatar.color-2{background:#4f6a57}
+.celestial-messenger .messenger-avatar.color-3{background:#75604c}
+.celestial-messenger .messenger-avatar.color-4{background:#4b6374}
+.celestial-messenger .messenger-avatar.color-5{background:#6b5264}
+.celestial-messenger .messenger-composer{
+  min-height:55px;margin-bottom:8px;
+  background:#203743;border-color:#476674;
+  box-shadow:0 8px 24px #0002;
+}
+.celestial-messenger .messenger-composer:focus-within{
+  border-color:#91d1c5;box-shadow:0 0 0 3px #88d1c21b;
+}
+.celestial-messenger .messenger-composer>input{font-size:12px}
+.celestial-messenger .messenger-composer>button{
+  background:#a9e2d5;color:#12372f;border-radius:9px;
+}
+.celestial-messenger .messenger-members{
+  background:#162630;border-left-color:#304e57;
+}
+.celestial-messenger .messenger-member:hover{background:#2d4650;border-color:#42636c}
+.celestial-messenger .messenger-role.admin{
+  color:#9cc8ff;background:#213a58;border-color:#527aa6;
+}
+.celestial-messenger .messenger-role.staff{
+  color:#cabff2;background:#302b49;border-color:#605780;
+}
+.celestial-messenger .messenger-role.moderator{
+  color:#b0efce;background:#21463e;border-color:#467d65;
+}
+
+/* ---------- Settings: considered product design, not a stack of modal cards ---------- */
+.celestial-settings-page{
+  background:linear-gradient(155deg,#0d1c27ec,#0b1722ed)!important;
+  color:#e9f4f4!important;
+  padding-top:58px!important;
+  padding-bottom:90px!important;
+}
+.celestial-settings-wrap{width:min(1240px,100%)!important}
+.celestial-settings-back{
+  display:inline-flex;gap:9px;align-items:center;
+  margin-bottom:34px!important;
+  border-color:#37515c!important;border-radius:8px!important;
+  background:#1b303a!important;color:#b6d7da!important;
+  font-weight:650!important;font-size:11px!important;
+}
+.celestial-settings-back:hover{border-color:#8ecdc3!important;color:#f6fffd!important}
+.celestial-settings-heading{
+  margin:0 0 37px!important;padding:0 0 29px;
+  border-bottom:1px solid #365361;
+}
+.celestial-settings-heading>span:first-child{
+  display:block;color:#a8dfcf;font-size:10px;letter-spacing:.18em;font-weight:850;
+}
+.celestial-settings-heading h1{
+  margin:15px 0 11px!important;
+  font-size:clamp(38px,4.2vw,57px)!important;font-weight:730;
+  letter-spacing:-.067em;line-height:1.1;color:#e7f4f0;
+  text-shadow:none!important;
+}
+.celestial-settings-heading h1 span{color:#a5dfd2}
+.celestial-settings-heading p{max-width:650px!important;color:#9fb7c1!important;font-size:13px}
+.celestial-settings-version{
+  display:inline-flex!important;align-items:center;gap:10px;
+  margin-top:22px;padding:7px 10px;border-radius:6px;border:1px solid #32525f;
+  background:#1c343d;color:#a9c9cc!important;
+  font-size:9px!important;font-weight:750;letter-spacing:.14em;
+}
+.celestial-settings-version i{
+  width:6px;height:6px;border-radius:50%;background:#86ddad;
+}
+.celestial-settings-layout{grid-template-columns:247px minmax(0,1fr)!important;gap:24px!important}
+.celestial-settings-nav{
+  align-self:start!important;gap:5px!important;padding:9px!important;
+  border:1px solid #34505d!important;border-radius:14px!important;
+  background:#142732!important;box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+.celestial-settings-nav>button{
+  min-height:61px;padding:12px!important;border-radius:9px!important;
+  border:1px solid transparent!important;color:#91acb6!important;
+}
+.celestial-settings-nav>button svg{width:20px;height:20px;color:#779baa!important}
+.celestial-settings-nav>button strong{font-size:12px;font-weight:740}
+.celestial-settings-nav>button small{font-size:10px;color:#7793a1!important}
+.celestial-settings-nav>button:hover{background:#223b46!important;color:#eaf5f4!important}
+.celestial-settings-nav>button.active{
+  color:#e7fff6!important;background:#264740!important;
+  border-color:#4a786a!important;
+}
+.celestial-settings-nav>button.active svg{color:#b3e9d4!important}
+.celestial-settings-content{
+  background:linear-gradient(165deg,#142935,#10212d)!important;
+  backdrop-filter:none!important;
+  border:1px solid #35515e!important;border-radius:15px!important;
+  box-shadow:0 20px 50px #0003!important;
+  padding:clamp(19px,3vw,35px)!important;
+}
+.celestial-settings-section-head{
+  margin-bottom:26px;padding-bottom:23px;border-bottom:1px solid #2f4754;
+}
+.celestial-settings-section-head>span{
+  display:block;color:#99d7c6;font-size:10px;
+  letter-spacing:.18em;font-weight:800;margin-bottom:13px;
+}
+.celestial-settings-section-head h2{
+  margin:0 0 8px!important;font-size:clamp(24px,2.7vw,34px)!important;
+  font-weight:740;letter-spacing:-.047em;
+}
+.celestial-settings-section-head p{
+  max-width:600px;margin:0!important;font-size:12px;color:#94aeb9!important;
+}
+.celestial-settings-group{padding:22px 0!important;border-top:1px solid #304b57!important}
+.celestial-settings-group:first-of-type{border-top:0!important}
+.celestial-settings-group h3{
+  color:#9fcdc9!important;font-size:10px!important;letter-spacing:.15em!important;
+}
+.celestial-settings-color-grid{gap:12px!important}
+.celestial-settings-color{
+  min-height:148px;padding:16px!important;gap:8px!important;
+  border:1px solid #395562!important;border-radius:11px!important;
+  background:#1b3340!important;transition:transform .2s,border-color .2s,background .2s;
+}
+.celestial-settings-color:hover{
+  transform:translateY(-2px);background:#29424e!important;border-color:#72958e!important;
+}
+.celestial-settings-color.selected{border-color:#93d5ba!important;background:#23453f!important}
+.celestial-settings-color strong{font-size:12px;color:#ebf7f1}
+.celestial-settings-color small{font-size:10px;color:#91afba}
+.celestial-settings-scene-grid button{
+  min-height:125px;border-color:#395562!important;border-radius:11px!important;
+  background:#1b3340!important;
+}
+.celestial-settings-scene-grid button:hover{border-color:#72958e!important}
+.celestial-settings-scene-grid button.selected{
+  border-color:#93d5ba!important;background:#23453f!important;
+}
+.celestial-pref-toggle,.celestial-settings-select{
+  padding:15px 0!important;border-color:#304957!important;
+}
+.celestial-pref-toggle strong,.celestial-settings-select strong{color:#e4f0ef;font-size:12px}
+.celestial-pref-toggle small,.celestial-settings-select small{
+  color:#92aeb8!important;font-size:11px;max-width:550px;
+}
+.celestial-pref-toggle input{
+  background:#273e4a!important;border-color:#4c6876!important;
+}
+.celestial-pref-toggle input:checked{background:#90d7c4!important;border-color:#a5e7d1!important}
+.celestial-pref-toggle input:checked::after{background:#173d35!important}
+.celestial-settings-select select,.celestial-settings-field input{
+  background:#203743!important;border:1px solid #426574!important;
+  color:#e4f3f4!important;border-radius:9px!important;
+}
+.celestial-settings-action-row button,
+.celestial-settings-import,.celestial-settings-signout,
+.celestial-settings-quick-action{
+  border:1px solid #4a6a76!important;border-radius:9px!important;
+  background:#25414d!important;color:#d5ecee!important;
+  font-size:11px!important;font-weight:700!important;
+  transition:background .18s,border-color .18s;
+}
+.celestial-settings-action-row button:hover,
+.celestial-settings-import:hover,
+.celestial-settings-quick-action:hover{
+  border-color:#8ecfc2!important;background:#2c5159!important;
+}
+.celestial-settings-action-row button.primary{
+  background:#9ad9cc!important;border-color:#aee8da!important;color:#12352e!important;
+}
+.celestial-settings-user{
+  border-radius:12px!important;background:#1e3742!important;border-color:#41616a!important;
+}
+.celestial-settings-user>span{background:#9ad8cd!important;color:#153b35!important}
+.celestial-settings-quick-action{
+  display:inline-flex;align-items:center;justify-content:space-between;
+  gap:20px;padding:12px 15px;cursor:pointer;
+  margin-top:12px;min-width:210px;
+}
+.celestial-settings-quick-action span{font-size:16px;color:#b6f1df}
+.celestial-shortcut-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;
+}
+.celestial-shortcut-grid>span{
+  display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+  padding:12px;border-radius:9px;border:1px solid #395965;
+  background:#1d3541;color:#c8dce0;font-size:11px;
+}
+.celestial-shortcut-grid kbd{
+  padding:4px 6px;border-radius:5px;background:#132935;
+  border:1px solid #52707c;color:#bce4df;
+  font:650 10px/1.1 ui-monospace,SFMono-Regular,monospace;
+}
+.celestial-shortcut-grid kbd:first-of-type{margin-left:auto}
+.celestial-settings-signout{
+  color:#ffb8b2!important;background:#512c34!important;border-color:#975961!important;
+}
+
+/* ---------- Admin: actual controls, not decoration ---------- */
+.celestial-admin-console{
+  position:relative;display:flex;flex-direction:column;gap:16px;
+  min-height:320px;color:#e5f1f3;
+}
+.celestial-admin-overview{
+  display:grid;grid-template-columns:minmax(0,1fr) 165px;gap:18px;
+  padding:20px;border:1px solid #3b5b65;border-radius:13px;
+  background:linear-gradient(130deg,#21414a,#182d3a);
+}
+.celestial-admin-overview-copy{display:flex;flex-direction:column;justify-content:center;gap:8px}
+.celestial-admin-eyebrow{
+  font:800 9px/1.5 "Segoe UI",system-ui,sans-serif;
+  color:#9bdcca;letter-spacing:.16em;
+}
+.celestial-admin-overview h2{
+  margin:0;font-size:clamp(20px,2.2vw,26px);
+  letter-spacing:-.045em;line-height:1.2;color:#eefaf6;
+}
+.celestial-admin-overview p{
+  max-width:520px;margin:0;color:#a3bdc5;
+  font-size:11px;line-height:1.7;
+}
+.celestial-admin-stat{
+  display:flex;flex-direction:column;justify-content:center;align-items:flex-start;
+  gap:7px;padding:18px;background:#102831;
+  border:1px solid #42606c;border-radius:11px;
+}
+.celestial-admin-stat span{color:#9bb8bd;font-size:9px;letter-spacing:.115em;font-weight:800}
+.celestial-admin-stat strong{color:#b9f2e2;font-size:47px;line-height:1;letter-spacing:-.05em;font-weight:740}
+.celestial-admin-stat small{color:#819eaa;font-size:10px}
+.celestial-admin-toolbar{display:flex;align-items:center;gap:10px;margin-top:5px}
+.celestial-admin-search{
+  display:flex;align-items:center;gap:9px;min-width:0;flex:1;
+  border:1px solid #45616d;border-radius:9px;
+  padding:0 12px;height:40px;background:#203742;color:#98b9c1;
+}
+.celestial-admin-search span{font-size:22px}
+.celestial-admin-search input{
+  flex:1;min-width:0;background:transparent;border:0;
+  outline:0;color:#effafb;font-size:12px;
+}
+.celestial-admin-search:focus-within{border-color:#98d6cc}
+.celestial-admin-refresh-date{color:#829da6;font-size:10px;white-space:nowrap}
+.celestial-admin-refresh{
+  border:1px solid #4e6e77;border-radius:8px;
+  background:#294752;color:#d4ebe9;
+  padding:11px 13px;font-size:11px;font-weight:700;
+}
+.celestial-admin-refresh:hover{background:#355864}
+.celestial-admin-refresh:disabled{opacity:.4}
+.celestial-admin-list{
+  overflow:hidden;border:1px solid #36535f;border-radius:12px;background:#1a303c;
+}
+.celestial-admin-table-head,.celestial-admin-table-row{
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(90px,.7fr) 110px 89px;
+  align-items:center;gap:10px;padding:13px 15px;
+}
+.celestial-admin-table-head{
+  border-bottom:1px solid #36535f;background:#172a35;
+  color:#8eafb8;font-size:9px;font-weight:820;letter-spacing:.13em;
+}
+.celestial-admin-table-row{
+  border-bottom:1px solid #2d4854;min-height:65px;
+}
+.celestial-admin-table-row:last-child{border-bottom:0}
+.celestial-admin-table-row:hover{background:#24414b}
+.celestial-admin-person{display:flex;align-items:center;gap:11px;min-width:0}
+.celestial-admin-initials{
+  display:grid;place-items:center;flex:0 0 35px;width:35px;height:35px;
+  border-radius:10px;background:#47726b;color:#ecfff7;
+  font-size:11px;font-weight:760;letter-spacing:.02em;
+}
+.celestial-admin-person>span:last-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.celestial-admin-person strong{
+  color:#dff4f1;font-size:12px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;
+}
+.celestial-admin-person small{font-size:10px;color:#85a2ae}
+.celestial-admin-table-row time{color:#9db4bd;font-size:11px}
+.celestial-admin-status{
+  display:inline-flex;align-items:center;gap:6px;color:#ead19e;
+  font-size:10px;font-weight:720;
+}
+.celestial-admin-status i{
+  width:6px;height:6px;border-radius:50%;background:#e3bc78;
+}
+.celestial-admin-review-button{
+  display:flex;align-items:center;justify-content:space-between;gap:5px;
+  border:1px solid #5a827f;border-radius:8px;
+  padding:9px;background:#2a504e;color:#ceffed;
+  font-size:10px;font-weight:720;cursor:pointer;
+}
+.celestial-admin-review-button:hover{background:#386762}
+.celestial-admin-review-button:disabled{opacity:.5}
+.celestial-admin-empty{
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:11px;
+  min-height:190px;padding:25px;
+}
+.celestial-admin-empty>span{
+  display:grid;place-items:center;width:53px;height:53px;
+  border:1px solid #50776d;border-radius:15px;
+  background:#24483e;color:#b1eed7;font-size:27px;
+}
+.celestial-admin-empty strong{color:#d4ece7;font-size:15px;letter-spacing:-.02em}
+.celestial-admin-empty p{margin:0;font-size:11px;color:#86a4af}
+.celestial-admin-explainer{color:#8eabb6;font-size:11px;line-height:1.7;margin:0}
+.celestial-admin-error,.celestial-admin-notice{
+  margin:0;padding:12px;border-radius:9px;font-size:12px;
+}
+.celestial-admin-error{color:#ffc4bd;background:#512d35;border:1px solid #8c525d}
+.celestial-admin-notice{color:#a7f2c8;background:#1b483e;border:1px solid #418773}
+.celestial-admin-review-overlay{
+  position:fixed;z-index:95;inset:0;
+  display:grid;place-items:center;padding:20px;
+  background:#030d14ce;backdrop-filter:blur(6px);
+}
+.celestial-admin-review-dialog{
+  position:relative;display:flex;flex-direction:column;
+  align-items:center;text-align:center;gap:13px;
+  width:min(410px,100%);padding:29px;
+  border:1px solid #547b83;border-radius:18px;
+  background:linear-gradient(155deg,#213e49,#142633);
+  box-shadow:0 30px 90px #000a;
+}
+.celestial-admin-review-close{
+  position:absolute;right:13px;top:11px;
+  background:transparent;border:0;color:#a9c4ca;font-size:23px;cursor:pointer;
+}
+.celestial-admin-dialog-avatar{
+  display:grid;place-items:center;width:72px;height:72px;
+  border:1px solid #74a391;border-radius:20px;
+  background:#366858;color:#e3fff3;font-size:22px;font-weight:800;
+}
+.celestial-admin-review-dialog h3{
+  margin:0;color:#f0fff9;font-size:25px;letter-spacing:-.04em;
+}
+.celestial-admin-review-dialog p{
+  margin:0;color:#a7c1c9;line-height:1.7;font-size:12px;
+}
+.celestial-admin-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%;margin-top:16px}
+.celestial-admin-dialog-actions button{
+  padding:13px 10px;border-radius:9px;font-size:11px;font-weight:780;
+}
+.celestial-admin-dialog-actions button:disabled{opacity:.5}
+.celestial-admin-dialog-actions .decline{
+  background:#4a2b35;border:1px solid #885260;color:#ffd2cc;
+}
+.celestial-admin-dialog-actions .decline:hover{background:#623743}
+.celestial-admin-dialog-actions .approve{
+  background:#a6e8d5;border:1px solid #c4f6e6;color:#12352d;
+}
+.celestial-admin-dialog-actions .approve:hover{background:#c6ffed}
+.celestial-admin-dialog-actions .approve span{padding-left:5px}
+
+/* ---------- Responsive & motion ---------- */
+@media(max-width:1100px){
+  .celestial-settings-layout{grid-template-columns:215px minmax(0,1fr)!important;gap:16px!important}
+  .celestial-browser-session{display:none}
+  .forest-browser.has-tabs .forest-browser-chrome{margin-left:58px!important}
+  .forest-browser.has-tabs .forest-browser-stage{margin-left:58px!important}
+}
+@media(max-width:800px){
+  .celestial-settings-layout{grid-template-columns:1fr!important}
+  .celestial-settings-nav{display:flex;flex-direction:row;flex-wrap:wrap}
+  .celestial-settings-nav>button{flex:1 1 28%;min-width:115px}
+  .celestial-settings-page{padding:72px 18px 60px 60px!important}
+  .celestial-settings-heading{margin-bottom:22px!important}
+  .celestial-settings-heading h1{font-size:36px!important}
+  .celestial-shortcut-grid{grid-template-columns:1fr}
+  .celestial-admin-overview{grid-template-columns:minmax(0,1fr) 135px}
+  .celestial-admin-table-head,.celestial-admin-table-row{grid-template-columns:minmax(0,1.5fr) 88px 75px}
+  .celestial-admin-table-head>span:nth-child(2),.celestial-admin-table-row>time{display:none}
+}
+@media(max-width:580px){
+  .forest-browser.has-tabs .forest-browser-chrome{margin:54px 7px 0 43px!important}
+  .forest-browser.has-tabs .forest-browser-stage{margin:0 7px 10px 43px!important}
+  .celestial-browser-topline{height:30px;padding:0 7px 0 10px}
+  .celestial-browser-identity{font-size:9px;letter-spacing:.08em}
+  .celestial-browser-identity em{display:none}
+  .celestial-browser-top-button{min-width:33px;width:33px;padding:2px}
+  .celestial-browser-top-button span{display:none}
+  .forest-browser.has-tabs .forest-tabs{height:37px!important;padding:5px 6px 0!important}
+  .forest-browser.has-tabs .forest-tab{min-width:93px!important;max-width:145px!important;height:31px!important}
+  .forest-browser.has-tabs .forest-toolbar{
+    height:46px!important;flex-basis:46px!important;padding:0 6px!important;gap:3px!important;
+  }
+  .forest-browser.has-tabs .forest-toolbar>button,
+  .forest-browser.has-tabs .forest-toolbar>a{width:26px;height:28px;flex-basis:26px;font-size:15px}
+  .forest-browser.has-tabs .forest-toolbar form{height:32px!important;padding:0 3px 0 7px!important}
+  .forest-browser.has-tabs .forest-toolbar form input{font-size:10px!important}
+  .forest-browser.has-tabs.new-tab .forest-browser-home{width:100%;padding:18px}
+  .forest-browser.has-tabs.new-tab .forest-wordmark{font-size:39px;margin-bottom:23px}
+  .forest-browser.has-tabs.new-tab .forest-main-search{height:49px}
+  .celestial-settings-page{padding:63px 12px 60px 12px!important}
+  .celestial-settings-nav>button{min-width:130px}
+  .celestial-settings-version{font-size:8px!important}
+  .celestial-settings-content{padding:16px!important}
+  .celestial-settings-color-grid{grid-template-columns:1fr!important}
+  .celestial-settings-color{min-height:72px;flex-direction:row;align-items:center}
+  .celestial-admin-overview{grid-template-columns:1fr}
+  .celestial-admin-stat{padding:12px}
+  .celestial-admin-stat strong{font-size:30px}
+  .celestial-admin-refresh-date{display:none}
+  .celestial-admin-table-head,.celestial-admin-table-row{
+    grid-template-columns:minmax(0,1fr) 68px;
+    padding:10px!important;
+  }
+  .celestial-admin-table-head>span:nth-child(3),.celestial-admin-table-row>.celestial-admin-status{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .forest-browser.has-tabs .forest-tab,
+  .forest-browser.has-tabs .forest-toolbar form,
+  .celestial-settings-color,
+  .celestial-browser-top-button,
+  .celestial-settings-action-row button{
+    transition:none!important;
+  }
+}
+
+/* The companion launcher belongs to the activity, never on top of browser controls. */
+.celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle{
+  top:auto!important;
+  bottom:29px!important;
+  right:27px!important;
+  min-height:40px;height:40px;
+  padding:0 14px;
+  border:1px solid #85bfb49c;
+  border-radius:11px;
+  background:#173a42f2;
+  color:#e4fff7;
+  box-shadow:0 10px 30px #0007,0 1px #ffffff13 inset;
+}
+.celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle:hover{
+  background:#27545a;
+  border-color:#a7e5d3;
+}
+.celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle svg{
+  color:#b6ecda;
+}
+.celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle.beside-ai{
+  right:calc(var(--celestial-sidebar-width) + 25px)!important;
+}
+@media(max-width:950px){
+  .celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle.beside-ai{
+    right:27px!important;
+  }
+}
+@media(max-width:580px){
+  .celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle{
+    right:17px!important;bottom:19px!important;width:auto;padding:0 11px;
+  }
+}
+
+/* Fullscreen for games, utilities, and Chat uses the browser's native top layer. */
+.celestial-tool-shell{position:relative}
+.celestial-app-game-fullscreen{
+  display:inline-flex;justify-content:center;align-items:center;
+  min-height:33px;gap:7px;
+  position:absolute;right:15px;top:14px;z-index:20;
+  padding:7px 11px;border-radius:8px;
+  border:1px solid #61918b;background:#284c49;
+  color:#d8fff3;font-size:11px;font-weight:730;
+  box-shadow:0 7px 18px #0004;
+  cursor:pointer;
+}
+.celestial-app-game-fullscreen:hover{
+  background:#36675c;border-color:#9ce0c8;
+}
+.celestial-tool-shell:fullscreen{
+  width:100vw!important;height:100dvh!important;
+  max-width:none!important;min-height:0!important;
+  display:flex!important;align-items:stretch;justify-content:center;
+  flex-direction:column;
+  padding:18px!important;margin:0!important;
+  border:0!important;border-radius:0!important;
+  background:linear-gradient(145deg,#0e2330,#091722)!important;
+  overflow:auto!important;
+}
+.celestial-tool-shell:fullscreen>.celestial-embedded-game{
+  min-height:0;max-height:calc(100dvh - 50px);
+  display:flex;align-items:stretch;justify-content:center;
+  flex:1;
+}
+.celestial-tool-shell:fullscreen>.celestial-embedded-game .forest-game-stage{
+  min-height:0;max-height:100%;flex:1;overflow:auto;
+}
+.celestial-tool-shell:fullscreen>.celestial-tool-focus,
+.celestial-tool-shell:fullscreen>.celestial-tool-notes,
+.celestial-tool-shell:fullscreen>.celestial-tool-calculator{
+  width:min(1200px,100%);margin:auto;min-height:min(520px,90vh);
+}
+.celestial-messenger.full:fullscreen{
+  inset:0!important;width:100vw!important;height:100dvh!important;
+  padding-left:0!important;
+  grid-template-columns:70px 240px minmax(0,1fr) 220px!important;
+  background:#0b1721!important;
+}
+.celestial-messenger.full:fullscreen .messenger-toolbar{
+  min-height:78px;
+}
+.celestial-messenger .messenger-fullscreen{
+  color:#b8d9d9;font-size:20px;
+}
+@media(max-width:1180px){
+  .celestial-messenger.full:fullscreen{grid-template-columns:65px 220px minmax(0,1fr)!important}
+}
+@media(max-width:820px){
+  .celestial-messenger.full:fullscreen{grid-template-columns:55px minmax(0,1fr)!important}
+}
+@media(max-width:550px){
+  .celestial-messenger.full:fullscreen{grid-template-columns:minmax(0,1fr)!important}
+  .celestial-tool-shell:fullscreen{padding:8px!important}
+  .celestial-app-game-fullscreen{right:9px;top:8px;padding:6px 8px;font-size:10px}
+}
+
+/* Settings and administration already include account/presence controls. */
+.celestial-workspace:has(.celestial-settings-page) .celestial-online,
+.celestial-workspace:has(.celestial-settings-page) .celestial-corner-actions{
+  display:none!important;
+}

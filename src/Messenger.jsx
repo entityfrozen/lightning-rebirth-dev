@@ -68,6 +68,19 @@ export function Messenger({user,live,compact=false,onClose,onOpenChat}){
   const [editing,setEditing]=useState(null);
   const [editText,setEditText]=useState('');
   const feed=useRef(null);
+  const messengerRoot=useRef(null);
+  const [fullscreen,setFullscreen]=useState(false);
+  useEffect(()=>{
+    const sync=()=>setFullscreen(document.fullscreenElement===messengerRoot.current);
+    document.addEventListener('fullscreenchange',sync);
+    return()=>document.removeEventListener('fullscreenchange',sync);
+  },[]);
+  const toggleFullscreen=async()=>{
+    try{
+      if(document.fullscreenElement===messengerRoot.current)await document.exitFullscreen();
+      else await messengerRoot.current?.requestFullscreen?.();
+    }catch{}
+  };
 
   const server=live.servers.find(s=>s.id===serverId)||live.servers[0]||null;
   const channels=server?.channels||[];
@@ -246,7 +259,7 @@ export function Messenger({user,live,compact=false,onClose,onOpenChat}){
     </div>
   </>;
 
-  return <section className={'celestial-messenger '+(compact?'compact':'full')}
+  return <section ref={messengerRoot} className={'celestial-messenger '+(compact?'compact':'full')}
     aria-label={compact?'Chat while browsing':'Celestial Chat'}>
     {!compact&&<nav className="messenger-server-rail" aria-label="Servers">
       <span className="messenger-rail-star" aria-label="Celestial">✦</span>
@@ -275,6 +288,11 @@ export function Messenger({user,live,compact=false,onClose,onOpenChat}){
         <span className={'messenger-connection '+(live.connected?'connected':'')}>
           <i/>{live.connected?'Live':'Reconnecting'}
         </span>
+        {!compact&&<button type="button" className="messenger-icon-action messenger-fullscreen"
+          onClick={toggleFullscreen} aria-label={fullscreen?'Exit chat fullscreen':'Fullscreen chat'}
+          title={fullscreen?'Exit fullscreen':'Fullscreen (Esc to exit)'}>
+          {fullscreen?'▣':'⛶'}
+        </button>}
         {!compact&&<button className={'messenger-icon-action '+(searchOpen?'selected':'')}
           onClick={()=>{setSearchOpen(open=>!open);setMessageSearch('');}}
           aria-label="Search messages" title="Search messages">⌕</button>}

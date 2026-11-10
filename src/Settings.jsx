@@ -2,7 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {
   Color24Filled,Globe24Filled,Shield24Filled,Person24Filled,
   ArrowLeft20Filled,CheckmarkCircle20Filled,ArrowUpRight20Filled,
-  ArrowDownload20Filled,ArrowUpload20Filled
+  ArrowDownload20Filled,ArrowUpload20Filled,People24Filled
 } from '@fluentui/react-icons';
 import {readLocal,saveLocal} from './constants.js';
 import {browserPreferences,setBrowserPreferences,searchEngines} from './Preferences.js';
@@ -33,7 +33,12 @@ function Toggle({title,description,checked,onChange}){
   </label>;
 }
 export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,setReduced,showHomeAI,setShowHomeAI,onBack,onLogout}){
-  const [panel,setPanel]=useState('appearance');
+  const [panel,setPanel]=useState(()=>{
+    const next=readLocal('celestial-settings-start-panel','appearance');
+    return ['appearance','browser','privacy','account','administration'].includes(next)?next:'appearance';
+  });
+  const isAdmin=['admin','account_manager'].includes(user?.role);
+  const visiblePanels=isAdmin?[...panels,{id:'administration',label:'Administration',description:'Review access requests',icon:People24Filled}]:panels;
   const [browser,setBrowser]=useState(browserPreferences);
   const [cloak,setCloak]=useState(getCloakSettings);
   const [notification,setNotification]=useState('');
@@ -86,20 +91,25 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
   return <section className="celestial-settings-page">
     <div className="celestial-settings-wrap">
       <button className="celestial-settings-back" onClick={onBack}><ArrowLeft20Filled/> Back home</button>
-      <header className="celestial-settings-heading"><span>MAKE IT YOURS</span><h1>Settings.</h1><p>Everything in one place, just like it should be.</p></header>
+      <header className="celestial-settings-heading">
+        <span>CELESTIAL / PREFERENCES</span>
+        <h1>Make this place yours<span>.</span></h1>
+        <p>Change what you see, how you browse, and how Celestial works for you.</p>
+        <span className="celestial-settings-version">WORKSPACE SETTINGS <i/> SAVED ON THIS DEVICE</span>
+      </header>
       <div className="celestial-settings-layout">
         <nav className="celestial-settings-nav" aria-label="Settings categories">
-          {panels.map(item=>{
+          {visiblePanels.map(item=>{
             const Glyph=item.icon;
             return <button key={item.id} className={panel===item.id?'active':''}
-              aria-current={panel===item.id?'page':undefined} onClick={()=>{setPanel(item.id);setNotification('');}}>
+              aria-current={panel===item.id?'page':undefined} onClick={()=>{setPanel(item.id);saveLocal('celestial-settings-start-panel',item.id);setNotification('');}}>
               <Glyph/><span><strong>{item.label}</strong><small>{item.description}</small></span>
             </button>;
           })}
         </nav>
         <div className="celestial-settings-content">
           {panel==='appearance'&&<>
-            <div className="celestial-settings-section-head"><h2>Make it feel like yours.</h2><p>Choose the atmosphere. Changes apply immediately.</p></div>
+            <div className="celestial-settings-section-head"><span>01 / APPEARANCE</span><h2>The look and feel.</h2><p>A few details that make your workspace feel like your own.</p></div>
             <div className="celestial-settings-group"><h3>COLOR PALETTE</h3>
               <div className="celestial-settings-color-grid">
                 {palettes.map(theme=><button key={theme.id} className={'celestial-settings-color '+(palette===theme.id?'selected':'')}
@@ -130,8 +140,8 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
             </div>
           </>}
           {panel==='browser'&&<>
-            <div className="celestial-settings-section-head"><h2>A browser that works your way.</h2>
-              <p>Your search and tab preferences are saved on this device.</p></div>
+            <div className="celestial-settings-section-head"><span>02 / BROWSER</span><h2>Every tab, your way.</h2>
+              <p>Small controls that make a difference when you're switching between sites and conversations.</p></div>
             <div className="celestial-settings-group"><h3>SEARCH</h3>
               <label className="celestial-settings-select"><span><strong>Search engine</strong><small>Used whenever you search from the address bar.</small></span>
                 <select value={browser.searchEngine} onChange={e=>preference({searchEngine:e.target.value})}>
@@ -149,10 +159,20 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
               <Toggle title="Open site links in new tabs" description="When the proxy opens a new window, make a Celestial tab."
                 checked={browser.openLinksInTabs} onChange={v=>preference({openLinksInTabs:v})}/>
             </div>
+            <div className="celestial-settings-group"><h3>KEYBOARD SHORTCUTS</h3>
+              <div className="celestial-shortcut-grid">
+                <span>Jump to address bar <kbd>Ctrl</kbd> <kbd>L</kbd></span>
+                <span>Open a new tab <kbd>Ctrl</kbd> <kbd>T</kbd></span>
+                <span>Reopen closed tab <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>T</kbd></span>
+                <span>Next / previous tab <kbd>Ctrl</kbd> <kbd>Tab</kbd></span>
+                <span>Fullscreen browser <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>F</kbd></span>
+              </div>
+              <button className="celestial-settings-quick-action" onClick={()=>{location.hash='browser';}}>Open Browser <span>↗</span></button>
+            </div>
           </>}
           {panel==='privacy'&&<>
-            <div className="celestial-settings-section-head"><h2>Choose your tab identity.</h2>
-              <p>Customize the browser tab's title and icon, or open Celestial in a blank wrapper.</p></div>
+            <div className="celestial-settings-section-head"><span>03 / PRIVACY</span><h2>Your tab, your identity.</h2>
+              <p>Customize the tab's title and icon, or open Celestial inside a separate blank wrapper.</p></div>
             <div className="celestial-settings-group"><h3>TAB CLOAKING</h3>
               <label className="celestial-settings-select"><span><strong>Tab style</strong><small>Only the visible title and icon change.</small></span>
                 <select value={cloak.preset} onChange={e=>identity({preset:e.target.value})}>
@@ -176,11 +196,13 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
             </div>
           </>}
           {panel==='account'&&<>
-            <div className="celestial-settings-section-head"><h2>Your account & preferences.</h2>
-              <p>Manage your session and take your layout with you.</p></div>
+            <div className="celestial-settings-section-head"><span>04 / ACCOUNT</span><h2>Everything tied to you.</h2>
+              <p>Your session and preferences stay in your control.</p></div>
             <div className="celestial-settings-user"><span>{user.username?.charAt(0).toUpperCase()}</span>
               <div><strong>{user.username}</strong><small>Signed in to Celestial</small></div></div>
-            {['admin','account_manager'].includes(user.role)&&<div className="celestial-settings-group"><h3>MEMBERS</h3><AccountReview/></div>}
+            {isAdmin&&<div className="celestial-settings-group"><h3>ADMINISTRATION</h3>
+              <button className="celestial-settings-quick-action" onClick={()=>setPanel('administration')}>
+                Open account approvals <span>↗</span></button></div>}
             <div className="celestial-settings-group"><h3>SETTINGS FILE</h3>
               <div className="celestial-settings-action-row">
                 <button onClick={exportSettings}><ArrowDownload20Filled/> Export settings</button>
@@ -194,6 +216,11 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
             <div className="celestial-settings-group"><h3>ACCOUNT</h3>
               <button className="celestial-settings-signout" onClick={onLogout}>Sign out of Celestial</button>
             </div>
+          </>}
+          {panel==='administration'&&isAdmin&&<>
+            <div className="celestial-settings-section-head"><span>05 / ADMINISTRATION</span>
+              <h2>Access control.</h2><p>Review requests without leaving Celestial. Only authorized staff can act on them.</p></div>
+            <AccountReview/>
           </>}
           {notification&&<p className="celestial-settings-notice" role="status">{notification}</p>}
         </div>

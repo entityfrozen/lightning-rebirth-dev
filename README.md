@@ -145,6 +145,36 @@ captures screenshots of Browser, split Browser+Chat, and full Chat. A build
 passing alone is not considered proof that a proxied website is fully
 compatible—some destinations still block automated or intercepted access.
 
+## Studio interface
+
+Browser, Chat, Settings and Administration share a calmer, deliberate
+desktop-app design: slate panels, fine borders, carefully balanced typography,
+one teal highlight and readable content. The active website stays foremost.
+
+**Browser:** an always-visible tab strip and address bar, document titles in
+tabs, saved-site tray, quick menu, recent closed-tab recovery and native
+fullscreen. Keyboard shortcuts: Ctrl/Cmd+L focuses the address bar, Ctrl/Cmd+T
+opens a tab, Ctrl/Cmd+Shift+T restores one, Ctrl+Tab changes tabs, and
+Ctrl/Cmd+Shift+F switches fullscreen (Esc exits). On some browsers, a system
+shortcut may take precedence over Celestial's handler. Fullscreen requires a
+user interaction and browser permission; the active proxied tab is preserved
+when entering or leaving.
+
+**Chat:** full-page or side-by-side Messenger, now with a native fullscreen
+control in the header. Messages, members, role badges, DMs and channels use
+the existing authenticated community services.
+
+**Apps:** fullscreen control for playable games and the built-in utilities.
+Existing game state remains mounted during the transition.
+
+**Settings & Administration:** separate settings categories, discoverable
+shortcuts, palette previews, browser preferences, account data and a
+dedicated administration tab for staff. Account requests are searchable,
+reviewed individually and submitted to the existing role-checked
+approval/decline endpoints. Regular members cannot access the admin
+workspace. Neither profile settings nor account approvals overwrite the
+existing server database or conversation history.
+
 ## Visual direction
 
 The QOL workspace is intentionally calmer than the old glass-card UI:

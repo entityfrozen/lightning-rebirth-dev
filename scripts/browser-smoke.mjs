@@ -127,6 +127,16 @@ try{
     throw Error('Proxy content rendered but browser overlay stayed visible: '+
       JSON.stringify(state)+'; '+error.message);
   });
+  // Fullscreen requires a real user click and must exit without dropping
+  // the active proxied frame.
+  await page.getByRole('button',{name:'Enter browser fullscreen'}).click();
+  await page.waitForFunction(()=>document.fullscreenElement?.classList.contains('forest-browser'),
+    null,{timeout:10000});
+  await page.screenshot({path:path.join(screenshots,'browser-fullscreen.png'),fullPage:true});
+  await page.getByRole('button',{name:'Exit browser fullscreen'}).click();
+  await page.waitForFunction(()=>!document.fullscreenElement,null,{timeout:10000});
+  const originalFrame=await page.locator('iframe.portal-iframe').first().getAttribute('src');
+  assert.equal(originalFrame,state.iframe,'Fullscreen cannot reset the active browser page');
   await page.screenshot({path:path.join(screenshots,'browser.png'),fullPage:true});
   // Prove the rewritten document actually rendered, not merely iframe.src
   // being set. This uses example.com's public, static page as the smoke target.
@@ -169,7 +179,34 @@ try{
   await sendButton.click();
   await page.locator('.celestial-messenger.full .messenger-message-text')
     .filter({hasText:'Celestial chat smoke test'}).waitFor({timeout:15000});
+  await page.getByRole('button',{name:'Fullscreen chat'}).click();
+  await page.waitForFunction(()=>document.fullscreenElement?.classList.contains('celestial-messenger'),
+    null,{timeout:10000});
+  await page.screenshot({path:path.join(screenshots,'chat-fullscreen.png'),fullPage:true});
+  await page.getByRole('button',{name:'Exit chat fullscreen'}).click();
+  await page.waitForFunction(()=>!document.fullscreenElement,null,{timeout:10000});
   await page.screenshot({path:path.join(screenshots,'full-chat.png'),fullPage:true});
+  // Admin workspace must be present for the approved bootstrap administrator.
+  await page.getByRole('button',{name:'Settings',exact:true}).first().click();
+  await page.getByRole('navigation',{name:'Settings categories'}).getByRole('button',
+    {name:/Administration/}).click();
+  await page.locator('.celestial-admin-console').waitFor({timeout:15000});
+  await page.getByRole('textbox',{name:'Search account requests'}).fill('not-a-user');
+  await page.getByText('No matching accounts').waitFor({timeout:10000});
+  await page.getByRole('textbox',{name:'Search account requests'}).fill('');
+  await page.screenshot({path:path.join(screenshots,'administration.png'),fullPage:true});
+  // A native fullscreen game should preserve its own component and board.
+  await page.getByRole('button',{name:'Apps',exact:true}).first().click();
+  await page.locator('.celestial-app-tile').filter({hasText:'2048'}).click();
+  await page.locator('.celestial-embedded-game').waitFor({timeout:15000});
+  await page.getByRole('button',{name:'Fullscreen game'}).click();
+  await page.waitForFunction(()=>document.fullscreenElement?.classList.contains('celestial-tool-shell'),
+    null,{timeout:10000});
+  await page.screenshot({path:path.join(screenshots,'game-fullscreen.png'),fullPage:true});
+  await page.getByRole('button',{name:'Exit game fullscreen'}).click();
+  await page.waitForFunction(()=>!document.fullscreenElement,null,{timeout:10000});
+  assert.ok(await page.locator('.celestial-embedded-game').count(),
+    'Fullscreen must preserve the active game');
 
   console.log(JSON.stringify({
     ok:true,worker,state,scriptPaths:[...scriptPaths],

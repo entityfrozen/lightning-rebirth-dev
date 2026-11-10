@@ -25,13 +25,13 @@ const savedTabs=()=> {
       cursor:typeof tab.cursor==='number'?tab.cursor:-1
     })):[blank()];
 };
-function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
+function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retryKey}){
   const iframe=useRef(null),frame=useRef(null),loadingTimeout=useRef(null);
   const lastRenderedDocument=useRef(null);
-  const lastUrl=useRef(''),navigateRef=useRef(onNavigate),popupRef=useRef(onPopup);
+  const lastUrl=useRef(''),navigateRef=useRef(onNavigate),popupRef=useRef(onPopup),titleRef=useRef(onTitle);
   const [state,setState]=useState('loading'),[error,setError]=useState('');
   const [loadedOnce,setLoadedOnce]=useState(false);
-  navigateRef.current=onNavigate;popupRef.current=onPopup;
+  navigateRef.current=onNavigate;popupRef.current=onPopup;titleRef.current=onTitle;
 
   useEffect(()=>{
     let cancelled=false;
@@ -50,6 +50,7 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
         if(!doc||doc===lastRenderedDocument.current||doc.readyState==='loading')return;
         if(!doc.body||(doc.body.children.length===0&&!doc.body.textContent?.trim()))return;
         lastRenderedDocument.current=doc;
+        if(doc.title)titleRef.current(tab.id,doc.title);
         clearTimeout(loadingTimeout.current);
         setState('ready');setError('');setLoadedOnce(true);
       }catch{}
@@ -131,10 +132,15 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
   const [prefs,setPrefs]=useState(browserPreferences);
   const [bookmarks,setBookmarks]=useState(()=>readLocal('forest-browser-bookmarks',[]));
   const [retry,setRetry]=useState({});
+  const [fullScreen,setFullScreen]=useState(false);
+  const [showBookmarks,setShowBookmarks]=useState(false);
+  const [closedTabs,setClosedTabs]=useState([]);
+  const [menuOpen,setMenuOpen]=useState(false);
+  const root=useRef(null);
   const controls=useRef(new Map()),box=useRef(null),lastLaunch=useRef(null);
   const current=useMemo(()=>tabs.find(t=>t.id===activeId)||tabs[0], [tabs,activeId]);
   const currentId=current?.id,visibleUrl=current?.url||'';
-  const hasTabs=tabs.length>1||tabs.some(tab=>tab.url);
+  const hasTabs=true; // The browser always has tabs and an address bar.
 
   useEffect(()=>{
     const listener=event=>setPrefs(event.detail);
@@ -147,6 +153,28 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
     }else{saveLocal('forest-browser-tabs',[blank()]);}
   },[tabs,prefs.restoreTabs,prefs.saveHistory]);
   useEffect(()=>saveLocal('forest-browser-bookmarks',bookmarks),[bookmarks]);
+  useEffect(()=>{
+    const sync=()=>setFullScreen(document.fullscreenElement===root.current);
+    document.addEventListener('fullscreenchange',sync);
+    return()=>document.removeEventListener('fullscreenchange',sync);
+  },[]);
+  const toggleFullscreen=async()=>{
+    try{
+      if(document.fullscreenElement===root.current)await document.exitFullscreen();
+      else if(root.current?.requestFullscreen)await root.current.requestFullscreen();
+      else setMenuOpen(false);
+    }catch{
+      // Browser policy can deny fullscreen; the button remains available.
+      setMenuOpen(false);
+    }
+  };
+  const restoreClosedTab=()=>{
+    const tab=closedTabs.at(-1);
+    if(!tab)return;
+    setClosedTabs(all=>all.slice(0,-1));
+    setTabs(all=>[...all.slice(-11),tab]);
+    setActiveId(tab.id);
+  };
   useEffect(()=>setInput(visibleUrl),[visibleUrl,currentId]);
   const modify=useCallback((id,fn)=>setTabs(all=>all.map(tab=>tab.id===id?fn(tab):tab)),[]);
   const addTab=useCallback((url='')=>{
@@ -158,6 +186,8 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
     return next.id;
   },[]);
   const closeTab=useCallback(id=>{
+    const removed=tabs.find(tab=>tab.id===id);
+    if(removed?.url)setClosedTabs(all=>[...all.slice(-7),removed]);
     const remaining=tabs.filter(tab=>tab.id!==id);
     const next=remaining.length?remaining:[blank()];
     setTabs(next);
@@ -203,11 +233,24 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
         event.target instanceof HTMLTextAreaElement||event.target?.isContentEditable;
       if(ctrl&&key==='l'){event.preventDefault();box.current?.focus();box.current?.select();return;}
       if(ctrl&&key==='t'){event.preventDefault();addTab();return;}
+      if(ctrl&&event.shiftKey&&key==='f'){
+        event.preventDefault();toggleFullscreen();return;
+      }
+      if(ctrl&&event.shiftKey&&key==='t'){
+        event.preventDefault();restoreClosedTab();return;
+      }
+      if(!editing&&ctrl&&key==='tab'){
+        event.preventDefault();
+        const idx=tabs.findIndex(tab=>tab.id===currentId);
+        const shift=event.shiftKey?-1:1;
+        setActiveId(tabs[(idx+shift+tabs.length)%tabs.length]?.id);
+        return;
+      }
       if(!editing&&ctrl&&key==='w'&&!homeMode){event.preventDefault();closeTab(currentId);}
     };
     window.addEventListener('keydown',onKey);
     return()=>window.removeEventListener('keydown',onKey);
-  },[addTab,closeTab,currentId,homeMode]);
+  },[addTab,closeTab,currentId,homeMode,tabs,closedTabs,fullScreen]);
   const goHistory=direction=>{
     const tab=current;
     if(!tab||tab.cursor+direction<0||tab.cursor+direction>=tab.history.length)return;
@@ -224,14 +267,29 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
     else setBookmarks(all=>[...all,{label:new URL(visibleUrl).hostname,url:visibleUrl}].slice(-30));
   };
   const favorite=bookmarks.some(bookmark=>bookmark.url===visibleUrl);
+  const updateTitle=useCallback((id,title)=>{
+    const clean=String(title||'').replace(/\s+/g,' ').trim().slice(0,64);
+    if(clean)modify(id,tab=>tab.title===clean?tab:{...tab,title:clean});
+  },[modify]);
   const submit=event=>{event.preventDefault();navigate(input);};
   return <section className={'forest-browser '+(hasTabs?'has-tabs ':'')+(visibleUrl?'is-browsing':'new-tab')+(prefs.compactTabs?' compact-tabs':'')}
-    aria-label="Celestial Browser">
+    aria-label="Celestial Browser" ref={root} data-fullscreen={fullScreen?'on':'off'}>
     {hasTabs&&<div className="forest-browser-chrome">
+      <div className="celestial-browser-topline">
+        <span className="celestial-browser-identity"><span className="celestial-browser-star">✦</span> CELESTIAL <em>/ BROWSER</em></span>
+        <div className="celestial-browser-top-actions">
+          <span className="celestial-browser-session">{tabs.length} {tabs.length===1?'tab':'tabs'} open</span>
+          <button type="button" className="celestial-browser-top-button" onClick={toggleFullscreen}
+            title={fullScreen?'Exit fullscreen (Esc)':'Fullscreen (Ctrl+Shift+F)'}
+            aria-label={fullScreen?'Exit browser fullscreen':'Enter browser fullscreen'}
+            aria-pressed={fullScreen}>{fullScreen?'▣':'⛶'} <span>{fullScreen?'Exit fullscreen':'Fullscreen'}</span></button>
+        </div>
+      </div>
       <div className="forest-tabs">{tabs.map(tab=><div key={tab.id}
         className={'forest-tab '+(tab.id===currentId?'active':'')}>
         <button onClick={()=>setActiveId(tab.id)} title={tab.url||'New tab'}>
-          {tab.url?new URL(tab.url).hostname:'New tab'}</button>
+          <span className="celestial-browser-tab-mark" aria-hidden="true">{tab.url?'◉':'✦'}</span>
+          {tab.title|| (tab.url?new URL(tab.url).hostname:'New tab')}</button>
         <button className="forest-tab-close" onClick={()=>closeTab(tab.id)} aria-label="Close tab">×</button>
       </div>)}
       <button className="forest-add-tab" onClick={()=>addTab()} aria-label="New tab">＋</button></div>
@@ -243,13 +301,36 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
           if(control?.reload)control.reload();
           else if(visibleUrl)setRetry(all=>({...all,[currentId]:(all[currentId]||0)+1}));
         }} aria-label="Reload" disabled={!visibleUrl}><Icon name="reload" size={16}/></button>
-        <form onSubmit={submit}><Icon name="browser" size={15}/>
+        <form onSubmit={submit}><span className="celestial-browser-lock" aria-hidden="true">{visibleUrl?.startsWith('https:')?'⌁':'⌕'}</span>
           <input ref={box} value={input} onChange={e=>setInput(e.target.value)}
-            aria-label="Website address" autoComplete="off"/>
+            aria-label="Website address" autoComplete="off" spellCheck={false}
+            placeholder="Search anything or enter a web address"/>
           <button type="submit" aria-label="Visit site">→</button></form>
-        <button onClick={toggleBookmark} className={favorite?'favorite':''} aria-label="Bookmark"><Icon name="bookmark" size={16}/></button>
+        <button onClick={toggleBookmark} className={favorite?'favorite':''}
+          disabled={!visibleUrl} aria-label={favorite?'Remove bookmark':'Bookmark this page'}
+          title={favorite?'Remove bookmark':'Bookmark this page'}><Icon name="bookmark" size={16}/></button>
+        <button onClick={()=>setShowBookmarks(open=>!open)} aria-label="Show saved bookmarks"
+          aria-expanded={showBookmarks} title="Bookmarks">▤</button>
+        <button onClick={()=>setMenuOpen(open=>!open)} aria-label="Browser menu"
+          aria-expanded={menuOpen} title="Browser tools">⋯</button>
         {visibleUrl&&<a href={visibleUrl} target="_blank" rel="noopener noreferrer" title="Open directly" aria-label="Open directly"><Icon name="external" size={16}/></a>}
       </div>
+      {showBookmarks&&<div className="celestial-browser-bookmark-tray">
+        <strong>Saved sites</strong>
+        {bookmarks.length===0?<span>No bookmarks yet. Save a page with the star.</span>:
+          bookmarks.map(bookmark=><button key={bookmark.url} onClick={()=>{
+            navigate(bookmark.url);setShowBookmarks(false);
+          }} title={bookmark.url}>{bookmark.label}</button>)}
+        <button onClick={()=>setShowBookmarks(false)} aria-label="Close bookmarks">×</button>
+      </div>}
+      {menuOpen&&<div className="celestial-browser-menu" role="group" aria-label="Browser tools">
+        <button onClick={()=>{addTab();setMenuOpen(false);}}>＋ New tab <kbd>Ctrl T</kbd></button>
+        <button disabled={!closedTabs.length} onClick={()=>{restoreClosedTab();setMenuOpen(false);}}>
+          ↶ Reopen closed tab <kbd>Ctrl Shift T</kbd></button>
+        <button onClick={()=>{toggleFullscreen();setMenuOpen(false);}}>⛶ {fullScreen?'Exit fullscreen':'Fullscreen'} <kbd>Ctrl Shift F</kbd></button>
+        <button onClick={()=>{setShowBookmarks(v=>!v);setMenuOpen(false);}}>☆ Bookmarks</button>
+        <span>Tabs are saved on this device.</span>
+      </div>}
     </div>}
     <div className="forest-browser-stage">
       {!visibleUrl&&<div className="forest-browser-home">
@@ -268,7 +349,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
           onClick={()=>navigate(bookmark.url)}>✧ {bookmark.label}</button>)}</div>}
       </div>}
       {tabs.map(tab=>tab.url?<BrowserFrame key={tab.id} tab={tab} active={tab.id===currentId}
-        user={user} onNavigate={onLocation} onPopup={openPopup} retryKey={retry[tab.id]||0}
+        user={user} onNavigate={onLocation} onPopup={openPopup} onTitle={updateTitle} retryKey={retry[tab.id]||0}
         register={(id,control)=>{
           if(control?.retry){setRetry(all=>({...all,[id]:(all[id]||0)+1}));return;}
           if(control)controls.current.set(id,control);else controls.current.delete(id);
