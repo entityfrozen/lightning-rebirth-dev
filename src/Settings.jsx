@@ -7,7 +7,7 @@ import {
 import {readLocal,saveLocal} from './constants.js';
 import {browserPreferences,setBrowserPreferences,searchEngines} from './Preferences.js';
 import {getCloakSettings,saveCloak,cloakPresets,openCloakedTab} from './Cloak.js';
-import {AccountReview} from './AccountReview.jsx';
+import {AdminConsole} from './AdminConsole.jsx';
 
 const palettes=[
   {id:'aurora',name:'Aurora',description:'Midnight blue and icy teal'},
@@ -32,8 +32,11 @@ function Toggle({title,description,checked,onChange}){
     <input type="checkbox" checked={Boolean(checked)} onChange={e=>onChange(e.target.checked)}/>
   </label>;
 }
-export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,setReduced,showHomeAI,setShowHomeAI,onBack,onLogout}){
-  const [panel,setPanel]=useState('appearance');
+export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,setReduced,showHomeAI,setShowHomeAI,onBack,onLogout,initialPanel='appearance'}){
+  const [panel,setPanel]=useState(initialPanel);
+  const isAdmin=['admin','account_manager'].includes(user.role);
+  const sections=isAdmin?[...panels,{id:'admin',label:'Admin console',description:'Accounts and approvals',icon:Shield24Filled}]:panels;
+  useEffect(()=>setPanel(initialPanel),[initialPanel]);
   const [browser,setBrowser]=useState(browserPreferences);
   const [cloak,setCloak]=useState(getCloakSettings);
   const [notification,setNotification]=useState('');
@@ -47,6 +50,14 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
   const preference=patch=>setBrowser(setBrowserPreferences(patch));
   const identity=patch=>setCloak(saveCloak(patch));
   const notify=message=>{setNotification(message);};
+  const clearBrowserData=()=>{
+    if(!window.confirm('Clear local browsing history, saved tabs and bookmarks?'))return;
+    for(const key of ['forest-browser-tabs','forest-browser-bookmarks','celestial-browser-recent']){
+      localStorage.removeItem(key);
+    }
+    window.dispatchEvent(new Event('celestial:browser-clear-data'));
+    notify('Local browser data cleared.');
+  };
   const exportSettings=()=>{
     const safe={version:1,palette,backdrop,reduced,showHomeAI,browser:browserPreferences(),cloak:getCloakSettings()};
     const file=new Blob([JSON.stringify(safe,null,2)],{type:'application/json'});
@@ -85,21 +96,33 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
 
   return <section className="celestial-settings-page">
     <div className="celestial-settings-wrap">
-      <button className="celestial-settings-back" onClick={onBack}><ArrowLeft20Filled/> Back home</button>
-      <header className="celestial-settings-heading"><span>MAKE IT YOURS</span><h1>Settings.</h1><p>Everything in one place, just like it should be.</p></header>
+      <div className="celestial-settings-topline">
+        <button className="celestial-settings-back" onClick={onBack}><ArrowLeft20Filled/> Back to Celestial</button>
+        <span className="celestial-settings-current-context"><i/> PREFERENCES / {panel.toUpperCase()}</span>
+      </div>
+      <header className="celestial-settings-heading">
+        <div className="celestial-settings-heading-star" aria-hidden="true">✦</div>
+        <span>THE WORKSPACE</span><h1>Make it <em>yours.</em></h1>
+        <p>Set up Celestial the way you like it. Changes save as you go.</p>
+      </header>
       <div className="celestial-settings-layout">
         <nav className="celestial-settings-nav" aria-label="Settings categories">
-          {panels.map(item=>{
+          {sections.map(item=>{
             const Glyph=item.icon;
             return <button key={item.id} className={panel===item.id?'active':''}
               aria-current={panel===item.id?'page':undefined} onClick={()=>{setPanel(item.id);setNotification('');}}>
               <Glyph/><span><strong>{item.label}</strong><small>{item.description}</small></span>
             </button>;
           })}
+          <div className="celestial-settings-nav-account">
+            <span>{user.username?.slice(0,1).toUpperCase()}</span>
+            <div><strong>{user.username}</strong><small>{isAdmin?'Staff account':'Signed in'}</small></div>
+          </div>
         </nav>
-        <div className="celestial-settings-content">
+        <div className={'celestial-settings-content panel-'+panel}>
           {panel==='appearance'&&<>
-            <div className="celestial-settings-section-head"><h2>Make it feel like yours.</h2><p>Choose the atmosphere. Changes apply immediately.</p></div>
+            <div className="celestial-settings-section-head"><span>01 / DISPLAY</span>
+              <h2>Look & feel.</h2><p>Choose the colors and background that feel right. Everything updates instantly.</p></div>
             <div className="celestial-settings-group"><h3>COLOR PALETTE</h3>
               <div className="celestial-settings-color-grid">
                 {palettes.map(theme=><button key={theme.id} className={'celestial-settings-color '+(palette===theme.id?'selected':'')}
@@ -130,8 +153,15 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
             </div>
           </>}
           {panel==='browser'&&<>
-            <div className="celestial-settings-section-head"><h2>A browser that works your way.</h2>
-              <p>Your search and tab preferences are saved on this device.</p></div>
+            <div className="celestial-settings-section-head"><span>02 / THE WEB</span><h2>Browsing, your way.</h2>
+              <p>Decide how tabs, shortcuts, and your history work.</p></div>
+            <div className="celestial-settings-shortcut-card">
+              <div className="celestial-settings-shortcut-icon">⛶</div>
+              <div><strong>Full-screen browsing</strong>
+                <small>Open any site, then use the expand button in the browser toolbar. Press Escape to exit.</small>
+              </div>
+              <kbd>Ctrl ⇧ F</kbd>
+            </div>
             <div className="celestial-settings-group"><h3>SEARCH</h3>
               <label className="celestial-settings-select"><span><strong>Search engine</strong><small>Used whenever you search from the address bar.</small></span>
                 <select value={browser.searchEngine} onChange={e=>preference({searchEngine:e.target.value})}>
@@ -149,10 +179,22 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
               <Toggle title="Open site links in new tabs" description="When the proxy opens a new window, make a Celestial tab."
                 checked={browser.openLinksInTabs} onChange={v=>preference({openLinksInTabs:v})}/>
             </div>
+            <div className="celestial-settings-group"><h3>QUICK ACTIONS</h3>
+              <div className="celestial-settings-hotkeys">
+                <span>Address bar <kbd>Ctrl L</kbd></span>
+                <span>New tab <kbd>Ctrl T</kbd></span>
+                <span>Reopen tab <kbd>Ctrl ⇧ T</kbd></span>
+                <span>Switch tabs <kbd>Ctrl Tab</kbd></span>
+              </div>
+              <button className="celestial-settings-danger-action" type="button" onClick={clearBrowserData}>
+                Clear saved browser data <span>↗</span>
+              </button>
+              <p className="celestial-settings-footnote">This clears Celestial's local bookmarks, recent sites and saved tabs. Your accounts and chats are not affected.</p>
+            </div>
           </>}
           {panel==='privacy'&&<>
-            <div className="celestial-settings-section-head"><h2>Choose your tab identity.</h2>
-              <p>Customize the browser tab's title and icon, or open Celestial in a blank wrapper.</p></div>
+            <div className="celestial-settings-section-head"><span>03 / PRIVACY</span>
+              <h2>Tab appearance.</h2><p>Choose a title and icon for Celestial's tab or open it inside a blank window.</p></div>
             <div className="celestial-settings-group"><h3>TAB CLOAKING</h3>
               <label className="celestial-settings-select"><span><strong>Tab style</strong><small>Only the visible title and icon change.</small></span>
                 <select value={cloak.preset} onChange={e=>identity({preset:e.target.value})}>
@@ -176,11 +218,15 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
             </div>
           </>}
           {panel==='account'&&<>
-            <div className="celestial-settings-section-head"><h2>Your account & preferences.</h2>
-              <p>Manage your session and take your layout with you.</p></div>
+            <div className="celestial-settings-section-head"><span>04 / ACCOUNT</span>
+              <h2>Your space.</h2><p>Your account, local preferences, and settings backup.</p></div>
             <div className="celestial-settings-user"><span>{user.username?.charAt(0).toUpperCase()}</span>
               <div><strong>{user.username}</strong><small>Signed in to Celestial</small></div></div>
-            {['admin','account_manager'].includes(user.role)&&<div className="celestial-settings-group"><h3>MEMBERS</h3><AccountReview/></div>}
+            {isAdmin&&<div className="celestial-settings-admin-promo">
+              <span className="celestial-settings-admin-icon">✦</span>
+              <div><strong>Admin console</strong><small>Manage account requests and view the member directory.</small></div>
+              <button onClick={()=>setPanel('admin')}>Open console <span>↗</span></button>
+            </div>}
             <div className="celestial-settings-group"><h3>SETTINGS FILE</h3>
               <div className="celestial-settings-action-row">
                 <button onClick={exportSettings}><ArrowDownload20Filled/> Export settings</button>
@@ -195,6 +241,7 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
               <button className="celestial-settings-signout" onClick={onLogout}>Sign out of Celestial</button>
             </div>
           </>}
+          {panel==='admin'&&isAdmin&&<AdminConsole user={user}/>}
           {notification&&<p className="celestial-settings-notice" role="status">{notification}</p>}
         </div>
       </div>
