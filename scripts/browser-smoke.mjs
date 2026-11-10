@@ -161,14 +161,14 @@ try{
   const primaryLabels=await page.locator('nav[aria-label="Main navigation"] .dock-link')
     .evaluateAll(buttons=>buttons.map(button=>button.getAttribute('aria-label')));
   assert.deepEqual(primaryLabels,['Home','Browser','Apps','Chat','AI','Settings']);
-  await page.getByRole('button',{name:'Compact navigation'}).click();
-  await page.waitForFunction(()=>document.querySelector('.dock-shell')?.getBoundingClientRect().width<90,
-    null,{timeout:4500});
-  const compactWidth=await page.locator('.dock-shell').evaluate(element=>element.getBoundingClientRect().width);
-  assert.ok(compactWidth<90,'Compact navigation should keep icons accessible without taking space');
-  await page.getByRole('button',{name:'Expand navigation'}).click();
-  await page.waitForFunction(()=>document.querySelector('.dock-shell')?.getBoundingClientRect().width>150,
-    null,{timeout:4500});
+  const desktopDock=await page.locator('.dock-shell').evaluate(element=>{
+    const r=element.getBoundingClientRect();
+    return {bottom:r.bottom,width:r.width,left:r.left};
+  });
+  assert.ok(Math.abs(desktopDock.bottom-889)<6,
+    'Desktop navigation should sit along the bottom with a small gap');
+  assert.ok(desktopDock.width>650 && desktopDock.width<900,
+    'Desktop navigation should be a compact centered dock');
   await page.getByRole('button',{name:'Quick switch (Ctrl+K)'}).click();
   await page.getByRole('dialog',{name:'Switch to a page'})
     .getByRole('textbox',{name:'Find a page'}).fill('apps');
@@ -182,9 +182,13 @@ try{
 
   const isolation=await page.evaluate(()=>window.crossOriginIsolated);
   assert.equal(isolation,true,'Celestial must be cross-origin isolated for Scramjet');
-  await page.getByRole('textbox',{name:'Search or enter a URL'})
-    .fill('https://example.com');
-  await page.getByRole('textbox',{name:'Search or enter a URL'}).press('Enter');
+  await page.getByRole('button',{name:'Home',exact:true}).first().click();
+  await page.locator('.forest-browser.home-mode').waitFor({timeout:15000});
+  await page.screenshot({path:path.join(screenshots,'flare-home-desktop.png'),fullPage:true});
+  const homeSearch=page.locator('.forest-browser.home-mode input[aria-label="Search or enter a URL"]');
+  await homeSearch.fill('https://example.com');
+  await page.locator('.forest-browser.home-mode button[aria-label="Search"]').click();
+  await page.locator('.forest-browser.is-browsing').waitFor({timeout:20000});
   await page.locator('iframe.portal-iframe').waitFor({timeout:20000});
 
   await page.waitForFunction(()=>{
@@ -234,6 +238,16 @@ try{
   const originalFrame=await page.locator('iframe.portal-iframe').first().getAttribute('src');
   assert.equal(originalFrame,state.iframe,'Fullscreen cannot reset the active browser page');
   await page.screenshot({path:path.join(screenshots,'browser.png'),fullPage:true});
+  const openTabCount=await page.locator('.flare-browser-bottom-tabs .forest-tab').count();
+  assert.ok(openTabCount>=1,'Browser tabs should appear in the bottom strip');
+  await page.getByRole('button',{name:'Close browser and return Home'}).click();
+  await page.locator('.forest-browser.home-mode').waitFor({timeout:15000});
+  const hiddenTabSrc=await page.locator('iframe.portal-iframe').first().getAttribute('src');
+  assert.equal(hiddenTabSrc,state.iframe,'Closing Browser should preserve the active tab');
+  await page.getByRole('button',{name:'Browser',exact:true}).first().click();
+  await page.locator('.forest-browser.is-browsing').waitFor({timeout:15000});
+  const reopenedTabSrc=await page.locator('iframe.portal-iframe').first().getAttribute('src');
+  assert.equal(reopenedTabSrc,state.iframe,'Returning to Browser should reuse the same proxy frame');
   // Prove the rewritten document actually rendered, not merely iframe.src
   // being set. This uses example.com's public, static page as the smoke target.
   await page.waitForFunction(()=>{
