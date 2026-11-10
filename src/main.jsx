@@ -18,6 +18,7 @@ import './messenger.css';
 import './studio.css';
 import './refinement.css';
 import './auth.css';
+import './navigation.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
@@ -35,12 +36,11 @@ const WorkspaceChat=React.lazy(()=>import('./WorkspaceChat.jsx').then(mod=>({def
 
 const sections=new Set(['home','browser','apps','chat','ai','settings']);
 const dockItems=[
-  {id:'home',label:'Home',icon:Home24Filled},
-  {id:'apps',label:'Apps',icon:Grid24Filled},
-  {id:'browser',label:'Browser',icon:Globe24Filled},
-  {id:'cloud',label:'AI',icon:Cloud24Filled},
-  {id:'music',label:'Music',icon:MusicNote224Filled},
-  {id:'chat',label:'Chat',icon:Chat24Filled}
+  {id:'home',label:'Home',icon:Home24Filled,detail:'Your starting point'},
+  {id:'browser',label:'Browser',icon:Globe24Filled,detail:'Tabs and web search'},
+  {id:'apps',label:'Apps',icon:Grid24Filled,detail:'Games and tools'},
+  {id:'chat',label:'Chat',icon:Chat24Filled,detail:'Messages and members'},
+  {id:'cloud',label:'AI',icon:Cloud24Filled,detail:'Ask a question'}
 ];
 const routeFromHash=()=>{
   const route=location.hash.replace(/^#/,'').split('/')[0];
@@ -187,7 +187,9 @@ function App() {
     const initial=routeFromHash();
     return initial==='home'?'home':initial==='ai'?'cloud':initial==='chat'?'chat':initial==='apps'?'apps':initial==='settings'?'settings':'browser';
   });
-  const [dockOpen,setDockOpen]=useState(()=>readLocal('dock-open',true));
+  const [dockOpen,setDockOpen]=useState(()=>readLocal('navigation-expanded',true)!==false);
+  const [jumpOpen,setJumpOpen]=useState(false);
+  const [jumpQuery,setJumpQuery]=useState('');
   const [showHomeAI,setShowHomeAI]=useState(()=>readLocal('home-ai-sidebar',true)!==false);
   const [chatOpen,setChatOpen]=useState(()=>readLocal('workspace-chat-open',false)===true);
   const [palette,setPalette]=useState(()=>readLocal('celestial-palette','aurora'));
@@ -215,7 +217,7 @@ function App() {
     saveLocal('reduce-motion',reduced);
     document.documentElement.dataset.motion=reduced?'reduced':'full';
   },[reduced]);
-  useEffect(()=>saveLocal('dock-open',dockOpen),[dockOpen]);
+  useEffect(()=>saveLocal('navigation-expanded',dockOpen),[dockOpen]);
   useEffect(()=>saveLocal('home-ai-sidebar',showHomeAI),[showHomeAI]);
   useEffect(()=>saveLocal('workspace-chat-open',chatOpen),[chatOpen]);
   useEffect(()=>{applyCloak();},[]);
@@ -248,7 +250,22 @@ function App() {
     return()=>window.removeEventListener('keydown',escape);
   },[modal]);
 
+  useEffect(()=>{
+    const shortcut=event=>{
+      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
+        event.preventDefault();
+        setJumpQuery('');
+        setJumpOpen(value=>!value);
+      }else if(event.key==='Escape'){
+        setJumpOpen(false);
+      }
+    };
+    window.addEventListener('keydown',shortcut);
+    return()=>window.removeEventListener('keydown',shortcut);
+  },[]);
+
   function selectSection(section) {
+    setJumpOpen(false);
     setModal(null);
     setView(section);
     setActiveDock(section==='home'?'home':section==='ai'?'cloud':section==='chat'?'chat':section==='apps'?'apps':section==='settings'?'settings':'browser');
@@ -290,7 +307,7 @@ function App() {
   return <>
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
     <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced||['browser','chat','apps','settings'].includes(view)}/></Suspense></SceneBoundary>
-    <div className="celestial-workspace">
+    <div className={'celestial-workspace '+(dockOpen?'nav-wide':'nav-compact')}>
       <main className="celestial-stage" id="main-content">
         <div className={'celestial-activity-layout '+(showCompanion?'with-chat':'')}>
           <div className="celestial-activity-main">
@@ -337,37 +354,98 @@ function App() {
           </aside>}
         </div>
       </main>
-      <div className="celestial-online" title={loading?'Connecting':'Current live connections'}>
-        online users: <strong>{live.connected?live.online.length:'—'}</strong>
-      </div>
       <div className={'dock-shell '+(!dockOpen?'closed':'')}>
-        <aside className="dock" aria-label="Celestial navigation" inert={!dockOpen}>
+        <nav className="dock" aria-label="Main navigation">
+          <div className="dock-brand" aria-label="Celestial">
+            <span className="dock-brand-icon" aria-hidden="true">✦</span>
+            <span className="dock-brand-name">celestial</span>
+          </div>
+          <button type="button" className="dock-command" title="Quick switch (Ctrl+K)"
+            aria-label="Quick switch (Ctrl+K)" onClick={()=>{setJumpQuery('');setJumpOpen(true);}}>
+            <span className="dock-command-icon" aria-hidden="true">⌕</span>
+            <span className="dock-command-label">Jump to...</span>
+            <kbd>⌘K</kbd>
+          </button>
+          <span className="dock-section-label">WORKSPACE</span>
           <div className="dock-group main-links">
             {dockItems.map(item=>{
               const FilledIcon=item.icon;
-              return <button key={item.id} type="button" aria-label={item.label} title={item.label}
-                className={'dock-link '+(activeDock===item.id?'active':'')}
-                aria-current={activeDock===item.id?'page':undefined}
-                onClick={()=>openDock(item.id)}><FilledIcon/></button>;
+              const target=item.id==='cloud'?'ai':item.id;
+              const selected=view===target;
+              return <button key={item.id} type="button" aria-label={item.label}
+                title={item.label} className={'dock-link '+(selected?'active':'')}
+                aria-current={selected?'page':undefined}
+                onClick={()=>openDock(item.id)}>
+                <FilledIcon/><span className="dock-link-label">{item.label}</span>
+                {item.id==='chat'&&live.connected&&live.online.length>0&&
+                  <span className="dock-count" aria-label={live.online.length+' online'}>{live.online.length}</span>}
+              </button>;
             })}
           </div>
+          <div className="dock-spacer"/>
           <div className="dock-group dock-bottom">
             <button type="button" className={'dock-link '+(view==='settings'?'active':'')}
-              title="Settings" aria-label="Settings" onClick={()=>selectSection('settings')}><Settings24Filled/></button>
+              title="Settings" aria-label="Settings" aria-current={view==='settings'?'page':undefined}
+              onClick={()=>selectSection('settings')}>
+              <Settings24Filled/><span className="dock-link-label">Settings</span>
+            </button>
+            <div className="dock-presence" role="status">
+              <i className={live.connected?'is-online':''} aria-hidden="true"/>
+              <span className="dock-presence-label">{live.connected?live.online.length+' online':'Connecting…'}</span>
+            </div>
+            <button type="button" className="dock-profile" title="Account"
+              aria-label={'Account: '+user.username} onClick={()=>setModal('profile')}>
+              <span className="dock-avatar" aria-hidden="true">{actor[0]?.toUpperCase()}</span>
+              <span className="dock-profile-name">{user.username}</span>
+            </button>
           </div>
-        </aside>
-        <button className="dock-toggle" type="button" title={dockOpen?'Hide sidebar':'Show sidebar'}
-          aria-label={dockOpen?'Hide sidebar':'Show sidebar'}
-          aria-expanded={dockOpen} onClick={()=>setDockOpen(state=>!state)}>
-          <ChevronLeft24Filled/>
+        </nav>
+        <button className="dock-toggle" type="button"
+          title={dockOpen?'Compact navigation':'Expand navigation'}
+          aria-label={dockOpen?'Compact navigation':'Expand navigation'}
+          aria-expanded={dockOpen} onClick={()=>setDockOpen(value=>!value)}>
+          <ChevronLeft24Filled/><span>{dockOpen?'Compact':'Expand'}</span>
         </button>
       </div>
       <div className="celestial-corner-actions">
-        <button type="button" onClick={()=>setModal('profile')}>
+        <button type="button" aria-label={'Account: '+user.username} onClick={()=>setModal('profile')}>
           <Person20Filled/> {user.username}
         </button>
       </div>
     </div>
+    {jumpOpen&&<div className="nav-switcher-overlay" onMouseDown={event=>{
+      if(event.target===event.currentTarget)setJumpOpen(false);
+    }}>
+      <div className="nav-switcher" role="dialog" aria-modal="true" aria-label="Switch to a page">
+        <div className="nav-switcher-search">
+          <span aria-hidden="true">⌕</span>
+          <input autoFocus value={jumpQuery} onChange={event=>setJumpQuery(event.target.value)}
+            placeholder="Where do you want to go?" aria-label="Find a page"
+            onKeyDown={event=>{
+              if(event.key!=='Enter')return;
+              const match=[...dockItems,{id:'settings',label:'Settings',detail:'Preferences and account'}]
+                .find(item=>(item.label+' '+item.detail).toLowerCase().includes(jumpQuery.trim().toLowerCase()));
+              if(match){event.preventDefault();openDock(match.id);setJumpOpen(false);}
+            }}/>
+          <kbd>ESC</kbd>
+        </div>
+        <div className="nav-switcher-results">
+          {[...dockItems,{id:'settings',label:'Settings',detail:'Preferences and account',icon:Settings24Filled}]
+            .filter(item=>(item.label+' '+item.detail).toLowerCase().includes(jumpQuery.trim().toLowerCase()))
+            .map(item=>{
+              const Symbol=item.icon;
+              return <button type="button" key={item.id} onClick={()=>{openDock(item.id);setJumpOpen(false);}}>
+                <Symbol/><span><strong>{item.label}</strong><small>{item.detail}</small></span>
+                <span className="nav-switcher-arrow" aria-hidden="true">↗</span>
+              </button>;
+            })}
+          {![...dockItems,{id:'settings',label:'Settings',detail:'Preferences and account'}]
+            .some(item=>(item.label+' '+item.detail).toLowerCase().includes(jumpQuery.trim().toLowerCase()))&&
+            <p className="nav-switcher-empty">No matching page. Try Home, Apps, Browser, Chat, AI, or Settings.</p>}
+        </div>
+        <div className="nav-switcher-hint">Select a page to jump there. Press Esc to close.</div>
+      </div>
+    </div>}
     {(modal==='login'||modal==='register')&&<AuthSheet mode={modal} close={()=>setModal(null)}
       onLoggedIn={person=>{setUser(person);setToast('Welcome, '+person.username);}}/>}
     {modal==='profile'&&<Modal title="Account" close={()=>setModal(null)}>
