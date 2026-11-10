@@ -861,3 +861,9 @@
   .celestial-tool-shell:fullscreen{padding:8px!important}
   .celestial-app-game-fullscreen{right:9px;top:8px;padding:6px 8px;font-size:10px}
 }
+
+/* Settings and administration already include account/presence controls. */
+.celestial-workspace:has(.celestial-settings-page) .celestial-online,
+.celestial-workspace:has(.celestial-settings-page) .celestial-corner-actions{
+  display:none!important;
+}
