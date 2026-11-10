@@ -90,6 +90,7 @@ function Focus(){
 }
 export function Apps({onNavigate,onMusic,user,live,onAuth}){
   const [query,setQuery]=useState('');
+  const [category,setCategory]=useState('ALL');
   const [opened,setOpened]=useState(null);
   const shell=useRef(null);
   const [fullscreen,setFullscreen]=useState(false);
@@ -105,7 +106,9 @@ export function Apps({onNavigate,onMusic,user,live,onAuth}){
     }catch{}
   };
   const selected=launchers.find(app=>app.id===opened);
-  const filtered=launchers.filter(app=>(app.label+' '+app.description).toLowerCase().includes(query.toLowerCase()));
+  const filtered=launchers.filter(app=>(category==='ALL'||app.category===category)&&
+    (app.label+' '+app.description).toLowerCase().includes(query.trim().toLowerCase()));
+  const categories=[{id:'ALL',label:'All apps'},{id:'ESSENTIAL',label:'Essentials'},{id:'PLAY',label:'Games'},{id:'TOOLS',label:'Tools'}];
   const open=id=>{
     if(['browser','chat','ai'].includes(id))return onNavigate(id);
     if(id==='music')return onMusic();
@@ -123,24 +126,38 @@ export function Apps({onNavigate,onMusic,user,live,onAuth}){
           {selected.game?<Arcade embedded gameId={selected.id} live={live} user={user} onAuth={onAuth}/>:selected.id==='notes'?<Notes/>:selected.id==='calculator'?<Calculator/>:<Focus/>}
         </div>
       </>:<>
-        <header className="celestial-apps-heading"><span className="celestial-section-kicker">YOUR SPACE / YOUR TOOLS</span><h1>Everything, <em>in one place.</em></h1>
-          <p>Only what you use. No clutter, no fake launch buttons.</p></header>
-        <div className="celestial-apps-search"><span>⌕</span><input aria-label="Find an app" placeholder="Find an app…" value={query} onChange={e=>setQuery(e.target.value)}/><kbd>APPS</kbd></div>
+        <header className="celestial-apps-heading"><span className="celestial-section-kicker">CELESTIAL / LIBRARY</span>
+          <h1>Apps</h1><p>Open a tool, start a game, or pick up where you left off.</p></header>
+        <div className="celestial-apps-browser">
+          <div className="celestial-apps-search"><span aria-hidden="true">⌕</span>
+            <input aria-label="Find an app" placeholder="Search apps and games" value={query} onChange={e=>setQuery(e.target.value)}/>
+            {query?<button type="button" className="celestial-apps-clear" onClick={()=>setQuery('')} aria-label="Clear search">×</button>:<kbd>SEARCH</kbd>}
+          </div>
+          <nav className="celestial-apps-filters" aria-label="App categories">
+            {categories.map(item=><button key={item.id} type="button" className={category===item.id?'active':''}
+              aria-pressed={category===item.id} onClick={()=>setCategory(item.id)}>{item.label}
+              <span>{item.id==='ALL'?launchers.length:launchers.filter(app=>app.category===item.id).length}</span></button>)}
+          </nav>
+        </div>
+        <div className="celestial-apps-results" aria-live="polite">{filtered.length} {filtered.length===1?'app':'apps'} {query?'found':'available'}</div>
         {['ESSENTIAL','PLAY','TOOLS'].map(group=>{
           const items=filtered.filter(app=>app.category===group);
           return items.length?<div className="celestial-apps-group" key={group}>
-            <h2>{group==='ESSENTIAL'?'Your essentials':group==='PLAY'?'Games you can actually play':'Useful little things'}</h2>
+            <div className="celestial-apps-group-title"><h2>{group==='ESSENTIAL'?'Essentials':group==='PLAY'?'Games':'Tools'}</h2>
+              <span>{items.length} {items.length===1?'app':'apps'}</span></div>
             <div className="celestial-apps-grid">{items.map(app=>{
               const Glyph=app.icon;
               return <button key={app.id} className="celestial-app-tile" onClick={()=>open(app.id)}>
                 <span className={'celestial-app-tile-symbol '+app.gradient}><Glyph/></span>
-                <span className="celestial-app-tile-content"><strong>{app.label}</strong><small>{app.description}</small></span>
+                <span className="celestial-app-tile-content"><strong>{app.label}</strong><small>{app.description}</small>
+                  <span className="celestial-app-tile-kind">{app.game?'PLAY':app.category==='TOOLS'?'UTILITY':'WORKSPACE'}</span></span>
                 <ArrowUpRight20Filled className="celestial-app-tile-arrow"/>
               </button>;
             })}</div>
           </div>:null;
         })}
-        {!filtered.length&&<div className="celestial-apps-empty">No apps matched “{query}”.</div>}
+        {!filtered.length&&<div className="celestial-apps-empty"><strong>No matches</strong><p>Try another search or switch categories.</p>
+          <button type="button" onClick={()=>{setQuery('');setCategory('ALL')}}>Show all apps</button></div>}
       </>}
     </div>
   </section>;
