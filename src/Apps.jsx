@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useRef,useState} from 'react';
 import {Arcade} from './Arcade.jsx';
 import {readLocal,saveLocal} from './constants.js';
 import {
@@ -91,6 +91,19 @@ function Focus(){
 export function Apps({onNavigate,onMusic,user,live,onAuth}){
   const [query,setQuery]=useState('');
   const [opened,setOpened]=useState(null);
+  const shell=useRef(null);
+  const [fullscreen,setFullscreen]=useState(false);
+  useEffect(()=>{
+    const handler=()=>setFullscreen(document.fullscreenElement===shell.current);
+    document.addEventListener('fullscreenchange',handler);
+    return()=>document.removeEventListener('fullscreenchange',handler);
+  },[]);
+  const toggleFullscreen=async()=>{
+    try{
+      if(document.fullscreenElement===shell.current)await document.exitFullscreen();
+      else await shell.current?.requestFullscreen?.();
+    }catch{}
+  };
   const selected=launchers.find(app=>app.id===opened);
   const filtered=launchers.filter(app=>(app.label+' '+app.description).toLowerCase().includes(query.toLowerCase()));
   const open=id=>{
@@ -102,7 +115,11 @@ export function Apps({onNavigate,onMusic,user,live,onAuth}){
     <div className="celestial-apps-inner">
       {selected?<><button className="celestial-apps-return" onClick={()=>setOpened(null)}><ArrowLeft20Filled/> All apps</button>
         <header className="celestial-apps-heading"><span className="celestial-section-kicker">CELESTIAL / APPS</span><h1>{selected.label}</h1><p>{selected.description}</p></header>
-        <div className="celestial-tool-shell">
+        <div className="celestial-tool-shell" ref={shell}>
+          <button type="button" className="celestial-app-game-fullscreen"
+            aria-label={fullscreen?'Exit game fullscreen':'Fullscreen game'}
+            title={fullscreen?'Exit fullscreen (Esc)':'Fullscreen'}
+            onClick={toggleFullscreen}>{fullscreen?'▣ Exit fullscreen':'⛶ Fullscreen'}</button>
           {selected.game?<Arcade embedded gameId={selected.id} live={live} user={user} onAuth={onAuth}/>:selected.id==='notes'?<Notes/>:selected.id==='calculator'?<Calculator/>:<Focus/>}
         </div>
       </>:<>
