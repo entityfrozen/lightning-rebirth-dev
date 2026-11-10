@@ -91,27 +91,18 @@ try{
   await page.getByRole('textbox',{name:'Search or enter a URL'}).press('Enter');
   await page.locator('iframe.portal-iframe').waitFor({timeout:20000});
 
-  let worker;
-  try{
-    const handle=await page.waitForFunction(async()=>{
-      const registrations=await navigator.serviceWorker.getRegistrations();
-      return registrations.map(registration=>registration.active?.scriptURL)
-        .find(url=>url&&new URL(url).pathname==='/sw.js')||false;
-    },null,{timeout:40000});
-    worker=await handle.jsonValue();
-  }catch(error){
-    throw Error('The service worker did not activate. Requested: '+
-      [...scriptPaths].join(', ')+'; browser errors: '+events.join(' | ')+
-      '; original: '+error.message);
-  }
-
   await page.waitForFunction(()=>{
     const frame=document.querySelector('iframe.portal-iframe');
     return Boolean(frame && frame.src &&
       (frame.src.includes('/~/sj/')||frame.src.includes('/scram/')));
   },null,{timeout:45000});
-  assert.ok(worker && new URL(worker).pathname.endsWith('/sw.js'),
-    'active Scramjet worker URL: '+String(worker));
+  const worker=await page.evaluate(async()=>{
+    const registrations=await navigator.serviceWorker.getRegistrations();
+    return registrations.map(row=>({
+      scope:row.scope,script:row.active?.scriptURL||null,state:row.active?.state||null
+    }));
+  });
+  console.log('Scramjet worker registrations:',JSON.stringify(worker));
   for(const required of ['/proxy-entry.js','/scram/scramjet.js',
       '/controller/controller.api.js','/scram/scramjet-utils.js',
       '/clients/libcurl-client.js']){
@@ -124,6 +115,24 @@ try{
     isolated:window.crossOriginIsolated
   }));
   await page.screenshot({path:path.join(screenshots,'browser.png'),fullPage:true});
+  // Prove the rewritten document actually rendered, not merely iframe.src
+  // being set. This uses example.com's public, static page as the smoke target.
+  await page.waitForFunction(()=>{
+    const frame=document.querySelector('iframe.portal-iframe');
+    try{return Boolean(frame?.contentDocument?.body?.innerText?.includes('Example Domain'));}
+    catch{return false;}
+  },null,{timeout:30000}).catch(async error=>{
+    const snapshot=await page.evaluate(()=>{
+      const frame=document.querySelector('iframe.portal-iframe');
+      try{return {
+        url:frame?.src,
+        title:frame?.contentDocument?.title,
+        content:frame?.contentDocument?.body?.innerText?.slice(0,1000)
+      };}catch(e){return {url:frame?.src,error:e.message};}
+    });
+    throw Error('Scramjet did not render the test website: '+
+      JSON.stringify(snapshot)+'; original '+error.message);
+  });
 
   // The companion must work without unmounting the proxied iframe.
   await page.getByRole('button',{name:'Open community Chat beside this page'}).click();
