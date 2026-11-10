@@ -1,5 +1,6 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useState,useRef} from 'react';
 import {Arcade} from './Arcade.jsx';
+import {useElementFullscreen} from './useElementFullscreen.js';
 import {readLocal,saveLocal} from './constants.js';
 import {
   Globe24Filled,Chat24Filled,Cloud24Filled,MusicNote224Filled,
@@ -91,6 +92,8 @@ function Focus(){
 export function Apps({onNavigate,onMusic,user,live,onAuth}){
   const [query,setQuery]=useState('');
   const [opened,setOpened]=useState(null);
+  const gameSurface=useRef(null);
+  const {isFullscreen,fullscreenError,toggleFullscreen}=useElementFullscreen(gameSurface);
   const selected=launchers.find(app=>app.id===opened);
   const filtered=launchers.filter(app=>(app.label+' '+app.description).toLowerCase().includes(query.toLowerCase()));
   const open=id=>{
@@ -102,7 +105,17 @@ export function Apps({onNavigate,onMusic,user,live,onAuth}){
     <div className="celestial-apps-inner">
       {selected?<><button className="celestial-apps-return" onClick={()=>setOpened(null)}><ArrowLeft20Filled/> All apps</button>
         <header className="celestial-apps-heading"><span className="celestial-section-kicker">CELESTIAL / APPS</span><h1>{selected.label}</h1><p>{selected.description}</p></header>
-        <div className="celestial-tool-shell">
+        <div className="celestial-tool-shell" ref={gameSurface}>
+          {selected.game&&<div className="celestial-game-toolbar">
+            <span><i/> PLAYING / {selected.label.toUpperCase()}</span>
+            <button type="button" onClick={toggleFullscreen}
+              aria-label={isFullscreen?'Exit game fullscreen':'Play fullscreen'}
+              title={isFullscreen?'Exit fullscreen (Esc)':'Fullscreen this game'}>
+              <span aria-hidden="true">{isFullscreen?'⊟':'⛶'}</span>
+              {isFullscreen?'Exit fullscreen':'Fullscreen'}
+            </button>
+          </div>}
+          {fullscreenError&&<p className="celestial-game-error" role="alert">{fullscreenError}</p>}
           {selected.game?<Arcade embedded gameId={selected.id} live={live} user={user} onAuth={onAuth}/>:selected.id==='notes'?<Notes/>:selected.id==='calculator'?<Calculator/>:<Focus/>}
         </div>
       </>:<>
