@@ -201,7 +201,18 @@ try{
   // Fullscreen is also available for real playable Apps, not just webpages.
   await page.locator('.dock').getByRole('button',{name:'Apps'}).click();
   await page.locator('.celestial-app-tile').filter({hasText:'2048'}).click();
-  await page.getByRole('button',{name:'Play fullscreen'}).click();
+  await page.screenshot({path:path.join(screenshots,'game-window.png'),fullPage:true});
+  const gameButton=page.getByRole('button',{name:'Play fullscreen'});
+  if(await gameButton.count()===0){
+    const status=await page.evaluate(()=>({
+      route:location.hash,
+      app:document.querySelector('.celestial-apps-page')?.textContent?.slice(0,600),
+      toolbar:document.querySelector('.celestial-game-toolbar')?.outerHTML||null,
+      error:document.querySelector('.celestial-loading')?.textContent||null
+    }));
+    throw Error('Game fullscreen control was not rendered: '+JSON.stringify(status));
+  }
+  await gameButton.click();
   await page.waitForFunction(()=>document.fullscreenElement?.classList.contains('celestial-tool-shell'),
     null,{timeout:10000});
   await page.screenshot({path:path.join(screenshots,'game-fullscreen.png'),fullPage:true});
