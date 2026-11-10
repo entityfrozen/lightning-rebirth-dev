@@ -89,8 +89,20 @@ function Minesweeper(){
   <div className="forest-game-controls"><button onClick={()=>setGame(initialMines())}>Restart ↗</button><span>{game.over?game.won?'You cleared the field!':'Boom. Try again.':'First click is always safe.'}</span></div>
  </div>;
 }
+const chessLevels=[
+ {id:'easy',label:'Easy',description:'Unpredictable moves. A good place to start.'},
+ {id:'normal',label:'Normal',description:'Plays for material and simple tactics.'},
+ {id:'hard',label:'Hard',description:'Looks further ahead and spots more threats.'},
+ {id:'expert',label:'Expert',description:'The toughest bot, with a deeper search.'}
+];
 function Chess({live,user}){
- const game=live.chess,[selected,setSelected]=useState(null),[queued,setQueued]=useState(false);
+ const game=live.chess;
+ const [selected,setSelected]=useState(null),[queued,setQueued]=useState(false);
+ const [level,setLevel]=useState(()=>{
+  const saved=readLocal('celestial-chess-level','normal');
+  return chessLevels.some(item=>item.id===saved)?saved:'normal';
+ });
+ useEffect(()=>saveLocal('celestial-chess-level',level),[level]);
  useEffect(()=>setSelected(null),[game?.fen]);
  useEffect(()=>{if(game)setQueued(false);},[game?.id]);
  const rows=useMemo(()=>{
@@ -101,23 +113,52 @@ function Chess({live,user}){
  const targets=new Set(legal.filter(m=>m.from===selected).map(m=>m.to));
  const from=new Set(legal.map(m=>m.from));
  const order=game?.color==='b'?[7,6,5,4,3,2,1,0]:[0,1,2,3,4,5,6,7];
+ const startBot=()=>live.send({type:'chessBot',difficulty:level});
  const select=square=>{
   if(!game||game.over||game.turn!==game.color)return;
   if(selected&&targets.has(square)){
    live.send({type:'chessMove',id:game.id,from:selected,to:square,promotion:'q'});setSelected(null);
   }else setSelected(from.has(square)?square:null);
  };
- if(!game)return <div className="forest-game-stage"><div className="forest-game-symbol">♞</div><h2>Chess</h2><p>Challenge someone online or face Celestial's chess bot.</p>
-   <div className="forest-game-controls"><button disabled={!user||!live.connected||queued} onClick={()=>{live.send({type:'queue',game:'chess'});setQueued(true)}}>{queued?'Finding an opponent…':'Find a player'}</button><button disabled={!user||!live.connected} onClick={()=>live.send({type:'chessBot',difficulty:'normal'})}>Play versus bot</button>{queued&&<button onClick={()=>{live.send({type:'chessCancelQueue'});setQueued(false)}}>Cancel</button>}</div></div>;
- return <div className="forest-game-stage"><div className="forest-game-heading"><h2>Chess</h2><span>{game.over?game.result:game.turn===game.color?'YOUR TURN':'OPPONENT TURN'}</span></div>
+ if(!game)return <div className="forest-game-stage celestial-chess-stage">
+   <div className="forest-game-heading"><h2>Chess</h2><span>SOLO / MULTIPLAYER</span></div>
+   <p>Play a bot at your level, or find another player online.</p>
+   <div className="celestial-chess-difficulty">
+     <div className="celestial-chess-difficulty-heading"><strong>Bot difficulty</strong><span>Choose before starting</span></div>
+     <div className="celestial-chess-levels" role="group" aria-label="Chess bot difficulty">
+       {chessLevels.map(item=><button key={item.id} type="button" className={level===item.id?'selected':''}
+         aria-pressed={level===item.id} onClick={()=>setLevel(item.id)}>{item.label}</button>)}
+     </div>
+     <p className="celestial-chess-level-description">{chessLevels.find(item=>item.id===level)?.description}</p>
+   </div>
+   <div className="forest-game-controls">
+     <button disabled={!user||!live.connected} onClick={startBot}>Play {chessLevels.find(item=>item.id===level)?.label} bot</button>
+     <button disabled={!user||!live.connected||queued} onClick={()=>{live.send({type:'queue',game:'chess'});setQueued(true)}}>
+       {queued?'Finding an opponent…':'Find a player'}</button>
+     {queued&&<button onClick={()=>{live.send({type:'chessCancelQueue'});setQueued(false)}}>Cancel search</button>}
+   </div>
+   {!user&&<small>Sign in to play. Your difficulty choice will be saved on this device.</small>}
+ </div>;
+ return <div className="forest-game-stage celestial-chess-stage">
+   <div className="forest-game-heading"><h2>Chess</h2><span>{game.over?game.result:game.turn===game.color?'YOUR TURN':'OPPONENT TURN'}</span></div>
    <div className="forest-chess-layout"><div className="forest-chess-board">{order.flatMap(y=>order.map(x=>{
      const square='abcdefgh'[x]+(8-y),piece=rows[y]?.[x]||'';
      return <button key={square} title={square} aria-label={square+' '+(piece||'empty')} onClick={()=>select(square)}
        className={'forest-chess-square '+((x+y)%2?'dark':'light')+(selected===square?' selected':'')+(targets.has(square)?' target':'')}>
        {pieces[piece]||''}</button>;
-   }))}</div><aside><span className="eyebrow">LIVE MATCH</span><h3>{game.color==='w'?'White pieces':'Black pieces'}</h3><p>{game.over?game.result:game.turn===game.color?'Choose a piece and make your move.':'Waiting for your opponent.'}</p><small>LAST MOVE: {game.last||'Opening'}</small><button onClick={()=>live.send({type:'chessSync',id:game.id})}>Refresh board ↻</button>
-   {!game.over&&<button onClick={()=>{if(confirm('Resign this game?'))live.send({type:'chessResign',id:game.id});}}>Resign</button>}
-   {game.over&&<button onClick={()=>{live.setChess(null);live.send({type:'chessBot',difficulty:'normal'})}}>New game</button>}</aside></div>
+   }))}</div>
+   <aside><span className="eyebrow">{game.bot?'BOT MATCH':'LIVE MATCH'}</span>
+     <h3>{game.color==='w'?'Playing White':'Playing Black'}</h3>
+     <p>{game.over?game.result:game.turn===game.color?'Choose a piece, then a highlighted square.':'Waiting for your opponent.'}</p>
+     {game.bot&&<div className="celestial-chess-bot-level">Bot difficulty <strong>{chessLevels.find(item=>item.id===game.difficulty)?.label||'Normal'}</strong></div>}
+     <small>LAST MOVE: {game.last||'Opening'}</small>
+     {(game.history?.length>0)&&<div className="celestial-chess-history" aria-label="Moves played">
+       {game.history.slice(-12).map((move,i)=><span key={game.history.length-12+i}>{move}</span>)}
+     </div>}
+     <button onClick={()=>live.send({type:'chessSync',id:game.id})}>Refresh board ↻</button>
+     {!game.over&&<button onClick={()=>{if(confirm('Resign this game?'))live.send({type:'chessResign',id:game.id});}}>Resign</button>}
+     {game.over&&<button onClick={()=>{live.setChess(null);startBot()}}>Play again · {chessLevels.find(item=>item.id===level)?.label}</button>}
+   </aside></div>
  </div>;
 }
 const symbols={rock:'✊',paper:'✋',scissors:'✌️'};
