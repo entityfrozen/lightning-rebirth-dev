@@ -179,12 +179,21 @@ try{
   await sendButton.click();
   await page.locator('.celestial-messenger.full .messenger-message-text')
     .filter({hasText:'Celestial chat smoke test'}).waitFor({timeout:15000});
+  await page.getByRole('button',{name:'Fullscreen chat'}).click();
+  await page.waitForFunction(()=>document.fullscreenElement?.classList.contains('celestial-messenger'),
+    null,{timeout:10000});
+  await page.screenshot({path:path.join(screenshots,'chat-fullscreen.png'),fullPage:true});
+  await page.getByRole('button',{name:'Exit chat fullscreen'}).click();
+  await page.waitForFunction(()=>!document.fullscreenElement,null,{timeout:10000});
   await page.screenshot({path:path.join(screenshots,'full-chat.png'),fullPage:true});
   // Admin workspace must be present for the approved bootstrap administrator.
   await page.getByRole('button',{name:'Settings',exact:true}).first().click();
   await page.getByRole('navigation',{name:'Settings categories'}).getByRole('button',
     {name:/Administration/}).click();
   await page.locator('.celestial-admin-console').waitFor({timeout:15000});
+  await page.getByRole('textbox',{name:'Search account requests'}).fill('not-a-user');
+  await page.getByText('No matching accounts').waitFor({timeout:10000});
+  await page.getByRole('textbox',{name:'Search account requests'}).fill('');
   await page.screenshot({path:path.join(screenshots,'administration.png'),fullPage:true});
 
   console.log(JSON.stringify({
