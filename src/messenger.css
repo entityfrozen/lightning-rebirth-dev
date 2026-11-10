@@ -515,3 +515,11 @@
 @media(prefers-reduced-motion:reduce){
   .messenger-guild,.messenger-composer>button,.messenger-message-actions{transition:none}
 }
+
+/* Immersive pages should not inherit the floating landing-page widgets. */
+.celestial-workspace:has(.celestial-messenger.full) .celestial-online,
+.celestial-workspace:has(.celestial-messenger.full) .celestial-corner-actions,
+.celestial-workspace:has(.forest-browser.is-browsing) .celestial-online,
+.celestial-workspace:has(.forest-browser.is-browsing) .celestial-corner-actions {
+  display:none;
+}
