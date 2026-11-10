@@ -366,7 +366,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
           <input ref={box} value={input} onChange={e=>setInput(e.target.value)}
             aria-label="Website address" placeholder="Search or enter a web address"
             spellCheck={false} autoComplete="off"/>
-          <kbd>⌘ L</kbd>
+          <kbd>Ctrl L</kbd>
           <button type="submit" aria-label="Visit site" title="Go to address">→</button>
         </form>
         <div className="celestial-browser-tools">
