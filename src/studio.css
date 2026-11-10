@@ -839,3 +839,15 @@
   height:100%;padding:0;background:transparent;border:0;
   border-radius:0;cursor:pointer;appearance:none;
 }
+
+/* The start page has just enough movement to feel alive without distracting. */
+@keyframes celestial-studio-ambient{
+  0%,100%{opacity:.57;transform:translate(-50%,-55%) scale(.98) rotate(-3deg)}
+  50%{opacity:.84;transform:translate(-50%,-55%) scale(1.035) rotate(3deg)}
+}
+@media(prefers-reduced-motion:no-preference){
+  :root:not([data-motion="reduced"]) .forest-browser.celestial-browser-v2.new-tab
+  .forest-browser-stage::before{
+    animation:celestial-studio-ambient 18s ease-in-out infinite;
+  }
+}
