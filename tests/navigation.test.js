@@ -42,6 +42,6 @@ test('quick switcher supports keyboard access and search',()=>{
   assert.match(shell,/setJumpOpen/);
   assert.match(shell,/role="dialog" aria-modal="true" aria-label="Switch to a page"/);
   assert.match(shell,/aria-label="Find a page"/);
-  assert.match(shell,/event\.key==='Enter'/);
+  assert.match(shell,/event\.key!=='Enter'/);
   assert.match(shell,/event\.key==='Escape'/);
 });
