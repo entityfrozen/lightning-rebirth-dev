@@ -69,9 +69,11 @@ try{
   await launcher.goto('about:blank');
   await launcher.setContent(`<iframe title="Lightning launcher" src="${base}/#apps"
     style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>`);
-  await launcher.frameLocator('iframe').locator('.celestial-apps-page')
-    .waitFor({timeout:25000});
-  const framed=await launcher.frameLocator('iframe').locator('body')
+  const embedded=launcher.frameLocator('iframe');
+  await embedded.locator('input[name="username"]').waitFor({timeout:25000});
+  // This local HTTP reproduction only checks framing. HTTPS is required for
+  // the partitioned cookie used to authenticate the real launcher.
+  const framed=await embedded.locator('body')
     .evaluate(()=>({embedded:window.top!==window,selfIsolated:window.crossOriginIsolated}));
   assert.equal(framed.embedded,true,'The launcher must display the Celestial application');
   assert.equal(framed.selfIsolated,false,'about:blank does not provide cross-origin isolation');
