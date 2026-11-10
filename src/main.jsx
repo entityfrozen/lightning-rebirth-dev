@@ -7,13 +7,14 @@ import {
   ChevronLeft24Filled, Person20Filled, Sparkle20Filled
 } from '@fluentui/react-icons';
 import {DialRoot} from 'dialkit';
-import 'dialkit/styles.css';
+if(new URLSearchParams(location.search).has('tune'))import('dialkit/styles.css');
 import './styles.css';
 import './forest.css';
 import './xylora.css';
 import './home-split.css';
 import './qol.css';
 import './workspace.css';
+import './messenger.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
@@ -85,7 +86,7 @@ function AuthSheet({mode,close,onLoggedIn,locked=false}){
           Return to sign in <Icon name="arrow" size={16}/>
         </button>:<><form onSubmit={submit}>
           <label>USERNAME<input autoFocus required name="username" autoComplete="username"
-            pattern={method==='register'?'[A-Za-z0-9_]{3,20}':'[a-zA-Z0-9._-]{3,32}'}
+            pattern={method==='register'?'[A-Za-z0-9_]{3,20}':undefined}
             minLength={3} maxLength={method==='register'?20:32}
             placeholder={method==='register'?'Choose a username':'Username'}/></label>
           <label>PASSWORD<input required name="password" type="password" minLength={8} maxLength={128} autoComplete={method==='register'?'new-password':'current-password'} placeholder="At least 8 characters"/></label>
@@ -221,7 +222,7 @@ function App() {
 
   return <>
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
-    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced}/></Suspense></SceneBoundary>
+    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced||['browser','chat','apps'].includes(view)}/></Suspense></SceneBoundary>
     <div className="celestial-workspace">
       <main className="celestial-stage" id="main-content">
         <div className={'celestial-activity-layout '+(showCompanion?'with-chat':'')}>

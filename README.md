@@ -75,6 +75,12 @@ The focus timer runs only while Celestial is open.
 
 ### Chat
 
+The full Chat page and compact Chat rail now share one Messenger component:
+server navigation, focused channel list, offline/online roster, authenticated
+role badges, DM threads, replies, reactions and editing. The styling uses
+quiet graphite panels, a restrained icy accent, compact typography, and
+reliable hierarchy rather than oversized glass cards.
+
 - **Multitasking panel:** use the Chat button on the Browser/Home/Apps page to
   keep channels, private messages and community members visible while you
   browse or play. It uses the same authenticated WebSocket as full Chat.
@@ -116,6 +122,28 @@ staff-moderation tools are not yet ported into the new UI.**
 
 Bolt's model failover code is imported; its screenshot parsing and web search
 extensions are **not yet included** in Celestial's AI endpoint.
+
+## Working proxy bootstrap
+
+The original `proxy-bootstrap` library still serves the published Scramjet
+core/controller, service worker and authenticated Wisp endpoint. However, the
+library's `bootstrap-init.js` creates a `data:` module import, which our
+Content Security Policy disallows. Loading it resulted in zero requests for
+`/sw.js` or the controller after the initial JavaScript file.
+
+Celestial now uses `public/proxy-entry.js` to load those exact published
+resources from **same-origin URLs** in the documented order (worker, core,
+controller, utilities, transport), then waits for the controller's
+initialization. This preserves a restrictive `script-src`, rather than
+whitelisting arbitrary `data:` script imports. Navigation errors now include
+clear failures and retry controls.
+
+The `Browser and Chat smoke test` GitHub workflow runs headless Chromium
+with a disposable local account database. It must activate the proxy worker,
+load the runtime/controller/transport and navigate a proxied iframe; it also
+captures screenshots of Browser, split Browser+Chat, and full Chat. A build
+passing alone is not considered proof that a proxied website is fully
+compatible—some destinations still block automated or intercepted access.
 
 ## Visual direction
 

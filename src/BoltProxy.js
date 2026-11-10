@@ -1,5 +1,6 @@
-// Thin adapter around the same Mercury Workshop Scramjet integration used in Bolt.
-// The browser transport is authenticated server-side; there is no public Wisp endpoint.
+// Scramjet adapter. The page owns a same-origin loader because the upstream
+// proxy-bootstrap loader dynamically imports data: modules, blocked by our CSP.
+// Proxy assets and Wisp remain session-protected by the server.
 let controllerPromise=null;
 let keepalive=null;
 async function loadBootstrap() {
@@ -18,7 +19,7 @@ async function loadBootstrap() {
     }
     const element=document.createElement('script');
     element.dataset.celestialProxy='true';
-    element.src='/bootstrap-init.js';
+    element.src='/proxy-entry.js';
     element.onload=()=>{element.dataset.state='loaded';resolve();};
     element.onerror=()=>{element.dataset.state='error';reject(Error('Browser engine unavailable. Sign in and try again.'));};
     document.head.append(element);
@@ -28,10 +29,10 @@ async function loadBootstrap() {
 export async function getProxyController(){
   if(!controllerPromise)controllerPromise=(async()=>{
     await loadBootstrap();
-    if(!window.isSecureContext&&!['localhost','127.0.0.1'].includes(location.hostname)){
-      throw Error('Browser proxy requires HTTPS.');
-    }
+    if(!window.isSecureContext)throw Error('Open Celestial over HTTPS to use the browser.');
     if(!('serviceWorker' in navigator))throw Error('Service workers are unavailable in this browser.');
+    // The same-origin bootstrap creates its worker, loads the published
+    // runtime in order, then awaits the controller's Wisp/WASM handshake.
     const controller=await window.initBootstrap();
     if(!controller?.createFrame)throw Error('The browser engine did not finish initializing.');
     if(typeof controller.wait==='function')await controller.wait();

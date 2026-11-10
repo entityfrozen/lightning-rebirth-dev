@@ -76,26 +76,29 @@ test('Browser uses a real proxy controller and handles failures visibly',()=>{
 test('Browser, games and community Chat can stay mounted together',()=>{
   const main=read('src/main.jsx');
   const side=read('src/WorkspaceChat.jsx');
+  const messenger=read('src/Messenger.jsx');
   const css=read('src/workspace.css');
   assert.match(main,/celestial-activity-layout/);
   assert.match(main,/WorkspaceChat user=\{user\} live=\{live\}/);
   assert.match(main,/view==='apps'\?<Apps user=\{user\} live=\{live\}/);
   assert.match(main,/view==='browser'\?<Browser/);
-  assert.match(side,/type:'v2Message'/);
-  assert.match(side,/\/api\/dms\//);
+  assert.match(side,/Messenger compact/);
+  assert.match(messenger,/type:'v2Message'/);
+  assert.match(messenger,/\/api\/dms\//);
   assert.match(css,/\.celestial-activity-layout\.with-chat/);
 });
 
 test('Chat displays offline members and source-authenticated platform role badges',()=>{
   const chat=read('src/Chat.jsx');
+  const messenger=read('src/Messenger.jsx');
   const server=read('server.js');
   const community=read('community-v2.js');
-  assert.match(chat,/fullRoster/);
-  assert.match(chat,/onlineIds\.has\(person\.id\)/);
-  assert.match(chat,/celestial-role-badge/);
-  assert.match(chat,/roleStyle=\{/);
-  assert.match(chat,/admin:\{label:'ADMIN',tone:'admin'\}/);
-  assert.match(read('src/qol.css'),/\.celestial-role-badge\.admin/);
+  assert.match(messenger,/roster=useMemo/);
+  assert.match(messenger,/onlineIds\.has\(person\.id\)/);
+  assert.match(messenger,/messenger-role/);
+  assert.match(messenger,/ROLE_BADGES=\{/);
+  assert.match(messenger,/admin:\{name:'ADMIN',tone:'admin'\}/);
+  assert.match(read('src/messenger.css'),/\.messenger-role\.admin/);
   assert.match(server,/getRole:userId=>db\.users\.find/);
   assert.match(community,/platformRole:getRole\(userId\)/);
 });
