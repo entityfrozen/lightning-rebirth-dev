@@ -16,6 +16,7 @@ import './qol.css';
 import './workspace.css';
 import './messenger.css';
 import './studio.css';
+import './refinement.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';

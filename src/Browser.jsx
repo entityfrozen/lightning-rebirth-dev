@@ -136,6 +136,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
   const [showBookmarks,setShowBookmarks]=useState(false);
   const [closedTabs,setClosedTabs]=useState([]);
   const [menuOpen,setMenuOpen]=useState(false);
+  const [notice,setNotice]=useState('');
   const root=useRef(null);
   const controls=useRef(new Map()),box=useRef(null),lastLaunch=useRef(null);
   const current=useMemo(()=>tabs.find(t=>t.id===activeId)||tabs[0], [tabs,activeId]);
@@ -167,6 +168,29 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
       // Browser policy can deny fullscreen; the button remains available.
       setMenuOpen(false);
     }
+  };
+  const copyAddress=async()=>{
+    if(!visibleUrl)return;
+    try{
+      await navigator.clipboard.writeText(visibleUrl);
+      setNotice('Address copied');
+    }catch{
+      setNotice('Clipboard unavailable. Select the address bar to copy.');
+    }
+    setMenuOpen(false);
+  };
+  const reconnect=()=>{
+    if(!currentId||!visibleUrl)return;
+    setRetry(all=>({...all,[currentId]:(all[currentId]||0)+1}));
+    setNotice('Reconnecting this tab…');
+    setMenuOpen(false);
+  };
+  const closeOtherTabs=()=>{
+    if(!current)return;
+    setClosedTabs(all=>[...all,...tabs.filter(tab=>tab.id!==current.id&&tab.url)].slice(-8));
+    setTabs([current]);
+    setActiveId(current.id);
+    setMenuOpen(false);
   };
   const restoreClosedTab=()=>{
     const tab=closedTabs.at(-1);
@@ -278,7 +302,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
       <div className="celestial-browser-topline">
         <span className="celestial-browser-identity"><span className="celestial-browser-star">✦</span> CELESTIAL <em>/ BROWSER</em></span>
         <div className="celestial-browser-top-actions">
-          <span className="celestial-browser-session">{tabs.length} {tabs.length===1?'tab':'tabs'} open</span>
+          <span className="celestial-browser-session" role="status">{notice||`${tabs.length} ${tabs.length===1?'tab':'tabs'} open`}</span>
           <button type="button" className="celestial-browser-top-button" onClick={toggleFullscreen}
             title={fullScreen?'Exit fullscreen (Esc)':'Fullscreen (Ctrl+Shift+F)'}
             aria-label={fullScreen?'Exit browser fullscreen':'Enter browser fullscreen'}
@@ -329,7 +353,10 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
           ↶ Reopen closed tab <kbd>Ctrl Shift T</kbd></button>
         <button onClick={()=>{toggleFullscreen();setMenuOpen(false);}}>⛶ {fullScreen?'Exit fullscreen':'Fullscreen'} <kbd>Ctrl Shift F</kbd></button>
         <button onClick={()=>{setShowBookmarks(v=>!v);setMenuOpen(false);}}>☆ Bookmarks</button>
-        <span>Tabs are saved on this device.</span>
+        <button disabled={!visibleUrl} onClick={copyAddress}>⧉ Copy page address</button>
+        <button disabled={!visibleUrl} onClick={reconnect}>↻ Reset tab connection</button>
+        <button disabled={tabs.length<2} onClick={closeOtherTabs}>× Close other tabs</button>
+        <span>Tabs and bookmarks are saved on this device.</span>
       </div>}
     </div>}
     <div className="forest-browser-stage">
