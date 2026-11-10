@@ -1,0 +1,659 @@
+/*
+ * Celestial account access
+ * The form stays quiet; all the motion lives behind it.
+ */
+.celestial-auth.overlay {
+  isolation: isolate;
+  padding: clamp(16px, 4vh, 38px) 22px;
+  overflow-y: auto;
+  background: #060d0f;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.celestial-auth.overlay::before,
+.celestial-auth.overlay::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  inset: -30%;
+  pointer-events: none;
+}
+.celestial-auth.overlay::before {
+  background:
+    radial-gradient(ellipse 35% 40% at 19% 25%, #214b385c, transparent 75%),
+    radial-gradient(ellipse 38% 40% at 80% 85%, #1f55604e, transparent 76%);
+}
+.celestial-auth.overlay::after {
+  background-image:
+    linear-gradient(#a0dccb09 1px, transparent 1px),
+    linear-gradient(90deg, #a0dccb09 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse at center, #0008, transparent 72%);
+}
+.celestial-auth .auth-sheet--v2 {
+  display: grid;
+  grid-template-columns: 49% 51%;
+  position: relative;
+  isolation: isolate;
+  width: min(1010px, 100%);
+  min-height: min(660px, calc(100dvh - 60px));
+  max-height: none;
+  border: 1px solid #526b5b66;
+  border-radius: 23px;
+  overflow: hidden;
+  background: #101819;
+  color: #e7f3ec;
+  box-shadow: 0 34px 100px #000a, 0 0 0 1px #e1ffe908 inset;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: celestial-auth-arrive .7s cubic-bezier(.2,.72,.13,1) both;
+}
+.celestial-auth .auth-art {
+  min-width: 0;
+  padding: 37px 38px 35px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  justify-content: space-between;
+  align-items: stretch;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 45%, #27634663 0, #163c2d3d 30%, transparent 61%),
+    linear-gradient(153deg, #0d2523 0%, #102b25 42%, #091a1b 100%);
+  border-right: 1px solid #9edac020;
+}
+.celestial-auth .auth-art::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(90deg,#dcffe507 1px,transparent 1px),
+    linear-gradient(#dcffe507 1px,transparent 1px);
+  background-size: 35px 35px;
+  mask-image: linear-gradient(#0008, transparent 85%);
+  pointer-events: none;
+}
+.celestial-auth .auth-art::after {
+  content: "";
+  width: 190%;
+  height: 120%;
+  position: absolute;
+  top: -95%;
+  left: -110%;
+  background: linear-gradient(90deg,transparent 35%,#c0ffe30c 50%,transparent 65%);
+  transform: rotate(27deg);
+  animation: celestial-auth-beam 11s ease-in-out 1.5s infinite;
+  pointer-events: none;
+}
+.celestial-auth .auth-brand {
+  display: inline-flex;
+  position: relative;
+  z-index: 4;
+  align-items: center;
+  gap: 12px;
+  width: fit-content;
+  color: #edfff2;
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -.07em;
+  line-height: 1;
+  animation: celestial-auth-fade-up .7s .1s both;
+}
+.celestial-auth .auth-brand img {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 14px #b9ffd456);
+}
+.celestial-auth .auth-brand-dot,
+.celestial-auth .auth-art-copy h2 span { color: #adf1bc; }
+.celestial-auth .auth-constellation {
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+  width: 380px;
+  height: 380px;
+  left: 50%;
+  top: 47%;
+  margin-left: -190px;
+  margin-top: -190px;
+}
+.celestial-auth .auth-constellation::before {
+  content: "";
+  position: absolute;
+  inset: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle,#92eeac28 1%,#62b69611 30%,transparent 68%);
+  filter: blur(13px);
+  animation: celestial-auth-breathe 6.5s ease-in-out infinite;
+}
+.celestial-auth .auth-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  transform: translate(-50%,-50%);
+}
+.celestial-auth .auth-orbit--outer {
+  width: 355px;
+  height: 355px;
+  border: 1px solid #acffdb37;
+  box-shadow: 0 0 42px #65d7a909 inset;
+  animation: celestial-auth-spin 48s linear infinite;
+}
+.celestial-auth .auth-orbit--middle {
+  width: 288px;
+  height: 288px;
+  border: 1px dashed #b7f0c958;
+  animation: celestial-auth-spin-reverse 36s linear infinite;
+}
+.celestial-auth .auth-orbit--inner {
+  width: 208px;
+  height: 208px;
+  border: 1px solid #bfffd62c;
+  box-shadow: 0 0 34px #a0ffb00d;
+}
+.celestial-auth .auth-orbit--outer span,
+.celestial-auth .auth-orbit--middle span {
+  position: absolute;
+  display: block;
+  width: 7px;
+  height: 7px;
+  top: 22%;
+  left: 7%;
+  border-radius: 50%;
+  background: #c7ffdb;
+  box-shadow: 0 0 12px #b9ffcd,0 0 32px #8af9b6;
+}
+.celestial-auth .auth-orbit--middle span {
+  top: 78%;
+  left: 84%;
+  width: 5px;
+  height: 5px;
+  background: #adf7de;
+}
+.celestial-auth .auth-core {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  width: 146px;
+  height: 146px;
+  margin: -73px 0 0 -73px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #b3f9cd75;
+  border-radius: 39%;
+  background:
+    radial-gradient(circle at 29% 22%,#bcffd467,transparent 45%),
+    linear-gradient(145deg,#255f49,#113b36 60%,#15352f);
+  transform: rotate(-13deg);
+  box-shadow: 0 0 85px #b1ffd52c,0 19px 42px #0007,inset 0 1px 28px #c5ffd72e;
+  animation: celestial-auth-hover 6.5s ease-in-out infinite;
+}
+.celestial-auth .auth-core img {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  transform: rotate(13deg);
+  filter: drop-shadow(0 0 22px #b2ffbf9a);
+}
+.celestial-auth .auth-core-glint {
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  top: 24px;
+  right: 23px;
+  border-radius: 50%;
+  background: #f3fff8b8;
+  filter: blur(9px);
+}
+.celestial-auth .auth-spark {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  width: 3px;
+  height: 3px;
+  background: #e1ffed;
+  box-shadow: 0 0 9px #b5ffd0;
+  animation: celestial-auth-twinkle 4s ease-in-out infinite;
+}
+.celestial-auth .auth-spark--one { top: 10%;left: 29%;animation-delay: .3s; }
+.celestial-auth .auth-spark--two { top: 27%;right: 4%;animation-delay: 1.6s; }
+.celestial-auth .auth-spark--three { bottom: 17%;left: 8%;animation-delay: 2.1s; }
+.celestial-auth .auth-spark--four { bottom: 7%;right: 24%;animation-delay: 3s; }
+.celestial-auth .auth-art-copy {
+  position: relative;
+  z-index: 3;
+  margin-top: auto;
+  margin-bottom: 30px;
+  animation: celestial-auth-fade-up .85s .35s both;
+}
+.celestial-auth .auth-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #b8dbc5;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+}
+.celestial-auth .auth-kicker-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #b5f3bc;
+  box-shadow: 0 0 12px #91efa8;
+}
+.celestial-auth .auth-art-copy h2 {
+  position: relative;
+  z-index: 2;
+  margin: 17px 0 13px;
+  color: #effff5;
+  font-size: clamp(35px, 4vw, 51px);
+  line-height: 1.07;
+  letter-spacing: -.07em;
+  font-weight: 750;
+}
+.celestial-auth .auth-art-copy p {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  max-width: 295px;
+  color: #b5ccbe;
+  font-size: 12px;
+  line-height: 1.8;
+  letter-spacing: .005em;
+}
+.celestial-auth .auth-art-footer {
+  position: absolute;
+  z-index: 4;
+  left: 38px;
+  right: 38px;
+  bottom: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #91b49f;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .15em;
+}
+
+.celestial-auth .auth-fields {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 52px clamp(30px,5vw,67px) 32px;
+  background: linear-gradient(155deg,#121d1e,#10191b 56%,#0e1719);
+  color: #ebf6f0;
+}
+.celestial-auth .auth-form-content {
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  animation: celestial-auth-fade-up .85s .18s both;
+}
+.celestial-auth .auth-mobile-mark {display:none;}
+.celestial-auth .auth-overline {
+  display: block;
+  color: #9adbaa;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+.celestial-auth .auth-form-intro h1,
+.celestial-auth .auth-requested h1 {
+  margin: 13px 0 10px;
+  color: #f0fbf3;
+  font-size: clamp(29px,3.5vw,38px);
+  font-weight: 760;
+  letter-spacing: -.065em;
+  line-height: 1.14;
+}
+.celestial-auth .auth-form-intro p,
+.celestial-auth .auth-requested p {
+  margin: 0;
+  color: #a7bcaf;
+  font-size: 12px;
+  line-height: 1.75;
+}
+.celestial-auth .auth-mode-switch {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 4px;
+  margin: 28px 0 26px;
+  padding: 4px;
+  border: 1px solid #31443f;
+  border-radius: 11px;
+  background: #0c1517;
+}
+.celestial-auth .auth-mode-switch button {
+  min-height: 40px;
+  padding: 8px 10px;
+  color: #8da69b;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 710;
+  transition: background .2s,border-color .2s,color .2s,box-shadow .2s;
+}
+.celestial-auth .auth-mode-switch button:hover:not(.is-active) {color:#e3f4e9;}
+.celestial-auth .auth-mode-switch button.is-active {
+  background: #253a34;
+  border-color: #5d7e6a75;
+  color: #e3f9eb;
+  box-shadow: 0 2px 8px #0005;
+}
+.celestial-auth .auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  animation: celestial-auth-form-swap .35s cubic-bezier(.2,.72,.15,1) both;
+}
+.celestial-auth .auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: #c7d9ce;
+  font-size: 11px;
+  font-weight: 680;
+  letter-spacing: .015em;
+}
+.celestial-auth .auth-field > input,
+.celestial-auth .auth-password-wrap input {
+  display: block;
+  width: 100%;
+  height: 49px;
+  min-height: 49px;
+  padding: 0 15px;
+  border: 1px solid #334743;
+  border-radius: 9px;
+  outline: none;
+  background: #182626 !important;
+  color: #f3fcf6 !important;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  transition: border-color .22s,box-shadow .22s,background .22s;
+}
+.celestial-auth .auth-field input::placeholder {color:#768d82;opacity:1;}
+.celestial-auth .auth-field input:hover {border-color:#537366;}
+.celestial-auth .auth-field input:focus {
+  border-color: #97d8a8;
+  background: #1b302a !important;
+  box-shadow: 0 0 0 3px #a9f7bb20;
+}
+.celestial-auth .auth-field input:-webkit-autofill {
+  -webkit-text-fill-color: #f3fcf6;
+  -webkit-box-shadow: 0 0 0 100px #1b302a inset;
+  caret-color:#f3fcf6;
+}
+.celestial-auth .auth-password-wrap {position:relative;display:block;}
+.celestial-auth .auth-password-wrap input {padding-right:66px;}
+.celestial-auth .auth-reveal {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  transform: translateY(-50%);
+  padding: 8px 7px;
+  min-width: 47px;
+  color: #b6dbbf;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 720;
+}
+.celestial-auth .auth-reveal:hover {background:#b4fbc014;color:#ecfff1;}
+.celestial-auth .auth-submit {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 8px;
+  padding: 12px 20px;
+  overflow: hidden;
+  border: 1px solid #edffea70;
+  border-radius: 9px;
+  background: #b1eabd;
+  color: #0c2b20;
+  font-size: 13px;
+  font-weight: 820;
+  letter-spacing: -.005em;
+  box-shadow: 0 8px 30px #a9f8c01c;
+  transition: background .2s,transform .2s,box-shadow .2s;
+}
+.celestial-auth .auth-submit::before {
+  content: "";
+  position: absolute;
+  top: -120%;
+  bottom: -120%;
+  width: 32%;
+  left: -55%;
+  transform: skewX(-24deg);
+  background: linear-gradient(90deg,transparent,#ffffff78,transparent);
+  transition: left .6s ease;
+}
+.celestial-auth .auth-submit:hover:not(:disabled) {
+  background: #ccf8cf;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 36px #a9f8c039;
+}
+.celestial-auth .auth-submit:hover:not(:disabled)::before {left:125%;}
+.celestial-auth .auth-submit:active:not(:disabled) {transform:translateY(0);}
+.celestial-auth .auth-submit:disabled {cursor:wait;opacity:.7;}
+.celestial-auth .auth-submit-arrow {display:inline-flex;align-items:center;}
+.celestial-auth .auth-form-note {
+  margin: 21px 0 0;
+  text-align: center;
+  color: #849e91;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.celestial-auth .auth-form-note span {color:#bbf2c9;margin-right:5px;}
+.celestial-auth .auth-form-note button {
+  border: none;
+  padding: 0 2px;
+  background: transparent;
+  color: #baf4c6;
+  font-size: inherit;
+  font-weight: 760;
+  text-decoration: none;
+}
+.celestial-auth .auth-form-note button:hover {text-decoration:underline;}
+.celestial-auth .form-error {
+  border:1px solid #b2656488;
+  background:#853a3e21;
+  color:#ffc2bb;
+  border-radius:8px;
+  padding:11px 12px;
+  font-size:11px;
+  letter-spacing:0;
+  line-height:1.5;
+}
+.celestial-auth .auth-close {
+  top: 15px;
+  right: 15px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #54736650;
+  background: #263b3540;
+  color:#b6d0be;
+  font-size:21px;
+}
+.celestial-auth .auth-close:hover {color:white;background:#36514578;}
+.celestial-auth .auth-bottom-line {
+  position: absolute;
+  left: clamp(30px,5vw,67px);
+  right: clamp(30px,5vw,67px);
+  bottom: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #5e786d;
+  font-size: 9px;
+  font-weight: 710;
+  letter-spacing: .13em;
+}
+.celestial-auth .auth-requested {
+  animation: celestial-auth-fade-up .6s ease both;
+}
+.celestial-auth .auth-requested p {margin:0 0 28px;}
+.celestial-auth .auth-success-mark {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  margin: 0 0 25px;
+  border-radius: 19px;
+  background: #b8f2c3;
+  box-shadow: 0 0 0 8px #b8f2c317,0 0 48px #8be6a028;
+  color: #133829;
+  font-size: 32px;
+  font-weight: 800;
+}
+.celestial-auth .auth-requested .auth-submit {
+  margin-top: 0;
+}
+.celestial-auth :is(button,input):focus-visible {
+  outline:2px solid #b8ffc9;
+  outline-offset:3px;
+}
+
+@keyframes celestial-auth-arrive {
+  from {opacity:0;transform:translateY(26px) scale(.985);filter:blur(5px);}
+  to {opacity:1;transform:translateY(0) scale(1);filter:blur(0);}
+}
+@keyframes celestial-auth-fade-up {
+  from {opacity:0;transform:translateY(15px);}
+  to {opacity:1;transform:translateY(0);}
+}
+@keyframes celestial-auth-form-swap {
+  from {opacity:0;transform:translateY(9px);}
+  to {opacity:1;transform:translateY(0);}
+}
+@keyframes celestial-auth-spin {
+  from {transform:translate(-50%,-50%) rotate(0);}
+  to {transform:translate(-50%,-50%) rotate(360deg);}
+}
+@keyframes celestial-auth-spin-reverse {
+  from {transform:translate(-50%,-50%) rotate(360deg);}
+  to {transform:translate(-50%,-50%) rotate(0);}
+}
+@keyframes celestial-auth-hover {
+  0%,100% {transform:translateY(0) rotate(-13deg);}
+  50% {transform:translateY(-12px) rotate(-8deg);}
+}
+@keyframes celestial-auth-twinkle {
+  0%,100% {opacity:.18;transform:scale(.6);}
+  45% {opacity:1;transform:scale(1.5);}
+}
+@keyframes celestial-auth-breathe {
+  0%,100% {opacity:.5;transform:scale(.95);}
+  50% {opacity:1;transform:scale(1.09);}
+}
+@keyframes celestial-auth-beam {
+  0%,20% {top:-95%;left:-110%;opacity:0;}
+  40%,58% {opacity:.9;}
+  75%,100% {top:80%;left:90%;opacity:0;}
+}
+
+@media (max-width: 810px) {
+  .celestial-auth .auth-sheet--v2 {
+    grid-template-columns: 41% 59%;
+    min-height: 640px;
+  }
+  .celestial-auth .auth-art {padding:31px 28px;}
+  .celestial-auth .auth-art-footer {left:28px;right:28px;}
+  .celestial-auth .auth-art-copy h2 {font-size:36px;}
+  .celestial-auth .auth-constellation {transform:scale(.83);}
+  .celestial-auth .auth-fields {padding-left:36px;padding-right:36px;}
+  .celestial-auth .auth-bottom-line {left:36px;right:36px;}
+}
+@media (max-width: 690px) {
+  .celestial-auth .auth-sheet--v2 {
+    grid-template-columns:1fr;
+    width:min(480px,100%);
+    min-height:0;
+    max-height:none;
+    overflow:visible;
+    border-radius:19px;
+  }
+  .celestial-auth .auth-art {
+    height:178px;
+    min-height:178px;
+    padding:24px 27px 21px;
+    border-right:0;
+    border-bottom:1px solid #9edac020;
+    border-radius:18px 18px 0 0;
+  }
+  .celestial-auth .auth-brand {font-size:20px;gap:9px;}
+  .celestial-auth .auth-brand img {width:25px;height:25px;}
+  .celestial-auth .auth-art-copy {margin:0;}
+  .celestial-auth .auth-art-copy h2 {font-size:29px;margin:9px 0 0;line-height:1.04;}
+  .celestial-auth .auth-art-copy p,
+  .celestial-auth .auth-art-footer {display:none;}
+  .celestial-auth .auth-kicker {font-size:8px;}
+  .celestial-auth .auth-constellation {
+    left:auto;right:-205px;top:4px;margin:0;
+    transform:scale(.65);
+    transform-origin:center center;
+    opacity:.83;
+  }
+  .celestial-auth .auth-fields {
+    min-height:520px;
+    border-radius:0 0 18px 18px;
+    padding:38px 36px 52px;
+  }
+  .celestial-auth .auth-form-intro h1 {font-size:31px;}
+  .celestial-auth .auth-bottom-line {bottom:19px;left:36px;right:36px;}
+}
+@media (max-width: 420px) {
+  .celestial-auth.overlay {padding:0;display:block;}
+  .celestial-auth .auth-sheet--v2 {
+    width:100%;
+    min-height:100dvh;
+    border-radius:0;
+    border:0;
+    box-shadow:none;
+  }
+  .celestial-auth .auth-art {height:164px;min-height:164px;border-radius:0;}
+  .celestial-auth .auth-art-copy h2 {font-size:27px;}
+  .celestial-auth .auth-fields {
+    flex:1;
+    min-height:calc(100dvh - 164px);
+    border-radius:0;
+    padding:30px 26px 50px;
+  }
+  .celestial-auth .auth-form-intro h1 {font-size:29px;}
+  .celestial-auth .auth-mode-switch {margin:22px 0;}
+  .celestial-auth .auth-form {gap:15px;}
+  .celestial-auth .auth-field input,
+  .celestial-auth .auth-password-wrap input {min-height:46px;height:46px;}
+  .celestial-auth .auth-bottom-line {left:26px;right:26px;}
+}
+@media (max-height: 710px) and (min-width: 691px) {
+  .celestial-auth .auth-sheet--v2 {min-height:570px;}
+  .celestial-auth .auth-fields {padding-top:34px;padding-bottom:44px;}
+  .celestial-auth .auth-mode-switch {margin:19px 0;}
+  .celestial-auth .auth-form {gap:12px;}
+  .celestial-auth .auth-art-copy h2 {font-size:40px;}
+}
+@media (prefers-reduced-motion: reduce) {
+  .celestial-auth *,
+  .celestial-auth *::before,
+  .celestial-auth *::after {animation:none!important;transition:none!important;}
+}
+:root[data-motion="reduced"] .celestial-auth *,
+:root[data-motion="reduced"] .celestial-auth *::before,
+:root[data-motion="reduced"] .celestial-auth *::after {animation:none!important;transition:none!important;}
