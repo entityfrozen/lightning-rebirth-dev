@@ -10,14 +10,14 @@ import {getCloakSettings,saveCloak,cloakPresets,openCloakedTab} from './Cloak.js
 import {AccountReview} from './AccountReview.jsx';
 
 const palettes=[
-  {id:'aurora',name:'Aurora',description:'Midnight blue and icy teal'},
+  {id:'aurora',name:'Graphite',description:'Soft charcoal with a subtle mint glow'},
   {id:'jade',name:'Evergreen',description:'Pine green with fresh mint'},
   {id:'amethyst',name:'Amethyst',description:'Soft violet on deep purple'}
 ];
 const backdrops=[
-  {id:'aurora',name:'Northern lights'},
+  {id:'aurora',name:'Graphite glow'},
   {id:'forest',name:'Deep forest'},
-  {id:'minimal',name:'Midnight gradient'}
+  {id:'minimal',name:'Blackout gradient'}
 ];
 const panels=[
   {id:'appearance',label:'Appearance',description:'How Celestial looks',icon:Color24Filled},
