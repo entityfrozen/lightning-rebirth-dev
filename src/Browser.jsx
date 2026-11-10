@@ -27,6 +27,7 @@ const savedTabs=()=> {
 };
 function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
   const iframe=useRef(null),frame=useRef(null),loadingTimeout=useRef(null);
+  const lastRenderedDocument=useRef(null);
   const lastUrl=useRef(''),navigateRef=useRef(onNavigate),popupRef=useRef(onPopup);
   const [state,setState]=useState('loading'),[error,setError]=useState('');
   const [loadedOnce,setLoadedOnce]=useState(false);
@@ -37,6 +38,22 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
     const el=iframe.current;
     if(!el||!tab.url)return;
     setState('loading');setError('');setLoadedOnce(false);
+    lastRenderedDocument.current=null;
+    // Scramjet replaces iframe documents through a service worker.
+    // Chromium may render those documents without firing the host iframe's
+    // onLoad callback reliably. Watch the real proxied document instead.
+    const watchDocument=setInterval(()=>{
+      if(cancelled||!frame.current)return;
+      try{
+        if(!el.src.includes('/~/sj/'))return;
+        const doc=el.contentDocument;
+        if(!doc||doc===lastRenderedDocument.current||doc.readyState==='loading')return;
+        if(!doc.body||(doc.body.children.length===0&&!doc.body.textContent?.trim()))return;
+        lastRenderedDocument.current=doc;
+        clearTimeout(loadingTimeout.current);
+        setState('ready');setError('');setLoadedOnce(true);
+      }catch{}
+    },180);
     clearTimeout(loadingTimeout.current);
     loadingTimeout.current=setTimeout(()=>{
       if(!cancelled){setState('error');setError('The site took too long to respond. Try again or open it directly.');}
@@ -50,7 +67,13 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
         if(!status.authenticated)throw Error('Sign in to browse in Celestial.');
         if(!status.proxy)throw Error('The browser engine is unavailable on this server.');
         const connection=await createProxyFrame(el,
-          url=>{if(!cancelled)navigateRef.current(tab.id,url);},
+          url=>{
+            if(cancelled)return;
+            // The proxy already navigated: sync the address bar without
+            // sending frame.go() a second time for the same navigation.
+            lastUrl.current=url;
+            navigateRef.current(tab.id,url);
+          },
           url=>{if(!cancelled)popupRef.current(url);});
         if(cancelled){disposeProxyFrame(connection);return;}
         frame.current=connection;
@@ -65,7 +88,10 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
         if(!cancelled){clearTimeout(loadingTimeout.current);setState('error');setError(failure.message||'Unable to open this site.');}
       }
     })();
-    return()=>{cancelled=true;clearTimeout(loadingTimeout.current);register(tab.id,null);disposeProxyFrame(frame.current);frame.current=null;};
+    return()=>{
+      cancelled=true;clearInterval(watchDocument);clearTimeout(loadingTimeout.current);
+      register(tab.id,null);disposeProxyFrame(frame.current);frame.current=null;
+    };
   },[tab.id,Boolean(user),retryKey]);
   useEffect(()=>{
     if(!tab.url||!frame.current||tab.url===lastUrl.current)return;
@@ -84,9 +110,10 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,register,retryKey}){
     <iframe ref={iframe} title={'Browsing '+tab.url} className="portal-iframe"
       allow="fullscreen; clipboard-read; clipboard-write; picture-in-picture"
       referrerPolicy="no-referrer"
-      onLoad={()=>{if(frame.current){
+      onLoad={()=>{
+        if(!frame.current||!iframe.current?.src.includes('/~/sj/'))return;
         clearTimeout(loadingTimeout.current);setState('ready');setLoadedOnce(true);
-      }}}/>
+      }}/> 
     {state==='loading'&&active&&!loadedOnce&&<div className="celestial-browser-loading"><span className="celestial-browser-spinner"/>Connecting to the site…</div>}
     {state==='error'&&active&&<div className="celestial-browser-failure">
       <span className="celestial-browser-failure-icon">◈</span>
