@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {Icon} from './icons.jsx';
 import {
-  Grid20Filled,MusicNote220Filled,Cloud20Filled,Settings20Filled,Globe20Filled
+  Grid20Filled,MusicNote220Filled,Cloud20Filled,Settings20Filled,Globe20Filled,Chat20Filled
 } from '@fluentui/react-icons';
 import {api,readLocal,saveLocal} from './constants.js';
 import {browserAddress,browserPreferences} from './Preferences.js';
@@ -13,6 +13,12 @@ const shortcuts=[
   {id:'music',name:'music',icon:MusicNote220Filled},
   {id:'cloud',name:'AI',icon:Cloud20Filled},
   {id:'settings',name:'settings',icon:Settings20Filled}
+];
+const homeDestinations=[
+  {id:'browser',label:'Browser',detail:'Search & open tabs',icon:Globe20Filled},
+  {id:'apps',label:'Apps',detail:'Games and tools',icon:Grid20Filled},
+  {id:'chat',label:'Chat',detail:'Talk to members',icon:Chat20Filled},
+  {id:'cloud',label:'AI',detail:'Ask something',icon:Cloud20Filled}
 ];
 const blank=()=>({id:Date.now().toString(36)+Math.random().toString(36).slice(2,8),url:'',history:[],cursor:-1});
 const savedTabs=()=> {
@@ -378,10 +384,24 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null}){
             placeholder="search or enter a url" aria-label="Search or enter a URL" autoComplete="off" spellCheck={false}/>
           <button type="submit" aria-label="Search"><Icon name="arrow" size={20}/></button>
         </form>
-        <div className="forest-shortcuts">{shortcuts.map(item=>{
+        {homeMode?<div className="celestial-home-starter">
+          <p className="celestial-home-starter-title">Where to?</p>
+          <div className="celestial-home-starter-grid">
+            {homeDestinations.map(item=>{
+              const Glyph=item.icon;
+              return <button type="button" key={item.id} onClick={()=>onShortcut?.(item.id)}>
+                <Glyph/><span><strong>{item.label}</strong><small>{item.detail}</small></span>
+              </button>;
+            })}
+          </div>
+          <div className="celestial-home-more">
+            <button type="button" onClick={()=>onShortcut?.('music')}>Open Music</button>
+            <button type="button" onClick={()=>onShortcut?.('settings')}>Settings</button>
+          </div>
+        </div>:<div className="forest-shortcuts">{shortcuts.map(item=>{
           const Glyph=item.icon;
           return <button key={item.id} onClick={()=>onShortcut?.(item.id)}><Glyph/>{item.name}</button>;
-        })}</div>
+        })}</div>}
         {bookmarks.length>0&&<div className="forest-bookmarks">{bookmarks.slice(-6).map(bookmark=><button key={bookmark.url}
           onClick={()=>navigate(bookmark.url)}>✧ {bookmark.label}</button>)}</div>}
       </div>}
