@@ -730,3 +730,16 @@
 :root[data-motion="reduced"] .forest-browser.home-mode .forest-browser-home{
   animation:none !important;
 }
+
+/* The homepage needs atmosphere, not a field of bright WebGL particles.
+ * Keep the radial background and make the old fireflies almost imperceptible. */
+#app:has(.forest-browser.home-mode) .forest-particles {
+  opacity: .06 !important;
+  filter: blur(.8px);
+  transition: opacity .3s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  #app:has(.forest-browser.home-mode) .forest-particles {
+    transition: none !important;
+  }
+}

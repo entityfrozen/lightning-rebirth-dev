@@ -128,6 +128,12 @@ try{
   assert.equal(mobileNav.canReadLabels,true,'Mobile tabs need visible text');
   assert.ok(Math.abs(mobileNav.bottom-844)<5,'Mobile navigation must be at the bottom');
   await mobile.screenshot({path:path.join(screenshots,'navigation-mobile.png'),fullPage:true});
+  await mobile.locator('.forest-browser.home-mode .forest-wordmark').waitFor({timeout:12000});
+  await mobile.waitForFunction(()=>{
+    const title=document.querySelector('.forest-browser.home-mode .forest-browser-home');
+    return title && parseFloat(getComputedStyle(title).opacity)>.97;
+  },null,{timeout:3000});
+  await mobile.screenshot({path:path.join(screenshots,'flare-home-mobile.png'),fullPage:true});
   await mobile.close();
 
   const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
@@ -183,7 +189,13 @@ try{
   const isolation=await page.evaluate(()=>window.crossOriginIsolated);
   assert.equal(isolation,true,'Celestial must be cross-origin isolated for Scramjet');
   await page.getByRole('button',{name:'Home',exact:true}).first().click();
-  await page.locator('.forest-browser.home-mode').waitFor({timeout:15000});
+  await page.locator('.forest-browser.home-mode .forest-wordmark').waitFor({timeout:15000});
+  await page.waitForFunction(()=>{
+    const title=document.querySelector('.forest-browser.home-mode .forest-browser-home');
+    return title && parseFloat(getComputedStyle(title).opacity)>.97;
+  },null,{timeout:3000});
+  assert.equal(await page.locator('.forest-browser.home-mode input[aria-label="Search or enter a URL"]').isVisible(),
+    true,'Homepage Search should be visible after the entrance animation');
   await page.screenshot({path:path.join(screenshots,'flare-home-desktop.png'),fullPage:true});
   const homeSearch=page.locator('.forest-browser.home-mode input[aria-label="Search or enter a URL"]');
   await homeSearch.fill('https://example.com');
