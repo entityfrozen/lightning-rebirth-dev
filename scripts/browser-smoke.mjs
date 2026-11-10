@@ -195,6 +195,18 @@ try{
   await page.getByText('No matching accounts').waitFor({timeout:10000});
   await page.getByRole('textbox',{name:'Search account requests'}).fill('');
   await page.screenshot({path:path.join(screenshots,'administration.png'),fullPage:true});
+  // A native fullscreen game should preserve its own component and board.
+  await page.getByRole('button',{name:'Apps',exact:true}).first().click();
+  await page.locator('.celestial-app-tile').filter({hasText:'2048'}).click();
+  await page.locator('.celestial-embedded-game').waitFor({timeout:15000});
+  await page.getByRole('button',{name:'Fullscreen game'}).click();
+  await page.waitForFunction(()=>document.fullscreenElement?.classList.contains('celestial-tool-shell'),
+    null,{timeout:10000});
+  await page.screenshot({path:path.join(screenshots,'game-fullscreen.png'),fullPage:true});
+  await page.getByRole('button',{name:'Exit game fullscreen'}).click();
+  await page.waitForFunction(()=>!document.fullscreenElement,null,{timeout:10000});
+  assert.ok(await page.locator('.celestial-embedded-game').count(),
+    'Fullscreen must preserve the active game');
 
   console.log(JSON.stringify({
     ok:true,worker,state,scriptPaths:[...scriptPaths],
