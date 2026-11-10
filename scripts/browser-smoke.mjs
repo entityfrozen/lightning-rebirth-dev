@@ -162,9 +162,13 @@ try{
     .evaluateAll(buttons=>buttons.map(button=>button.getAttribute('aria-label')));
   assert.deepEqual(primaryLabels,['Home','Browser','Apps','Chat','AI','Settings']);
   await page.getByRole('button',{name:'Compact navigation'}).click();
+  await page.waitForFunction(()=>document.querySelector('.dock-shell')?.getBoundingClientRect().width<90,
+    null,{timeout:4500});
   const compactWidth=await page.locator('.dock-shell').evaluate(element=>element.getBoundingClientRect().width);
   assert.ok(compactWidth<90,'Compact navigation should keep icons accessible without taking space');
   await page.getByRole('button',{name:'Expand navigation'}).click();
+  await page.waitForFunction(()=>document.querySelector('.dock-shell')?.getBoundingClientRect().width>150,
+    null,{timeout:4500});
   await page.getByRole('button',{name:'Quick switch (Ctrl+K)'}).click();
   await page.getByRole('dialog',{name:'Switch to a page'})
     .getByRole('textbox',{name:'Find a page'}).fill('apps');
