@@ -33,7 +33,10 @@ function Toggle({title,description,checked,onChange}){
   </label>;
 }
 export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,setReduced,showHomeAI,setShowHomeAI,onBack,onLogout}){
-  const [panel,setPanel]=useState('appearance');
+  const [panel,setPanel]=useState(()=>{
+    const next=readLocal('celestial-settings-start-panel','appearance');
+    return ['appearance','browser','privacy','account','administration'].includes(next)?next:'appearance';
+  });
   const isAdmin=['admin','account_manager'].includes(user?.role);
   const visiblePanels=isAdmin?[...panels,{id:'administration',label:'Administration',description:'Review access requests',icon:People24Filled}]:panels;
   const [browser,setBrowser]=useState(browserPreferences);
@@ -99,7 +102,7 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
           {visiblePanels.map(item=>{
             const Glyph=item.icon;
             return <button key={item.id} className={panel===item.id?'active':''}
-              aria-current={panel===item.id?'page':undefined} onClick={()=>{setPanel(item.id);setNotification('');}}>
+              aria-current={panel===item.id?'page':undefined} onClick={()=>{setPanel(item.id);saveLocal('celestial-settings-start-panel',item.id);setNotification('');}}>
               <Glyph/><span><strong>{item.label}</strong><small>{item.description}</small></span>
             </button>;
           })}
