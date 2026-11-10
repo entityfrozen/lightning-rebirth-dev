@@ -765,3 +765,37 @@
     transition:none!important;
   }
 }
+
+/* The companion launcher belongs to the activity, never on top of browser controls. */
+.celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle{
+  top:auto!important;
+  bottom:29px!important;
+  right:27px!important;
+  min-height:40px;height:40px;
+  padding:0 14px;
+  border:1px solid #85bfb49c;
+  border-radius:11px;
+  background:#173a42f2;
+  color:#e4fff7;
+  box-shadow:0 10px 30px #0007,0 1px #ffffff13 inset;
+}
+.celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle:hover{
+  background:#27545a;
+  border-color:#a7e5d3;
+}
+.celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle svg{
+  color:#b6ecda;
+}
+.celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle.beside-ai{
+  right:calc(var(--celestial-sidebar-width) + 25px)!important;
+}
+@media(max-width:950px){
+  .celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle.beside-ai{
+    right:27px!important;
+  }
+}
+@media(max-width:580px){
+  .celestial-activity-main:has(.forest-browser)>.celestial-chat-toggle{
+    right:17px!important;bottom:19px!important;width:auto;padding:0 11px;
+  }
+}
