@@ -100,6 +100,12 @@ console.log('Celestial data ready',JSON.stringify({
 }));
 function tokenHash(token) {return createHash('sha256').update(token).digest('hex');}
 function parseCookie(value='') {return Object.fromEntries(value.split(';').map(v => v.trim().split('=').map(decodeURIComponent)).filter(p=>p.length===2));}
+// A partitioned cookie lets the same account work in third-party launcher frames.
+// Keep the original first-party cookie for normal tabs and existing logins.
+function sessionToken(headers){
+  const cookies=parseCookie(headers.cookie||'');
+  return cookies.lightning_embed_session||cookies.lightning_session;
+}
 function activeAccount(user) {
   return Boolean(user && user.approved!==false && user.enabled!==false &&
     user.reviewStatus!=='rejected' &&
@@ -109,14 +115,14 @@ function managesAccounts(user) {
   return activeAccount(user) && ['admin','account_manager'].includes(user.role);
 }
 function account(req) {
-  const value = parseCookie(req.headers.cookie).lightning_session;
+  const value = sessionToken(req.headers);
   if(!value) return null;
   const session = db.sessions.find(s => s.hash===tokenHash(value) && s.expires>Date.now());
   const user = session ? db.users.find(u=>u.id===session.userId) : null;
   return activeAccount(user)?user:null;
 }
 function liveIdentity(headers){
-  const token=parseCookie(headers.cookie||'').lightning_session;
+  const token=sessionToken(headers);
   if(!token)return null;
   const session=db.sessions.find(row=>row.hash===tokenHash(token)&&row.expires>Date.now());
   if(!session)return null;
@@ -145,7 +151,9 @@ function startSession(res,user,req) {
   const token=randomBytes(32).toString('base64url');
   db.sessions.push({hash:tokenHash(token),userId:user.id,expires:Date.now()+30*864e5});
   const secure=req.headers['x-forwarded-proto']==='https' || req.socket.encrypted;
-  res.setHeader('Set-Cookie',`lightning_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000${secure?'; Secure':''}`);
+  const cookies=[`lightning_session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000${secure?'; Secure':''}`];
+  if(secure)cookies.push(`lightning_embed_session=${token}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=2592000`);
+  res.setHeader('Set-Cookie',cookies);
 }
 function limited(req,action,max,windowMs) {
   const addr=req.socket.remoteAddress || 'unknown';
@@ -302,9 +310,12 @@ async function handleAPI(req,res,url) {
     startSession(res,found,req);await persist();return respond(res,200,{user:publicAccount(found)});
   }
   if(pathname==='/api/logout' && req.method==='POST') {
-    const token=parseCookie(req.headers.cookie).lightning_session;
+    const token=sessionToken(req.headers);
     if(token)db.sessions=db.sessions.filter(s=>s.hash!==tokenHash(token));
-    res.setHeader('Set-Cookie','lightning_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+    res.setHeader('Set-Cookie',[
+      'lightning_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+      'lightning_embed_session=; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=0'
+    ]);
     await persist();return respond(res,200,{ok:true});
   }
   if(!user)return fail(res,401,'Sign in to use this feature');
@@ -435,7 +446,7 @@ async function staticFile(req,res,url) {
   try {
     const info=await stat(filepath);if(!info.isFile())throw Error('Not a file');
     const content=await readFile(filepath);
-    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'credentialless','Cross-Origin-Resource-Policy':'same-origin','X-Frame-Options':'SAMEORIGIN','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com; connect-src 'self' data: https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'self'",'Cache-Control':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
+    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'credentialless','Cross-Origin-Resource-Policy':'same-origin','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com; connect-src 'self' data: https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'",'Cache-Control':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
     return res.end(req.method==='HEAD'?undefined:content);
   }catch{return fail(res,404,'File not found');}
 }
