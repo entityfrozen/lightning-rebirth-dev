@@ -310,7 +310,9 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null,onOpe
   const submitHome=event=>{
     event.preventDefault();
     if(!homeQuery.trim())return;
-    navigate(homeQuery);
+    const url=browserAddress(homeQuery,prefs.searchEngine);
+    if(!url)return;
+    addTab(url);
     setHomeQuery('');
     onOpenBrowser?.();
   };
@@ -417,7 +419,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null,onOpe
           return <button key={item.id} onClick={()=>onShortcut?.(item.id)}><Glyph/>{item.name}</button>;
         })}</div>}
         {bookmarks.length>0&&<div className="forest-bookmarks">{bookmarks.slice(-6).map(bookmark=><button key={bookmark.url}
-          onClick={()=>navigate(bookmark.url)}>✧ {bookmark.label}</button>)}</div>}
+          onClick={()=>{addTab(bookmark.url);if(homeMode)onOpenBrowser?.();}}>✧ {bookmark.label}</button>)}</div>}
       </div>}
       {tabs.map(tab=>tab.url?<BrowserFrame key={tab.id} tab={tab} active={tab.id===currentId}
         user={user} onNavigate={onLocation} onPopup={openPopup} onTitle={updateTitle} retryKey={retry[tab.id]||0}
