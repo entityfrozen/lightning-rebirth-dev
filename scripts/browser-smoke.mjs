@@ -114,6 +114,19 @@ try{
     sw:navigator.serviceWorker.controller?.scriptURL||'',
     isolated:window.crossOriginIsolated
   }));
+  await page.waitForFunction(()=>{
+    const loader=document.querySelector('.celestial-browser-loading');
+    const failure=document.querySelector('.celestial-browser-failure');
+    return !loader&&!failure;
+  },null,{timeout:15000}).catch(async error=>{
+    const state=await page.evaluate(()=>({
+      overlay:document.querySelector('.celestial-browser-loading')?.textContent||null,
+      error:document.querySelector('.celestial-browser-failure')?.textContent||null,
+      iframe:document.querySelector('iframe.portal-iframe')?.src||null
+    }));
+    throw Error('Proxy content rendered but browser overlay stayed visible: '+
+      JSON.stringify(state)+'; '+error.message);
+  });
   await page.screenshot({path:path.join(screenshots,'browser.png'),fullPage:true});
   // Prove the rewritten document actually rendered, not merely iframe.src
   // being set. This uses example.com's public, static page as the smoke target.
