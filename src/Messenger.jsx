@@ -311,7 +311,7 @@ export function Messenger({user,live,compact=false,onClose,onOpenChat}){
           <div className="messenger-room-emblem" aria-hidden="true"><span>✦</span></div>
           <span className="messenger-room-label">{server?.name||'Celestial'} / CHANNEL</span>
           <h2>#{activeChannel?.name||'general'}</h2>
-          <p>A place for everyone in this channel to talk.</p>
+          <p>Messages and updates for this channel.</p>
           <div className="messenger-room-rule"><span>CONVERSATION</span></div>
         </div>}
         {(!live.connected&&!dmUser&&!messages.length)&&<p className="messenger-state">Connecting to your channels…</p>}
