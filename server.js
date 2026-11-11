@@ -201,29 +201,6 @@ function safeOrigin(req) {
   return origin===target || origin===`http://${req.headers.host}` || origin===`https://${req.headers.host}`;
 }
 // Fixed upstream catalog endpoints only: never a user-controlled URL proxy.
-let gameCatalogCache={until:0,payload:null};
-const GAME_CATALOG_ENDPOINTS={
-  'Selenite':['https://selenite.cc/resources/games.json','https://git.ceres.rip/selenite/frontend/raw/branch/main/resources/games.json'],
-  'WASM.rip':['https://raw.githubusercontent.com/wasmdotrip/wasm.rip/main/games.json'],
-  'GN-Math':['https://raw.githubusercontent.com/gn-math/assets/main/zones.json']
-};
-async function gameCatalogs(){
-  if(gameCatalogCache.payload&&Date.now()<gameCatalogCache.until)return gameCatalogCache.payload;
-  const result=await Promise.all(Object.entries(GAME_CATALOG_ENDPOINTS).map(async ([name,endpoints])=>{
-    for(const endpoint of endpoints){
-      try{
-        const response=await fetch(endpoint,{signal:AbortSignal.timeout(12000),headers:{Accept:'application/json'}});
-        if(!response.ok||Number(response.headers.get('content-length')||0)>3000000)continue;
-        const rows=await response.json();
-        if(Array.isArray(rows))return {name,rows:rows.slice(0,1500)};
-      }catch{}
-    }
-    return {name,rows:[],error:'Catalog unavailable'};
-  }));
-  const payload={catalogs:result};
-  gameCatalogCache={until:Date.now()+(result.every(c=>!c.error)?300000:45000),payload};
-  return payload;
-}
 async function handleAPI(req,res,url) {
   const user=account(req);
   const pathname=url.pathname;
@@ -241,10 +218,7 @@ async function handleAPI(req,res,url) {
     if(!user)return fail(res,401,'Sign in required');
     return respond(res,200,{configured:Boolean(providers.nvidia)});
   }
-  if(req.method==='GET'&&pathname==='/api/games/catalog'){
-    if(!user)return fail(res,401,'Sign in required');
-    return respond(res,200,await gameCatalogs());
-  }
+
   if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),authenticated:Boolean(user)});
   if(req.method==='GET' && pathname==='/api/community/members'){
     if(!user)return fail(res,401,'Sign in required');
@@ -528,9 +502,8 @@ async function staticFile(req,res,url) {
   if(req.method!=='GET' && req.method!=='HEAD')return fail(res,405,'Method not allowed');
   let filename;
   try {filename=decodeURIComponent(url.pathname);}catch{return fail(res,400,'Bad path');}
-  // Embedded Lightning games still launch from /?embedded=1&game=... .
   // Those URLs must load the legacy app, not the native-home redirect.
-  if(filename==='/'&&(url.searchParams.has('embedded')||url.searchParams.has('legacy')))filename='/legacy.html';
+  if(filename==='/'&&url.searchParams.has('legacy'))filename='/legacy.html';
   else if(filename==='/')filename='/index.html';
   // A missed Scramjet service-worker interception must fail clearly rather
   // than silently serving index.html inside the browser iframe.
