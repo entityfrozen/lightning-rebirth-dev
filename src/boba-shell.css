@@ -314,3 +314,43 @@ body:has(.boba-workspace) canvas{opacity:.32}
 @media(prefers-reduced-motion:reduce){
   .celestial-workspace.boba-workspace .dock-link{transition:none !important}
 }
+
+/* The mobile dock needs visible destinations, not desktop-style hover tooltips. */
+@media(max-width:720px){
+  .celestial-workspace.boba-workspace .dock-shell,
+  .celestial-workspace.boba-workspace .dock-shell.closed{
+    left:0 !important;right:0 !important;bottom:0 !important;
+    width:100% !important;height:75px !important;
+    border-radius:22px 22px 0 0 !important;
+  }
+  .celestial-workspace.boba-workspace .dock{
+    border-radius:22px 22px 0 0 !important;
+    padding:5px 5px calc(7px + env(safe-area-inset-bottom,0px)) !important;
+  }
+  .celestial-workspace.boba-workspace .celestial-stage{
+    bottom:86px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-link,
+  .celestial-workspace.boba-workspace.nav-compact .dock-link{
+    display:flex !important;flex-direction:column !important;
+    gap:2px !important;justify-content:center !important;align-items:center !important;
+    height:60px !important;max-width:none !important;
+    border-radius:15px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-link>svg,
+  .celestial-workspace.boba-workspace.nav-compact .dock-link>svg{
+    width:21px !important;height:21px !important;
+    min-width:21px !important;min-height:21px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-link-label,
+  .celestial-workspace.boba-workspace .dock-link:hover .dock-link-label{
+    display:block !important;position:static !important;
+    width:auto !important;height:auto !important;
+    padding:0 !important;
+    transform:none !important;opacity:1 !important;
+    background:none !important;
+    color:inherit !important;
+    font-size:9px !important;font-weight:660 !important;
+    line-height:1.1 !important;white-space:nowrap !important;
+  }
+}
