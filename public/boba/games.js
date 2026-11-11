@@ -12,6 +12,7 @@ const favorites=()=>{try{const v=JSON.parse(localStorage.getItem(favoritesKey)||
 const safe=(value,base)=>{try{const u=new URL(String(value||''),base);return u.protocol==='https:'?u.href:''}catch{return ''}};
 const idFor=value=>String(value||'').normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g,'');
 const local=[{id:'2048',name:'2048',source:'Celestial',genre:'Puzzle',kind:'local',sources:[]}];
+const matrix=n=>Array.from({length:n},()=>Array(n).fill(0));
 function make2048(root){
  let tiles=matrix(4),score=0,won=false,history=null;
  const spawn=()=>{const empty=[];tiles.forEach((row,r)=>row.forEach((v,c)=>{if(!v)empty.push([r,c])}));if(!empty.length)return;const [r,c]=empty[Math.floor(Math.random()*empty.length)];tiles[r][c]=Math.random()<.9?2:4};
