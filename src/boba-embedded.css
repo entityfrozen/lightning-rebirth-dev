@@ -1,0 +1,46 @@
+/* The original Celestial workspace runs INSIDE the real Boba shell.
+   Keep authentication untouched. Strip only its redundant outer dock and wallpaper. */
+:root.celestial-embedded {
+  --bg:transparent;
+  --deep:rgba(255,255,255,.1);
+  --panel:rgba(255,255,255,.58);
+  --panel-bright:rgba(255,255,255,.75);
+  --text:#26344c;
+  --muted:#63748d;
+  --quiet:#8390a6;
+  --stroke:rgba(49,72,112,.14);
+  --strong-stroke:rgba(51,83,126,.25);
+  --cyan:#5474c1;
+  --violet:#8468c8;
+  --glass-line:rgba(57,79,114,.14);
+  --flare-text:#26344c;
+  --flare-muted:#67778e;
+  --flare-border:rgba(52,73,104,.12);
+  color-scheme:light;
+}
+:root.celestial-embedded body,
+:root.celestial-embedded #app {background:transparent !important}
+:root.celestial-embedded .celestial-backdrop,
+:root.celestial-embedded .celestial-corner-actions,
+:root.celestial-embedded .dock-shell,
+:root.celestial-embedded .dock-toggle {display:none !important}
+:root.celestial-embedded .celestial-workspace {
+  display:block !important;position:fixed !important;
+  inset:0 !important;width:100% !important;height:100dvh !important;
+  min-height:0 !important;padding:0 !important;margin:0 !important;
+  background:transparent !important;
+}
+:root.celestial-embedded .celestial-workspace .celestial-stage{
+  position:absolute !important;
+  inset:0 !important;left:0 !important;right:0 !important;top:0 !important;bottom:0 !important;
+  width:100% !important;height:100% !important;
+  margin:0 !important;max-width:none !important;
+  border:0 !important;border-radius:0 !important;
+  background:transparent !important;box-shadow:none !important;
+}
+:root.celestial-embedded .celestial-activity-layout{
+  min-height:0 !important;height:100% !important;
+}
+:root.celestial-embedded .celestial-home-split.ai-hidden,
+:root.celestial-embedded .celestial-home-main{height:100% !important;min-height:0 !important}
+:root.celestial-embedded .celestial-chat-toggle {z-index:10}
