@@ -230,7 +230,7 @@ try{
         getComputedStyle(label).display!=='none')
     };
   });
-  assert.deepEqual(mobileNav.labels,['Home','Browser','Apps','Chat','AI','Settings']);
+  assert.deepEqual(mobileNav.labels,['Home','Browser','Chat','AI','Settings']);
   assert.equal(mobileNav.canReadLabels,true,'Mobile tabs need visible text');
   assert.ok(Math.abs(mobileNav.bottom-844)<5,'Mobile navigation must be at the bottom');
   await mobile.screenshot({path:path.join(screenshots,'navigation-mobile.png'),fullPage:true});
@@ -272,7 +272,7 @@ try{
 
   const primaryLabels=await page.locator('nav[aria-label="Main navigation"] .dock-link')
     .evaluateAll(buttons=>buttons.map(button=>button.getAttribute('aria-label')));
-  assert.deepEqual(primaryLabels,['Home','Browser','Apps','Chat','AI','Settings']);
+  assert.deepEqual(primaryLabels,['Home','Browser','Chat','AI','Settings']);
   const desktopDock=await page.locator('.dock-shell').evaluate(element=>{
     const r=element.getBoundingClientRect();
     return {bottom:r.bottom,width:r.width,left:r.left};
