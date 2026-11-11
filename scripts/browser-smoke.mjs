@@ -103,10 +103,18 @@ try{
   // Check the actual Boba shell separately from the legacy workspace regression suite.
   const boba=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
   await boba.goto(base+'/',{waitUntil:'domcontentloaded',timeout:30000});
-  await boba.locator('.auth-sheet--v2').waitFor({timeout:25000});
-  await boba.locator('input[name="username"]').fill('SmokeAdmin');
-  await boba.locator('input[name="password"]').fill(password);
-  await boba.locator('.auth-fields form button[type="submit"]').click();
+  const bobaAuth=boba.frameLocator('iframe.boba-auth-host');
+  await bobaAuth.locator('.auth.gl.g2').waitFor({timeout:25000});
+  assert.equal(await bobaAuth.locator('body').evaluate(()=>
+    [...document.styleSheets].some(sheet=>sheet.href?.includes('/boba/original.css'))),true);
+  await boba.screenshot({path:path.join(screenshots,'boba-login.png'),fullPage:true});
+  await bobaAuth.getByRole('button',{name:'Create account',exact:true}).click();
+  await bobaAuth.locator('input[name="confirmPassword"]').waitFor({timeout:5000});
+  await boba.screenshot({path:path.join(screenshots,'boba-register.png'),fullPage:true});
+  await bobaAuth.getByRole('button',{name:'Sign in',exact:true}).click();
+  await bobaAuth.locator('input[name="username"]').fill('SmokeAdmin');
+  await bobaAuth.locator('input[name="password"]').fill(password);
+  await bobaAuth.locator('form button[type="submit"]').click();
   const bobaShell=boba.frameLocator('iframe.boba-app-host');
   await bobaShell.locator('nav#dock .dk').first().waitFor({timeout:25000});
   assert.equal(await bobaShell.locator('nav#dock .dk').count(),7,
