@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-palette="boba" data-fx="full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Celestial</title>
+  <link rel="icon" href="/assets/celestial-star.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/boba/original.css">
+  <link rel="stylesheet" href="/boba/native.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="gr-home"><stop stop-color="#2fe0b0"/><stop offset="1" stop-color="#1a7cc9"/></linearGradient>
+  <linearGradient id="gr-browser"><stop stop-color="#7aa7ff"/><stop offset="1" stop-color="#6e3cff"/></linearGradient>
+  <linearGradient id="gr-apps"><stop stop-color="#ffbe2e"/><stop offset="1" stop-color="#ff4f2b"/></linearGradient>
+  <linearGradient id="gr-chat"><stop stop-color="#70e5ba"/><stop offset="1" stop-color="#259fcb"/></linearGradient>
+  <linearGradient id="gr-ask"><stop stop-color="#ff7ac0"/><stop offset=".55" stop-color="#9b6bff"/><stop offset="1" stop-color="#4f6bff"/></linearGradient>
+  <linearGradient id="gr-settings"><stop stop-color="#aab3c0"/><stop offset="1" stop-color="#58616f"/></linearGradient>
+</defs></svg>
+<div class="atmo" aria-hidden="true">
+  <div class="amb"></div><div class="wash" id="washA"></div><div class="wash" id="washB"></div>
+  <div class="veil"></div><div class="grain"></div>
+</div>
+<main class="views" id="views" hidden>
+<section class="view flush" data-view="home" aria-label="Browser"></section>
+<section class="view" data-view="apps" aria-label="Apps"></section>
+<section class="view flush" data-view="chat" aria-label="Chat"></section>
+<section class="view flush" data-view="ai" aria-label="Ask"></section>
+<section class="view" data-view="settings" aria-label="Settings"></section>
+<section class="view" data-view="admin" aria-label="Administration"></section>
+<section class="view" data-view="account" aria-label="Account"></section>
+</main>
+<nav class="dock" id="dock" aria-label="Sections" hidden></nav>
+<div class="mini gl" id="mini" hidden></div>
+<div class="scrim" id="scrim"></div><div class="sheet gl g3" id="sheet" role="dialog" aria-modal="true"></div>
+<div class="over" id="over"></div>
+<script type="module" src="/boba/native.js"></script>
+</body></html>
