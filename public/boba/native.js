@@ -28,10 +28,17 @@ async function start(){
   if(id==='admin')loadAdmin();
   history.replaceState(null,'','/boba/index.html#'+id);
  }
+ const updateDock=()=>{
+  const ai=$('.dk[data-section="ai"]',dock);
+  if(ai)ai.hidden=localStorage.getItem('boba.dock.ai')==='false';
+  if(current==='ai'&&ai?.hidden)navigate('home');
+ };
+ window.addEventListener('celestial:dock-settings',updateDock);
  items.forEach(([id,label,key])=>{const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)});
  mountApps(view('apps'),open,navigate);mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
  if(user.role==='admin')loadAdmin=mountAdmin(view('admin'),user);
  view('settings').innerHTML=settings.html();paintSettings=settings.mount(view('settings'));
+ updateDock();
  views.hidden=false;dock.hidden=false;
  navigate(location.hash.slice(1)||'home');
  window.addEventListener('hashchange',()=>navigate(location.hash.slice(1)));
