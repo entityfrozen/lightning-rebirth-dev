@@ -68,9 +68,8 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
       try{
         if(!user)throw Error('Sign in to browse in Celestial.');
         if(!window.isSecureContext)throw Error('The browser needs a secure HTTPS connection.');
-        if(!window.crossOriginIsolated)throw Error(window.self!==window.top
-          ? 'Scramjet needs its own isolated browser tab. Chat works here, but websites must open in standalone Celestial.'
-          : 'Browser isolation is not enabled. Reload Celestial once; if this persists, the server needs a configuration update.');
+        // Probe the real Scramjet controller instead of rejecting an embedded
+        // page solely because crossOriginIsolated is false. if this persists, the server needs a configuration update.');
         const status=await api('/api/browser/status');
         if(!status.authenticated)throw Error('Sign in to browse in Celestial.');
         if(!status.proxy)throw Error('The browser engine is unavailable on this server.');
