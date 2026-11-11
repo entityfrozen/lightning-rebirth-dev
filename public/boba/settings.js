@@ -3,9 +3,9 @@ const identityPresets={
  celestial:['Celestial','/assets/celestial-star.svg'],
  workspace:['Workspace','/assets/celestial-star.svg'],
  notes:['My Notes','/assets/celestial-star.svg'],
- dcss:['DCSS Portal','https://portal.dcssga.org/favicon.ico'],
- classroom:['Google Classroom','https://classroom.google.com/favicon.ico'],
- docs:['Google Docs','https://docs.google.com/favicon.ico'],
+ dcss:['DCSS Portal','https://www.google.com/s2/favicons?domain=portal.dcssga.org&sz=64'],
+ classroom:['Google Classroom','https://ssl.gstatic.com/classroom/favicon.ico'],
+ docs:['Google Docs','https://www.google.com/s2/favicons?domain=docs.google.com&sz=64'],
  drive:['Google Drive','https://drive.google.com/favicon.ico'],
  clever:['Clever | Portal','https://clever.com/favicon.ico'],
  canvas:['Dashboard','https://canvas.instructure.com/favicon.ico'],
@@ -32,7 +32,8 @@ export const settings = {
       '<div class="thms" data-themes>' + THEMES.map(([v, n, m]) => '<button class="thm" type="button" data-v="' + v + '" data-pal="' + v + '" data-mode="' + m + '" aria-label="' + n + '"><span class="pv"></span><span>' + n + "</span></button>").join("") + "</div>" +
       '<div class="lr">' + lic("star", "#ffb547", "#ff7a1a") + '<h3>Accent</h3><div class="sws" data-acc>' +
       ACCENTS.map((c, i) => '<button class="sw" data-i="' + i + '" aria-label="Accent ' + (i + 1) + '" style="background:' + c[0] + '"></button>').join("") + "</div></div>" +
-      '<div class="lr">' + lic("ask", "#c084fc", "#7c3aed") + '<h3>Effects</h3><div class="seg" data-fx><span class="th"></span><button data-v="full">Full</button><button data-v="lite">Lite</button></div></div></section>' +
+      '<div class="lr">' + lic("ask", "#c084fc", "#7c3aed") + '<h3>Effects</h3><div class="seg" data-fx><span class="th"></span><button data-v="full">Full</button><button data-v="lite">Lite</button></div></div>' +
+      '<div class="lr"><span class="lic">'+ico("ask")+'</span><h3>AI dock icon</h3><label class="native-pref-switch"><input type="checkbox" data-show-ai> Show AI in the dock</label></div></section>' +
       '<div class="gt r" style="--d:.08s">Browsing</div><section class="grp gl g2 r" style="--d:.08s">' +
       '<div class="lr">' + lic("link", "#2be0e6", "#0b8f86") + '<h3>Connection</h3><span class="netst"><i data-cn></i><span data-cnm>Checking</span></span></div></section>' +
       '<div class="gt r" style="--d:.12s">This tab</div><section class="grp gl g2 r" style="--d:.12s">' +
@@ -48,6 +49,9 @@ export const settings = {
     const paint=()=>{applyPrefs();const p=localStorage.getItem('celestial.boba.theme')||'boba';$$('.thm',root).forEach(b=>b.classList.toggle('on',b.dataset.v===p));$$('.sw',root).forEach(b=>b.classList.toggle('on',Number(b.dataset.i)===Number(localStorage.getItem('boba.accent')||0)));const seg=$('[data-fx]',root);$$('button',seg).forEach(b=>b.classList.toggle('on',b.dataset.v===document.documentElement.dataset.fx));segThumb(seg)};
     root.addEventListener('click',e=>{const t=e.target.closest('.thm'),a=e.target.closest('.sw'),f=e.target.closest('[data-fx] button');if(t)localStorage.setItem('celestial.boba.theme',t.dataset.v);if(a)localStorage.setItem('boba.accent',a.dataset.i);if(f)localStorage.setItem('boba.fx',f.dataset.v);if(e.target.closest('[data-reset]')){for(const k of ['celestial.boba.theme','boba.accent','boba.fx'])localStorage.removeItem(k)}paint()});
     api('/api/browser/status').then(d=>{$('[data-cnm]',root).textContent=d.proxy?'Available':'Unavailable'}).catch(()=>{$('[data-cnm]',root).textContent='Offline'});
+    const showAi=$('[data-show-ai]',root);
+    showAi.checked=localStorage.getItem('boba.dock.ai')!=='false';
+    showAi.onchange=()=>{localStorage.setItem('boba.dock.ai',String(showAi.checked));window.dispatchEvent(new Event('celestial:dock-settings'))};
     const tab=$('[data-tab]',root),title=$('[data-tab-title]',root),iconInput=$('[data-tab-icon]',root);
     tab.value=localStorage.getItem('boba.tab.preset')||'celestial';title.value=localStorage.getItem('boba.tab.title')||'';iconInput.value=localStorage.getItem('boba.tab.icon')||'';
     const tabPaint=()=>{const custom=tab.value==='custom';$('[data-custom-tab]',root).hidden=!custom;$('[data-custom-icon]',root).hidden=!custom;
