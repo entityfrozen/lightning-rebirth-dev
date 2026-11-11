@@ -1,17 +1,16 @@
 import {$,$$,ico,api,applyPrefs} from './common.js';
 import {mountBrowser} from './browser.js';
-import {mountApps,mountAsk,mountAccount} from './native-views.js';
+import {mountAsk,mountAccount} from './native-views.js';
 import {mountChat} from './chat.js';
 import {settings} from './settings.js';
 import {mountAdmin} from './admin.js';
-import {mountGames} from './games.js';
 import {N} from './icons.js';
 applyPrefs();
 async function start(){
  const data=await api('/api/me');
  if(!data.user){location.replace('/boba/auth.html');return}
  const user=data.user,views=$('#views'),dock=$('#dock');
- const items=[['home','Home','home'],['browser','Browser','web'],['apps','Tools','play'],['games','Apps','grid-2x2'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
+ const items=[['home','Home','home'],['browser','Browser','web'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
  if(user.role==='admin')items.splice(items.length-1,0,['admin','Administration','shield']);
  const view=id=>$('[data-view="'+id+'"]');
  let current='home',paintSettings=()=>{},loadAdmin=()=>{};
@@ -36,7 +35,7 @@ async function start(){
  };
  window.addEventListener('celestial:dock-settings',updateDock);
  items.forEach(([id,label,key])=>{const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)});
- mountApps(view('apps'),open,navigate);mountGames(view('games'),open);mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
+ mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
  if(user.role==='admin')loadAdmin=mountAdmin(view('admin'),user);
  view('settings').innerHTML=settings.html();paintSettings=settings.mount(view('settings'));
  updateDock();
