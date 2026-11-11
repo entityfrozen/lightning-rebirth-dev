@@ -183,6 +183,18 @@ try{
       return !!(doc&&doc.URL!=='about:blank'&&doc.readyState!=='loading'&&doc.body&&(doc.body.children.length>0||doc.body.textContent?.trim()));
     }catch{return false}
   },{},{timeout:45000});
+  await boba.waitForFunction(()=>{
+    const frame=document.querySelector('.page iframe[src*="/~/sj/"]');
+    try{return frame?.contentDocument?.title==='Example Domain'&&
+      frame?.contentDocument?.body?.textContent?.includes('Example Domain')}catch{return false}
+  },null,{timeout:30000}).catch(async error=>{
+    const snapshot=await boba.evaluate(()=>{
+      const frame=document.querySelector('.page iframe');
+      try{return {src:frame?.src,title:frame?.contentDocument?.title,body:frame?.contentDocument?.body?.textContent?.slice(0,250),
+        error:document.querySelector('.native-browser-error')?.textContent}}catch(e){return {error:e.message,src:frame?.src}}
+    });
+    throw Error('Native Scramjet rendered wrong site: '+JSON.stringify(snapshot)+'; '+error.message);
+  });
   assert.equal(await boba.locator('.native-browser-error').count(),0,'Scramjet should render a real page instead of an error');
 
   await boba.screenshot({path:path.join(screenshots,'boba-native-browser.png'),fullPage:true});
