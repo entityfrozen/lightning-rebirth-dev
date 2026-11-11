@@ -146,6 +146,7 @@ try{
   const postedTime=await posted.locator('small[datetime]').getAttribute('datetime');
   assert.ok(postedTime && Number.isFinite(Date.parse(postedTime)),'timestamp uses the original message date');
   boba.once('dialog',dialog=>dialog.accept());
+  await pause(250);
   await posted.locator('[data-delete-message]').click({force:true});
   await boba.locator('.native-feed').getByText('Native Boba smoke message',{exact:true}).waitFor({state:'detached',timeout:10000});
 
@@ -155,6 +156,7 @@ try{
   await boba.locator('.native-compose button').click();
   await boba.locator('.native-feed').getByText('Clear channel smoke test',{exact:true}).waitFor({timeout:10000});
   boba.once('dialog',dialog=>dialog.accept());
+  await pause(250);
   await boba.locator('[data-clear-chat]').click();
   await boba.locator('.native-feed').getByText('Clear channel smoke test',{exact:true}).waitFor({state:'detached',timeout:10000});
   await boba.locator('[data-section="browser"]').click();
