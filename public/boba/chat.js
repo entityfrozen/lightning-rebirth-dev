@@ -3,7 +3,20 @@ export function mountChat(root,user){
  root.innerHTML='<div class="native-messenger"><aside class="native-rooms"><h3>Community</h3><select aria-label="Server" data-server></select><div data-channels></div><button class="btn s" data-join hidden>Join server</button><button class="btn s" data-new-server>New server</button></aside><section class="native-conversation"><header class="native-chat-head"><div><h2 data-title>Chat</h2><small data-status>Connecting…</small></div><button class="cb sm gh" aria-label="Fullscreen chat" data-full>'+ico('expand')+'</button></header><div class="native-feed srl" role="log"></div><form class="native-compose gl g2"><input aria-label="Message" maxlength="600" placeholder="Write a message"><button class="cb" type="submit" aria-label="Send message">'+ico('send')+'</button></form><p class="msg" data-error hidden></p></section><aside class="native-members"><h3>Members</h3><label class="fld"><input data-search placeholder="Find a member" aria-label="Find a member"></label><div data-people></div></aside></div>';
  let socket,servers=[],people=[],online=[],serverId='',channelId='',dm=null,dmRows=[],closed=false,revision=0;
  const $r=s=>$(s,root),send=d=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(d));return true},role=p=>({admin:'ADMIN',owner:'OWNER',account_manager:'STAFF',moderator:'MOD'}[p?.platformRole||p?.role]||'');
- const badge=p=>role(p)?'<span class="native-role role-'+esc(role(p).toLowerCase())+'">['+role(p)+']</span>':'';
+ const badge=p=>role(p)?'<span class="native-role role-'+esc(role(p).toLowerCase())+'">'+role(p)+'</span>':'';
+ const messageDate=m=>{
+  const raw=m.createdAt??m.at??m.ts??m.time;
+  const value=typeof raw==='number'&&raw<1e11?raw*1000:raw;
+  const date=new Date(value);
+  return Number.isFinite(date.getTime())?date:null;
+ };
+ const timestamp=m=>{
+  const date=messageDate(m);
+  if(!date)return '<small>Unknown time</small>';
+  const exact=date.toLocaleString([],{dateStyle:'medium',timeStyle:'short'});
+  const clock=date.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  return '<small title="'+esc(exact)+'" datetime="'+esc(date.toISOString())+'">'+esc(clock)+'</small>';
+ };
  const server=()=>servers.find(s=>s.id===serverId)||servers[0];
  const channel=()=>server()?.channels?.find(c=>c.id===channelId)||server()?.channels?.[0];
  const say=t=>{$r('[data-error]').hidden=!t;$r('[data-error]').textContent=t||''};
@@ -14,13 +27,21 @@ export function mountChat(root,user){
   $r('[data-title]').textContent=dm?dm.username:'# '+(c?.name||'general');$r('[data-status]').textContent=socket?.readyState===WebSocket.OPEN?'Live':'Reconnecting…';
   const feed=$r('.native-feed'),near=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100;
   const roster=new Map((s?.members||[]).map(p=>[p.id,p]));for(const p of people)roster.set(p.id,{...roster.get(p.id),...p});const all=[...roster.values()];const rows=dm?dmRows:(s?.messages?.[c?.id]||[]);
-  feed.innerHTML=rows.map(m=>{const p=roster.get(dm?m.from:m.userId)||all.find(x=>(x.username||x.name)===(dm?m.author:m.by||m.username));const name=dm?m.author:m.by||m.username||p?.username||'Member';return '<article class="native-message"><span class="native-person-icon">'+esc(name.slice(0,2).toUpperCase())+'</span><div><div class="native-message-meta"><b>'+esc(name)+'</b>'+badge(p)+'<small>'+esc(new Date(m.createdAt||m.ts||m.time||Date.now()).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}))+'</small></div><p>'+esc(dm?m.text:m.message)+'</p></div></article>'}).join('');
+  feed.innerHTML=rows.map(m=>{const p=roster.get(dm?m.from:m.userId)||all.find(x=>(x.username||x.name)===(dm?m.author:m.by||m.username));const name=dm?m.author:m.by||m.username||p?.username||'Member';return '<article class="native-message"><span class="native-person-icon">'+esc(name.slice(0,2).toUpperCase())+'</span><div><div class="native-message-meta"><b>'+esc(name)+'</b>'+badge(p)+timestamp(m)+'</div><p>'+esc(dm?m.text:m.message)+'</p></div>'+(!dm&&(user.role==='admin'||m.userId===user.id)?'<button type="button" class="native-delete-message" aria-label="Delete message" title="Delete message" data-delete-message="'+esc(m.id)+'" data-delete-channel="'+esc(c?.id||'')+'">'+ico('trash')+'</button>':'')+'</article>'}).join('');
   if(near)feed.scrollTop=feed.scrollHeight;
   const q=$r('[data-search]').value.toLowerCase(),ids=new Set(online.map(p=>p.id));$r('[data-people]').innerHTML=all.filter(p=>(p.username||p.name||'').toLowerCase().includes(q)).sort((a,b)=>Number(ids.has(b.id))-Number(ids.has(a.id))||String(a.username||a.name).localeCompare(String(b.username||b.name))).map(p=>'<button class="native-member" data-person="'+esc(p.id)+'"><i class="'+(ids.has(p.id)?'online':'')+'"></i><span>'+esc(p.username||p.name)+badge(p)+'</span></button>').join('');
  }
  async function refresh(){try{people=(await api('/api/community/members')).members||[];render()}catch{}}
  async function readDM(){if(!dm)return;const id=dm.id;const n=++revision;try{const d=await api('/api/dms/'+encodeURIComponent(id));if(dm?.id===id&&n===revision){dmRows=d.messages||[];render()}}catch(e){say(e.message)}}
  function connect(){if(closed)return;socket=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/live');socket.onopen=render;socket.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(m.type==='hello'||m.type==='presence')online=m.online||[];if(m.type==='v2State')servers=m.servers||[];if(m.type==='v2Server'){servers=servers.filter(s=>s.id!==m.server.id).concat(m.server)}if(['v2Message','v2MessageUpdate','v2MessageDeleted'].includes(m.type)){const s=servers.find(s=>s.id===m.serverId);const ch=m.channel||m.entry?.channel;if(s&&ch){s.messages||={};let rows=s.messages[ch]||[];if(m.type==='v2Message')rows=rows.concat(m.entry);if(m.type==='v2MessageUpdate')rows=rows.map(r=>r.id===m.entry.id?m.entry:r);if(m.type==='v2MessageDeleted')rows=rows.filter(r=>r.id!==m.id);s.messages[ch]=rows.slice(-150)}}if(m.type==='error')say(m.message);render()};socket.onclose=()=>{render();if(!closed)setTimeout(connect,2500)}}
+ $r('.native-feed').addEventListener('click',e=>{
+  const button=e.target.closest('[data-delete-message]');
+  if(!button||dm||!(user.role==='admin'||(server()?.messages?.[channelId]||[]).some(m=>m.id===button.dataset.deleteMessage&&m.userId===user.id)))return;
+  const messageId=button.dataset.deleteMessage;
+  const currentChannel=button.dataset.deleteChannel;
+  if(!confirm('Delete this message for everyone?'))return;
+  if(!send({type:'v2DeleteMessage',serverId,channel:currentChannel,messageId}))say('Chat is reconnecting. Try again.');
+ });
  $r('[data-server]').onchange=e=>{serverId=e.target.value;channelId='';dm=null;render()};$r('[data-channels]').onclick=e=>{const b=e.target.closest('[data-channel]');if(b){dm=null;channelId=b.dataset.channel;render()}};$r('[data-search]').oninput=render;$r('[data-people]').onclick=e=>{const b=e.target.closest('[data-person]');if(b&&b.dataset.person!==user.id){dm=people.find(p=>p.id===b.dataset.person);if(dm){dmRows=[];render();readDM()}}};
  $r('[data-join]').onclick=()=>send({type:'v2Join',serverId:serverId});$r('[data-new-server]').onclick=()=>{const name=prompt('Server name');if(name?.trim())send({type:'v2Create',name:name.trim(),description:'A Celestial community',icon:'✦'})};
  $r('[data-full]').onclick=()=>document.fullscreenElement?document.exitFullscreen():root.requestFullscreen();
