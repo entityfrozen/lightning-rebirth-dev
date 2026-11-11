@@ -91,7 +91,7 @@ function Focus(){
 export function Apps({onNavigate,onMusic,user,live,onAuth}){
   const [query,setQuery]=useState('');
   const [category,setCategory]=useState('ALL');
-  const [opened,setOpened]=useState(null);
+  const [opened,setOpened]=useState(()=>{const id=new URLSearchParams(location.search).get('game');return launchers.some(app=>app.game&&app.id===id)?id:null;});
   const [favorites,setFavorites]=useState(()=>readLocal('celestial-app-favorites',[]));
   const [recent,setRecent]=useState(()=>readLocal('celestial-app-recent',[]));
   useEffect(()=>saveLocal('celestial-app-favorites',favorites),[favorites]);
