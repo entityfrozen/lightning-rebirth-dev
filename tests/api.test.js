@@ -34,8 +34,10 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(homepage.headers.get('cross-origin-resource-policy'),'cross-origin');
 
     const html=await homepage.text();
-    assert.ok(html.includes('<title>Study Portal | Research Workspace</title>'));
-    assert.match(html,/study-portal\.svg/);
+    assert.ok(html.includes('<title>Celestial</title>'));
+    assert.match(html,/\/boba\/index\.html/);
+    assert.doesNotMatch(html,/\/bundle\/main\.js/);
+    assert.match(html,/celestial-star\.svg/);
     assert.doesNotMatch(html,/lightning-chan|mascotSprite|lightning-mark/);
     const appAsset=await fetch(url+'/bundle/main.js');
     assert.equal(appAsset.status,200);
