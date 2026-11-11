@@ -243,3 +243,46 @@
 @media(max-width:1050px){.celestial-discord{grid-template-columns:58px minmax(175px,225px) minmax(0,1fr)}.celestial-discord .native-members{display:none}}
 @media(max-width:640px){.celestial-discord{grid-template-columns:0 minmax(105px,145px) minmax(0,1fr)}.cel-chat-rail{display:none}.celestial-discord .native-rooms{padding:0 5px}.cel-chat-brand{padding:13px 7px;min-height:65px}.cel-chat-brand strong{font-size:12px}.cel-chat-brand small{font-size:9px}.celestial-discord .native-chat-link{font-size:11px;padding:9px 5px}.celestial-discord .native-chat-head{height:65px;padding:10px}.cel-chat-current h2{font-size:13px}.celestial-discord .native-feed{padding:12px 5px}.celestial-discord .native-message{padding:7px 4px;gap:6px}.celestial-discord .native-message .native-person-icon{width:30px;height:30px;font-size:9px}.cel-compose-wrap{margin:0 7px 8px}.cel-compose-hint{display:none}.cel-chat-self{padding:9px 4px}.cel-dm-list{max-height:190px}}
 @media(hover:none){.cel-reply-action{opacity:1}}
+
+/* Higher-contrast, animated 2048 board and additional Celestial arcade games. */
+.cel-2048{max-width:540px;background:linear-gradient(155deg,color-mix(in srgb,var(--acc),transparent 94%),var(--g1));border:1px solid var(--hair);padding:clamp(14px,2vw,28px);border-radius:27px;box-shadow:var(--sh)}
+.cel-2048-board{background:linear-gradient(145deg,#b5a590,#988876);box-shadow:inset 0 4px 13px #0002,0 12px 30px #0001;gap:10px;padding:12px;border-radius:21px}
+.cel-2048-tile{position:relative;box-shadow:inset 0 -5px 0 #00000010,0 2px 5px #00000013;font-size:clamp(20px,3vw,37px);font-weight:900;letter-spacing:-.07em;transition:background .22s ease,transform .18s cubic-bezier(.2,.8,.2,1);font-variant-numeric:tabular-nums}
+.cel-2048-tile.is-new{animation:celTilePop .25s cubic-bezier(.25,1.4,.5,1) both;animation-delay:var(--delay,0ms)}
+.cel-2048-tile[data-value="0"]{background:#ffffff20;box-shadow:none}
+.cel-2048-tile[data-value="2048"]{box-shadow:0 0 0 2px #f6da80,0 0 24px #ebc75b88;animation:celTileGold 1.6s ease-in-out infinite}
+@keyframes celTilePop{0%{transform:scale(.58);opacity:.4}70%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes celTileGold{0%,100%{filter:brightness(1)}50%{filter:brightness(1.2)}}
+.cel-extra-game{max-width:690px;margin:0 auto;padding:clamp(12px,2vw,24px);border-radius:25px;border:1px solid var(--hair);background:var(--g1);box-shadow:var(--sh);display:grid;gap:18px;justify-items:center}
+.cel-extra-game h3{font-size:22px;font-weight:800;letter-spacing:-.04em}
+.cel-extra-game>.btn{justify-self:center}
+.cel-chess{max-width:610px}
+.cel-chess>header{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px}
+.cel-chess label{display:flex;align-items:center;gap:9px;color:var(--ink-2);font-size:12px}
+.cel-chess select{padding:8px;border-radius:11px;background:var(--g2);border:1px solid var(--hair);color:var(--ink)}
+.cel-chess-board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));width:min(100%,520px);aspect-ratio:1;border:8px solid #433a33;border-radius:9px;overflow:hidden;box-shadow:0 16px 28px #0002}
+.cel-chess-cell{display:grid;place-items:center;aspect-ratio:1;min-width:0;padding:0;font-family:"Segoe UI Symbol","DejaVu Sans",serif;font-size:clamp(21px,4.2vw,46px);line-height:1;text-shadow:0 2px 2px #0002;transition:filter .12s}
+.cel-chess-cell.light{background:#eee8dd;color:#312a25}
+.cel-chess-cell.dark{background:#8c9b86;color:#1f2925}
+.cel-chess-cell.chosen{box-shadow:inset 0 0 0 5px #edca6f;filter:brightness(1.08)}
+.cel-chess-cell.target{box-shadow:inset 0 0 0 5px #5dbca8}
+.cel-chess-cell.moved{filter:brightness(1.05)}
+.cel-chess-cell:hover{filter:brightness(1.15)}
+.cel-chess-actions{display:flex;align-items:center;justify-content:center;gap:10px}
+.cel-connect-board{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;background:#3c65bc;border-radius:18px;padding:12px;box-shadow:0 12px 25px #0002;width:min(100%,500px)}
+.cel-connect-cell{aspect-ratio:1;border-radius:50%;background:#ffffff26;padding:4px}
+.cel-connect-cell span{display:block;width:100%;height:100%;border-radius:50%;background:#eae8df;box-shadow:inset 0 3px 5px #0004}
+.cel-connect-cell span[data-disc="1"]{background:#f05a65;animation:celTilePop .22s ease-out}
+.cel-connect-cell span[data-disc="2"]{background:#ffd468;animation:celTilePop .22s ease-out}
+.cel-mines-grid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:3px;width:min(100%,475px);padding:8px;background:var(--g3);border-radius:14px}
+.cel-mine-cell{aspect-ratio:1;min-width:0;border-radius:6px;background:var(--g1);box-shadow:inset 0 -3px 0 #0002;font-size:clamp(10px,1.7vw,18px);font-weight:850;color:var(--acc)}
+.cel-mine-cell.revealed{background:var(--g2);box-shadow:none}
+.cel-mine-cell[data-number="1"]{color:#4388d8}.cel-mine-cell[data-number="2"]{color:#319867}.cel-mine-cell[data-number="3"]{color:#d65a63}
+.cel-memory-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;width:min(100%,430px)}
+.cel-memory-cell{aspect-ratio:1;border-radius:15px;background:var(--g3);font-size:clamp(25px,4vw,44px);font-weight:800;color:var(--acc);transition:transform .2s ease,background .2s}
+.cel-memory-cell.showing{background:color-mix(in srgb,var(--acc),var(--g2) 79%);transform:rotateY(8deg);animation:celTilePop .2s ease-out}
+.cel-snake-grid{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:2px;background:var(--g3);padding:8px;border-radius:12px;width:min(100%,470px);aspect-ratio:1}
+.cel-snake-grid i{border-radius:3px;background:var(--g2);min-width:0}.cel-snake-grid i.head{background:#7cdbab;border-radius:6px}.cel-snake-grid i.body{background:#3db587}.cel-snake-grid i.food{background:#e97373;border-radius:50%;animation:celTileGold .9s infinite}
+.cel-snake-controls{display:flex;gap:10px;justify-content:center}.cel-snake-controls button{min-width:50px;font-size:17px}
+@media(max-width:550px){.cel-chess-board{border-width:5px}.cel-chess-cell{font-size:clamp(19px,5.6vw,34px)}.cel-extra-game{padding:12px}.cel-connect-board{padding:7px;gap:2px}.cel-2048-board{gap:6px;padding:8px}}
+@media(prefers-reduced-motion:reduce){.cel-2048-tile.is-new,.cel-memory-cell.showing,.cel-2048-tile[data-value="2048"],.cel-snake-grid i.food{animation:none}}
