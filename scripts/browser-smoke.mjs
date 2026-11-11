@@ -171,10 +171,12 @@ try{
     const r=element.getBoundingClientRect();
     return {bottom:r.bottom,width:r.width,left:r.left};
   });
-  assert.ok(Math.abs(desktopDock.bottom-889)<6,
-    'Desktop navigation should sit along the bottom with a small gap');
-  assert.ok(desktopDock.width>650 && desktopDock.width<900,
-    'Desktop navigation should be a compact centered dock');
+  assert.ok(Math.abs(desktopDock.bottom-890)<6,
+    'Boba desktop navigation should span the right edge with a small gap');
+  assert.ok(desktopDock.width>=76 && desktopDock.width<=94,
+    'Boba desktop navigation should be a compact right-side orbital dock');
+  assert.ok(desktopDock.left>1000,
+    'Boba desktop navigation should be right-aligned, not a wide footer');
   await page.getByRole('button',{name:'Quick switch (Ctrl+K)'}).click();
   await page.getByRole('dialog',{name:'Switch to a page'})
     .getByRole('textbox',{name:'Find a page'}).fill('apps');
