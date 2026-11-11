@@ -998,3 +998,906 @@ const ask = {
       sendBtn.classList.toggle("stop", !!ctl);
     };
     const patch = (id, body) =>
+      fetch("/api/ask/" + encodeURIComponent(id), { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), credentials: "same-origin" })
+        .then((r) => r.json())
+        .catch(() => null);
+    this.load = async () => {
+      try {
+        const d = await (await fetch("/api/ask" + (st.find ? "?q=" + encodeURIComponent(st.find) : ""), { credentials: "same-origin" })).json();
+        st.ready = d.ready !== false;
+        st.list = d.chats || [];
+      } catch {
+        st.list = [];
+      }
+      if (st.chat && !st.busy && !st.find && !st.list.some((c) => c.id === st.chat)) st.chat = null;
+      paintList();
+      if (!st.chat) empty();
+    };
+    const finish = (a, m, err) => {
+      const stick = near();
+      if (m.id) a.dataset.mid = m.id;
+      a.raw = m.text;
+      a.innerHTML = (m.text ? '<div class="ai-body">' + md(m.text, { sources: m.sources, onReady: () => finish(a, m, err) }) + "</div>" : "") +
+        (err ? '<p class="err">' + esc(err) + "</p>" : "") + aSrc(m.sources) + aFoot(m);
+      diagrams(a).then(() => stick && toEnd());
+      if (stick) toEnd();
+    };
+    const open = async (id) => {
+      if (st.busy) return;
+      st.chat = id;
+      paintList();
+      thread.classList.remove("empty");
+      inner.innerHTML = "";
+      try {
+        const r = await fetch("/api/ask/" + encodeURIComponent(id), { credentials: "same-origin" });
+        if (!r.ok) throw new Error("gone");
+        const d = await r.json();
+        if (st.chat !== id) return;
+        for (const m of d.msgs || []) {
+          if (m.role === "user") inner.append(qEl(m, st.pics.get(String(m.id))));
+          else {
+            const a = document.createElement("div");
+            a.className = "ai-a";
+            inner.append(a);
+            finish(a, m, "");
+          }
+        }
+        toEnd();
+      } catch {
+        st.chat = null;
+        paintList();
+        empty();
+      }
+    };
+    const run = async (body, u) => {
+      const m = { text: "", sources: [], model: null, id: 0 };
+      const a = document.createElement("div");
+      a.className = "ai-a";
+      a.innerHTML = '<span class="ai-dots"><i></i><i></i><i></i></span>';
+      inner.append(a);
+      toEnd();
+      const ctl = new AbortController();
+      setBusy(ctl);
+      let raf = 0, err = "";
+      const draw = () => {
+        raf = 0;
+        const stick = near();
+        a.innerHTML = '<div class="ai-body">' + md(m.text, { sources: m.sources, onReady: later }) + "</div>";
+        if (stick) toEnd();
+      };
+      const later = () => {
+        if (!raf) raf = requestAnimationFrame(draw);
+      };
+      try {
+        const r = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat: st.chat, tier: tierNow(), web: !!store.get("askWeb", false), ...body }),
+          credentials: "same-origin",
+          signal: ctl.signal,
+        });
+        if (!r.ok || !r.body) err = (await r.json().catch(() => ({}))).msg || "Couldn’t answer that. Try again.";
+        else {
+          const rd = r.body.getReader(), dec = new TextDecoder();
+          let buf = "";
+          for (;;) {
+            const { done, value } = await rd.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let cut;
+            while ((cut = buf.indexOf("\n\n")) > -1) {
+              const block = buf.slice(0, cut);
+              buf = buf.slice(cut + 2);
+              let ev = "", data = "";
+              for (const line of block.split("\n")) {
+                if (line.startsWith("event:")) ev = line.slice(6).trim();
+                else if (line.startsWith("data:")) data += line.slice(5).trim();
+              }
+              let d = {};
+              try {
+                d = JSON.parse(data || "{}");
+              } catch {}
+              if (ev === "start") {
+                const known = st.list.find((c) => c.id === d.id);
+                st.chat = d.id;
+                st.list = [{ id: d.id, title: known ? known.title : d.title, pinned: known ? known.pinned : false, updated: Date.now() }, ...st.list.filter((c) => c.id !== d.id)];
+                order();
+                if (!st.find) paintList();
+                if (u && d.user) {
+                  u.dataset.mid = d.user;
+                  if (body.photos && body.photos.length) st.pics.set(String(d.user), body.photos);
+                }
+              } else if (ev === "sources") m.sources = Array.isArray(d) ? d : [];
+              else if (ev === "model") m.model = d;
+              else if (ev === "t") {
+                m.text += d.t || "";
+                later();
+              } else if (ev === "fail") err = d.msg || "Couldn’t answer that. Try again.";
+              else if (ev === "done") m.id = d.id || 0;
+            }
+          }
+          if (!m.text && !err) err = "Couldn’t answer that. Try again.";
+        }
+      } catch {
+        if (!ctl.signal.aborted) err = "Couldn’t reach Ask. Check your connection.";
+        else if (!m.text) err = "Stopped.";
+      }
+      cancelAnimationFrame(raf);
+      finish(a, m, err);
+      setBusy(null);
+    };
+    const send = async (text) => {
+      text = String(text || "").trim();
+      if (st.busy) return;
+      if (st.att.some((x) => x.loading)) return say("Still reading your file…");
+      if (!text && !st.att.length) return;
+      const att = st.att;
+      st.att = [];
+      paintAtts();
+      say("");
+      q.value = "";
+      grow();
+      if (!st.chat) inner.innerHTML = "";
+      thread.classList.remove("empty");
+      const photos = att.filter((x) => x.kind === "photo").map((x) => x.url);
+      const files = att.filter((x) => x.kind !== "photo").map(({ kind, name, url, pages, text: t }) => ({ kind, name, url, pages, text: t }));
+      const u = qEl({ text, files }, photos);
+      inner.append(u);
+      await run({ text, files, photos }, u);
+    };
+    const edit = (u) => {
+      if (st.busy || !u.dataset.mid || $(".ai-edit", u)) return;
+      const row = $(".ai-qr", u);
+      const box = el('<div class="ai-edit"><textarea rows="1" maxlength="8000" aria-label="Edit message"></textarea><div class="ai-eb">' +
+        '<button class="btn s" type="button" data-ecancel>Cancel</button><button class="btn k s" type="button" data-esend>Send</button></div></div>');
+      const ta = $("textarea", box);
+      ta.value = $(".ai-u", u).textContent;
+      row.hidden = true;
+      u.append(box);
+      const fit = () => {
+        ta.style.height = "auto";
+        ta.style.height = Math.min(ta.scrollHeight, 240) + "px";
+      };
+      const stop = () => {
+        box.remove();
+        row.hidden = false;
+      };
+      const go = () => {
+        const text = ta.value.trim();
+        if (!text || st.busy) return;
+        const mid = u.dataset.mid, pics = st.pics.get(mid) || [];
+        while (u.nextElementSibling) u.nextElementSibling.remove();
+        const nu = qEl({ text }, null);
+        const qa = $(".ai-qa", u);
+        if (qa) nu.prepend(qa);
+        u.replaceWith(nu);
+        run({ text, edit: +mid, photos: pics }, nu);
+      };
+      ta.addEventListener("input", fit);
+      ta.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+          e.preventDefault();
+          go();
+        } else if (e.key === "Escape") stop();
+      });
+      $("[data-ecancel]", box).addEventListener("click", stop);
+      $("[data-esend]", box).addEventListener("click", go);
+      fit();
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+    };
+    const regen = (a) => {
+      if (st.busy || !st.chat) return;
+      const u = a.previousElementSibling;
+      const pics = u && u.dataset.mid ? st.pics.get(u.dataset.mid) || [] : [];
+      a.remove();
+      run({ regen: true, photos: pics }, null);
+    };
+    const copy = async (btn, text) => {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        return;
+      }
+      const old = btn.innerHTML;
+      btn.innerHTML = ico("check");
+      setTimeout(() => (btn.innerHTML = old), 1200);
+    };
+    const addFiles = async (files) => {
+      say("");
+      for (const f of files) {
+        const photo = isPhoto(f);
+        if (st.att.filter((x) => (x.kind === "photo") === photo).length >= 3) {
+          say(photo ? "Up to 3 photos at a time." : "Up to 3 files at a time.");
+          continue;
+        }
+        const slot = { kind: photo ? "photo" : "file", name: f.name || (photo ? "Photo" : "File"), loading: true };
+        st.att.push(slot);
+        paintAtts();
+        try {
+          const r = await (photo ? readPhoto(f) : readDoc(f));
+          if (st.att.includes(slot)) Object.assign(slot, r, { loading: false });
+        } catch (e) {
+          const i = st.att.indexOf(slot);
+          if (i > -1) st.att.splice(i, 1);
+          say(e.message);
+        }
+        paintAtts();
+      }
+    };
+    const closeMenu = () => {
+      $$(".ai-imenu", root).forEach((m) => m.remove());
+      st.menu = null;
+    };
+    const openMenu = (it) => {
+      closeMenu();
+      const c = st.list.find((x) => x.id === it.dataset.id);
+      if (!c) return;
+      st.menu = c.id;
+      const m = el('<div class="ai-menu ai-imenu gl g3" role="menu"><button type="button" data-act="rename">' + ico("pencil") + "Rename</button>" +
+        '<button type="button" data-act="pin">' + ico("pin") + (c.pinned ? "Unpin" : "Pin") + '</button><button type="button" class="bad" data-act="del">' + ico("trash") + "Delete</button></div>");
+      const side = $(".ai-side", root), r = it.getBoundingClientRect(), b = side.getBoundingClientRect();
+      m.style.top = r.bottom - b.top + 4 + "px";
+      m.style.left = Math.max(8, Math.min(r.right - b.left - 176, b.width - 184)) + "px";
+      side.append(m);
+    };
+    const rename = (id) => {
+      const c = st.list.find((x) => x.id === id);
+      const it = $$(".ai-it", listEl).find((x) => x.dataset.id === id);
+      if (!c || !it) return;
+      const inp = el('<input class="ai-ren" maxlength="60" aria-label="Chat name">');
+      inp.value = c.title;
+      $("span", it).replaceWith(inp);
+      inp.focus();
+      inp.select();
+      let done = false;
+      const save = async (keep) => {
+        if (done) return;
+        done = true;
+        const t = inp.value.replace(/\s+/g, " ").trim();
+        if (keep && t && t !== c.title) {
+          c.title = t;
+          const r = await patch(id, { title: t });
+          if (r && r.title) c.title = r.title;
+        }
+        paintList();
+      };
+      inp.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          save(true);
+        } else if (e.key === "Escape") save(false);
+      });
+      inp.addEventListener("blur", () => save(true));
+    };
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (st.busy) st.busy.abort();
+      else send(q.value);
+    });
+    q.addEventListener("input", grow);
+    q.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        if (!st.busy) send(q.value);
+      }
+    });
+    q.addEventListener("paste", (e) => {
+      const shots = [...(e.clipboardData ? e.clipboardData.files : [])].filter(isPhoto);
+      if (!shots.length) return;
+      e.preventDefault();
+      addFiles(shots);
+    });
+    form.addEventListener("dragover", (e) => {
+      if (![...e.dataTransfer.types].includes("Files")) return;
+      e.preventDefault();
+      form.classList.add("drop");
+    });
+    form.addEventListener("dragleave", (e) => !form.contains(e.relatedTarget) && form.classList.remove("drop"));
+    form.addEventListener("drop", (e) => {
+      form.classList.remove("drop");
+      if (!e.dataTransfer.files.length) return;
+      e.preventDefault();
+      addFiles([...e.dataTransfer.files]);
+    });
+    $("[data-add]", root).addEventListener("click", () => pick.click());
+    pick.addEventListener("change", () => {
+      const files = [...pick.files];
+      pick.value = "";
+      addFiles(files);
+    });
+    atts.addEventListener("click", (e) => {
+      const x = e.target.closest("[data-rm]");
+      if (!x) return;
+      st.att.splice(+x.dataset.rm, 1);
+      paintAtts();
+      say("");
+    });
+    $("[data-web]", root).addEventListener("click", () => {
+      store.set("askWeb", !store.get("askWeb", false));
+      paintTools();
+    });
+    $("[data-tier]", root).addEventListener("click", () => (tmenu.hidden = !tmenu.hidden));
+    tmenu.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-tv]");
+      if (!b) return;
+      store.set("askTier", b.dataset.tv);
+      tmenu.hidden = true;
+      paintTools();
+    });
+    document.addEventListener("click", (e) => {
+      if (st.menu && !e.target.closest(".ai-imenu,[data-more]")) closeMenu();
+      if (!tmenu.hidden && !e.target.closest("[data-tmenu],[data-tier]")) tmenu.hidden = true;
+    });
+    findIn.addEventListener("input", debounce(() => {
+      st.find = findIn.value.trim();
+      this.load();
+    }, 220));
+    $("[data-new]", root).addEventListener("click", () => {
+      if (st.busy) return;
+      st.chat = null;
+      paintList();
+      empty();
+      q.focus();
+    });
+    listEl.addEventListener("click", (e) => {
+      const it = e.target.closest("[data-id]");
+      if (!it || e.target.closest(".ai-ren")) return;
+      if (e.target.closest("[data-more]")) return st.menu === it.dataset.id ? closeMenu() : openMenu(it);
+      closeMenu();
+      if (it.dataset.id !== st.chat) open(it.dataset.id);
+    });
+    listEl.addEventListener("scroll", () => st.menu && closeMenu(), { passive: true });
+    $(".ai-side", root).addEventListener("click", async (e) => {
+      const act = e.target.closest(".ai-imenu [data-act]");
+      if (!act) return;
+      const id = st.menu, c = st.list.find((x) => x.id === id);
+      closeMenu();
+      if (!c) return;
+      if (act.dataset.act === "rename") return rename(id);
+      if (act.dataset.act === "pin") {
+        c.pinned = !c.pinned;
+        order();
+        paintList();
+        return patch(id, { pinned: c.pinned });
+      }
+      if (st.busy && st.chat === id) return;
+      await fetch("/api/ask/" + encodeURIComponent(id), { method: "DELETE", credentials: "same-origin" }).catch(() => {});
+      st.list = st.list.filter((x) => x.id !== id);
+      if (st.chat === id) {
+        st.chat = null;
+        empty();
+      }
+      paintList();
+    });
+    listEl.addEventListener("keydown", (e) => {
+      const it = e.target.closest("[data-id]");
+      if (!it || e.target.closest(".ai-ren,[data-more]")) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (it.dataset.id !== st.chat) open(it.dataset.id);
+      }
+    });
+    inner.addEventListener("click", (e) => {
+      const s = e.target.closest("[data-s]");
+      if (s) return send(s.textContent);
+      const ed = e.target.closest("[data-edit]");
+      if (ed) return edit(ed.closest(".ai-q"));
+      const cp = e.target.closest("[data-copy]");
+      if (cp) return copy(cp, cp.closest(".ai-a").raw || "");
+      const rg = e.target.closest("[data-regen]");
+      if (rg) return regen(rg.closest(".ai-a"));
+      const cc = e.target.closest("[data-cpy]");
+      if (cc) return copy(cc, $("code", cc.closest("pre")).textContent);
+      const link = e.target.closest(".ai-a a[href]");
+      if (link) {
+        e.preventDefault();
+        ctx.openWeb(link.href);
+      }
+    });
+  },
+  enter(root, ctx) {
+    ctx.wash(null);
+    if (this.paintTools) this.paintTools();
+    if (this.load) this.load();
+    setTimeout(() => $("[data-aq]", root).focus(), 60);
+  },
+};
+const AUTH = {
+  in: { fields: ["email", "password"], btn: "Sign in", seg: "in", alt: [["reset", "Forgot password?"], ["code", "Email me a code"]] },
+  up: { fields: ["user", "email", "password"], btn: "Create account", seg: "up" },
+  upCode: { fields: ["code"], btn: "Verify", seg: "up", note: true, back: "up" },
+  code: { fields: ["email"], btn: "Send code", title: "Email code", back: "in" },
+  codeIn: { fields: ["code"], btn: "Sign in", title: "Email code", note: true, back: "code" },
+  reset: { fields: ["email"], btn: "Send code", title: "Forgot password", back: "in" },
+  resetIn: { fields: ["code", "password"], btn: "Reset password", title: "Forgot password", note: true, back: "reset" },
+};
+const lic = (k, a, b) => '<span class="lic" style="background:linear-gradient(145deg,' + a + "," + b + ')">' + ico(k) + "</span>";
+async function square(file, size) {
+  if (file.size > 25e6) throw new Error("That picture is too big.");
+  let bmp;
+  try {
+    bmp = await createImageBitmap(file);
+  } catch {
+    throw new Error("Couldn't open that picture.");
+  }
+  const s = Math.min(bmp.width, bmp.height);
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  g.fillStyle = "#fff";
+  g.fillRect(0, 0, size, size);
+  g.imageSmoothingQuality = "high";
+  g.drawImage(bmp, (bmp.width - s) / 2, (bmp.height - s) / 2, s, s, 0, 0, size, size);
+  bmp.close();
+  const enc = (type) => new Promise((r) => c.toBlob(r, type, 0.86));
+  let out = await enc("image/webp");
+  if (!out || out.type !== "image/webp") out = await enc("image/jpeg");
+  if (!out) throw new Error("Couldn't open that picture.");
+  return out;
+}
+const lrow = (ic, a, b, label, key, val) =>
+  '<div class="lr">' + lic(ic, a, b) + "<h3>" + label + "</h3>" +
+  (val ? '<span class="val" data-v' + key + "></span>" : "") +
+  '<button class="btn s' + (key === "del" ? " bad" : "") + '" type="button" data-' + key + 'btn>' + (key === "del" ? "Delete" : "Change") + "</button></div>";
+const codeField = (attrs) =>
+  '<label class="fld code"' + (attrs || "") + '><input name="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Code" aria-label="Code"></label>';
+const account = {
+  html: () =>
+    '<div class="acct">' +
+    '<section class="auth gl g2 r" data-auth hidden><img class="auth-logo" src="/img/boba-cup.svg" alt="">' +
+    '<div class="seg" data-amode><span class="th"></span><button type="button" class="on" data-v="in">Sign in</button><button type="button" data-v="up">Create account</button></div>' +
+    '<h2 class="ah" data-atitle hidden></h2>' +
+    '<form data-aform novalidate><p class="note" data-anote hidden></p>' +
+    '<label class="fld" data-f="user">' + ico("user") +
+    '<input name="user" maxlength="20" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Username" aria-label="Username"></label>' +
+    '<label class="fld" data-f="email">' + ico("mail") +
+    '<input name="email" type="email" maxlength="254" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email" aria-label="Email"></label>' +
+    codeField(' data-f="code"') +
+    '<label class="fld" data-f="password">' + ico("lock") +
+    '<input name="password" type="password" maxlength="200" autocomplete="current-password" placeholder="Password" aria-label="Password"></label>' +
+    '<p class="msg" data-amsg hidden></p><button class="btn k" type="submit" data-asub>Sign in</button><div class="alt" data-alt></div></form></section>' +
+    '<div class="acg" data-mine hidden>' +
+    '<section class="pass r" data-pass><div class="top"><span class="av" data-pf></span><div class="nm"><h1 data-name></h1><p data-user></p></div>' +
+    '<div class="pbs"><button class="pb" type="button" data-czbtn>Customize</button><button class="pb" type="button" data-out>' + ico("signout") + "Sign out</button></div></div>" +
+    '<div class="bot">Member since<b data-since></b></div><svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">' + N.home + "</svg></section>" +
+    '<section class="about gl g2 r" style="--d:.04s"><div class="abh">' + lic("ask", "#c084fc", "#7c3aed") + "<h3>About you</h3><span>Ask reads this in every chat</span></div>" +
+    '<form data-abform novalidate><textarea name="about" maxlength="300" placeholder="Your grade, subjects, how you like answers" aria-label="About you"></textarea>' +
+    '<div class="abf"><p class="msg" hidden></p><button class="btn k s" type="submit">Save</button></div></form></section>' +
+    '<section class="cz gl g2" data-cz hidden><input type="file" accept="image/*" data-file hidden><h3>Avatar</h3><div class="avs">' +
+    '<button class="avu" type="button" data-up aria-label="Upload photo"></button>' +
+    AVATARS.map((c, i) => '<button class="sw" type="button" data-av="' + i + '" aria-label="Colour ' + (i + 1) + '" style="background:linear-gradient(145deg,' + c[0] + "," + c[1] + ')"></button>').join("") +
+    '</div><button class="btn s" type="button" data-czdone>Done</button><h3>Cover</h3><div class="covs" data-covs></div><p class="msg" data-czmsg hidden></p></section>' +
+    '<section class="grp gl g2 r" style="--d:.08s"><h3 class="cardh">Account</h3>' +
+    lrow("user", "#b98cff", "#7a4cf0", "Display name", "dn", true) +
+    '<form class="lf one" data-dnform hidden novalidate><label class="fld"><input name="display" maxlength="32" autocomplete="nickname" placeholder="Display name" aria-label="Display name"></label>' +
+    '<button class="btn k s" type="submit">Save</button><p class="msg" hidden></p></form>' +
+    lrow("mail", "#43c2ff", "#3058f0", "Email", "em", true) +
+    '<form class="lf" data-emform hidden novalidate>' +
+    '<label class="fld" data-s1><input name="email" type="email" maxlength="254" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="New email" aria-label="New email"></label>' +
+    '<label class="fld" data-s1><input name="password" type="password" maxlength="200" autocomplete="current-password" placeholder="Password" aria-label="Password"></label>' +
+    codeField(" data-s2 hidden") +
+    '<button class="btn k s" type="submit">Send code</button><p class="msg" hidden></p></form>' +
+    lrow("lock", "#8b93a3", "#555e6e", "Password", "pw") +
+    '<form class="lf" data-pwform hidden novalidate><label class="fld"><input type="password" name="current" autocomplete="current-password" placeholder="Current password" aria-label="Current password"></label>' +
+    '<label class="fld"><input type="password" name="password" autocomplete="new-password" placeholder="New password" aria-label="New password"></label>' +
+    '<button class="btn k s" type="submit">Save</button><p class="msg" hidden></p></form></section>' +
+    '<section class="grp gl g2 r" style="--d:.12s"><h3 class="cardh">Privacy</h3>' +
+    '<div class="lr">' + lic("clock", "#5ee08a", "#139b48") + '<h3>Save history</h3><button class="tg" type="button" role="switch" aria-label="Save history" data-keep><i></i></button></div>' +
+    '<div class="lr">' + lic("shield", "#2be0e6", "#0b8f86") + '<h3>Auto‑clear</h3><div class="seg" data-forget><span class="th"></span>' +
+    '<button type="button" data-fg="0">Never</button><button type="button" data-fg="1">1 day</button><button type="button" data-fg="7">1 week</button></div></div>' +
+    '<div class="lr">' + lic("trash", "#ffbe2e", "#ff7a1a") + '<h3>Clear history</h3><button class="btn s" type="button" data-clr>Clear</button></div></section>' +
+    '<section class="grp gl g2 wide r" style="--d:.16s"><h3 class="cardh">Your data</h3>' +
+    '<div class="lr">' + lic("down", "#43c2ff", "#3058f0") + '<h3>Download my data</h3><button class="btn s" type="button" data-dl>Download</button></div>' +
+    lrow("trash", "#ff6b6b", "#d62e4a", "Delete account", "del") +
+    '<form class="lf" data-delform hidden novalidate><label class="fld"><input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password"></label>' +
+    '<button class="btn s bad" type="submit">Delete for good</button><p class="msg" hidden></p></form></section></div></div>',
+  mount(root, ctx) {
+    const form = $("[data-aform]", root), msg = $("[data-amsg]", root), sub = $("[data-asub]", root);
+    const seg = $("[data-amode]", root), title = $("[data-atitle]", root), note = $("[data-anote]", root), alt = $("[data-alt]", root);
+    const st = (this.st = { state: "in", email: "", tok: "", sent: 0, timer: 0, was: false, form });
+    const say = (el, text, good) => {
+      el.hidden = !text;
+      el.textContent = text || "";
+      el.classList.toggle("ok", !!good);
+    };
+    const paintAlt = () => {
+      const c = AUTH[st.state];
+      const links = [...(c.alt || [])];
+      const left = Math.ceil((st.sent + 60000 - Date.now()) / 1000);
+      if (c.note) links.push(["resend", left > 0 ? "Resend in " + left + "s" : "Resend code", left > 0]);
+      if (c.back) links.push(["back", "Back"]);
+      alt.innerHTML = links.map(([k, label, off]) => '<button type="button" data-al="' + k + '"' + (off ? " disabled" : "") + ">" + label + "</button>").join("");
+      alt.hidden = !links.length;
+      clearTimeout(st.timer);
+      if (c.note && left > 0) st.timer = setTimeout(paintAlt, 1000);
+    };
+    const show = (s, focus) => {
+      const c = AUTH[s];
+      st.state = s;
+      for (const k of ["user", "email", "code", "password"]) $('[data-f="' + k + '"]', root).hidden = !c.fields.includes(k);
+      seg.hidden = !c.seg;
+      if (c.seg) {
+        $$("button", seg).forEach((b) => b.classList.toggle("on", b.dataset.v === c.seg));
+        segThumb(seg);
+      }
+      title.hidden = !c.title;
+      title.textContent = c.title || "";
+      note.hidden = !c.note;
+      if (c.note) note.innerHTML = "Code sent to <b>" + esc(st.email) + "</b>";
+      sub.textContent = c.btn;
+      form.password.placeholder = s === "resetIn" ? "New password" : "Password";
+      form.password.autocomplete = s === "in" ? "current-password" : "new-password";
+      if (c.note) form.code.value = "";
+      say(msg, "");
+      paintAlt();
+      if (focus) {
+        const first = c.fields.map((k) => form[k]).find((i) => !i.value) || form[c.fields[0]];
+        setTimeout(() => first.focus(), 30);
+      }
+    };
+    st.show = show;
+    const run = async (fn) => {
+      sub.disabled = true;
+      say(msg, "");
+      try {
+        await fn();
+      } catch (err) {
+        say(msg, err.message);
+      }
+      sub.disabled = false;
+    };
+    const mail = () => form.email.value.trim();
+    const code = () => form.code.value.replace(/\D/g, "");
+    const sent = (s, email, again) => {
+      st.email = email;
+      st.sent = Date.now();
+      show(s, true);
+      if (again) say(msg, "New code sent.", true);
+    };
+    const send = (again) =>
+      run(async () => {
+        const s = st.state;
+        if (s === "up" || s === "upCode") {
+          const d = await ctx.account.register(form.user.value.trim(), mail(), form.password.value);
+          st.tok = d.tok;
+          return sent("upCode", d.email, again);
+        }
+        const purpose = s.startsWith("code") ? "login" : "reset";
+        const d = await ctx.account.sendCode(mail(), purpose);
+        sent(purpose === "login" ? "codeIn" : "resetIn", d.email, again);
+      });
+    seg.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-v]");
+      if (b && b.dataset.v !== AUTH[st.state].seg) show(b.dataset.v, true);
+    });
+    alt.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-al]");
+      if (!b || b.disabled) return;
+      if (b.dataset.al === "back") return show(AUTH[st.state].back, true);
+      if (b.dataset.al === "resend") return send(true);
+      show(b.dataset.al, true);
+    });
+    form.code.addEventListener("input", () => (form.code.value = code()));
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const s = st.state, c = AUTH[s];
+      if (c.fields.includes("code") && code().length !== 6) return say(msg, "Enter the 6-digit code.");
+      if (c.fields.some((k) => !form[k].value.trim())) return say(msg, "Fill in every field.");
+      if (s === "in") return run(() => ctx.account.login(mail(), form.password.value));
+      if (s === "upCode") return run(() => ctx.account.verify(st.email, code(), st.tok));
+      if (s === "codeIn") return run(() => ctx.account.codeLogin(st.email, code()));
+      if (s === "resetIn") return run(() => ctx.account.reset(st.email, code(), form.password.value));
+      send(false);
+    });
+    show("in");
+    $("[data-out]", root).addEventListener("click", () => ctx.account.leave());
+    const pair = (btnSel, formSel, open, run) => {
+      const f = $(formSel, root), m = $(".msg", f);
+      $(btnSel, root).addEventListener("click", () => {
+        f.hidden = !f.hidden;
+        say(m, "");
+        if (f.hidden) return;
+        if (open) open(f);
+        [...f.querySelectorAll("input")].find((i) => !i.closest("[hidden]")).focus();
+      });
+      f.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const b = f.querySelector("button[type=submit]");
+        b.disabled = true;
+        try {
+          await run(f, m);
+        } catch (err) {
+          say(m, err.message);
+        }
+        b.disabled = false;
+      });
+    };
+    pair("[data-dnbtn]", "[data-dnform]", (f) => (f.display.value = ctx.account.me.display), async (f) => {
+      await ctx.account.profile({ display: f.display.value });
+      f.hidden = true;
+    });
+    const cz = $("[data-cz]", root);
+    $("[data-czbtn]", root).addEventListener("click", () => {
+      cz.hidden = !cz.hidden;
+      if (!cz.hidden) this.covers(root, ctx);
+    });
+    $("[data-czdone]", root).addEventListener("click", () => (cz.hidden = true));
+    const czm = $("[data-czmsg]", root), file = $("[data-file]", root), up = $("[data-up]", root);
+    cz.addEventListener("click", async (e) => {
+      if (e.target.closest("[data-up]")) return file.click();
+      const b = e.target.closest("[data-av],[data-cov]");
+      if (!b || b.classList.contains("on")) return;
+      say(czm, "");
+      try {
+        if (!("av" in b.dataset)) return await ctx.account.profile({ cover: b.dataset.cov });
+        if (ctx.account.me.pic) await ctx.account.dropPic();
+        await ctx.account.profile({ color: +b.dataset.av });
+      } catch (err) {
+        say(czm, err.message);
+      }
+    });
+    file.addEventListener("change", async () => {
+      const f = file.files[0];
+      file.value = "";
+      if (!f) return;
+      up.classList.add("ld");
+      say(czm, "");
+      try {
+        await ctx.account.upload(await square(f, 256));
+      } catch (err) {
+        say(czm, err.message);
+      }
+      up.classList.remove("ld");
+    });
+    const ab = $("[data-abform]", root), abm = $(".msg", ab);
+    ab.about.addEventListener("input", () => {
+      ab.dataset.dirty = "1";
+      say(abm, "");
+    });
+    ab.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const b = $("button", ab);
+      b.disabled = true;
+      try {
+        await ctx.account.profile({ about: ab.about.value });
+        delete ab.dataset.dirty;
+        ab.about.value = ctx.account.me.about;
+        say(abm, "Saved", true);
+      } catch (err) {
+        say(abm, err.message);
+      }
+      b.disabled = false;
+    });
+    $("[data-keep]", root).addEventListener("click", () => {
+      store.set("keep", !store.get("keep", true));
+      this.privacy(root);
+    });
+    $("[data-forget]", root).addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-fg]");
+      if (!b) return;
+      store.set("forget", +b.dataset.fg);
+      store.set("history", ctx.history.list());
+      this.privacy(root);
+    });
+    const clr = $("[data-clr]", root);
+    let armed = 0;
+    clr.addEventListener("click", () => {
+      clearTimeout(armed);
+      if (!clr.classList.contains("bad")) {
+        clr.classList.add("bad");
+        clr.textContent = "Clear all?";
+        armed = setTimeout(() => {
+          clr.classList.remove("bad");
+          clr.textContent = "Clear";
+        }, 4000);
+        return;
+      }
+      store.set("cleared", Date.now());
+      store.set("history", []);
+      clr.classList.remove("bad");
+      clr.textContent = "Cleared";
+      armed = setTimeout(() => (clr.textContent = "Clear"), 2000);
+    });
+    const dl = $("[data-dl]", root);
+    dl.addEventListener("click", async () => {
+      dl.disabled = true;
+      try {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(await ctx.account.download());
+        a.download = "boba-" + ctx.account.me.name + ".json";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      } catch {
+        dl.textContent = "Try again";
+        setTimeout(() => (dl.textContent = "Download"), 2500);
+      }
+      dl.disabled = false;
+    });
+    const emf = $("[data-emform]", root);
+    const emStage = (two) => {
+      $$("[data-s1]", emf).forEach((x) => (x.hidden = two));
+      $$("[data-s2]", emf).forEach((x) => (x.hidden = !two));
+      emf.classList.toggle("one", two);
+      $("button[type=submit]", emf).textContent = two ? "Confirm" : "Send code";
+    };
+    emf.code.addEventListener("input", () => (emf.code.value = emf.code.value.replace(/\D/g, "")));
+    pair("[data-embtn]", "[data-emform]", (f) => {
+      f.reset();
+      emStage(false);
+    }, async (f, m) => {
+      if (f.code.closest("[data-s2]").hidden) {
+        const d = await ctx.account.changeEmail(f.email.value.trim(), f.password.value);
+        emStage(true);
+        say(m, "Code sent to " + d.email, true);
+        f.code.focus();
+        return;
+      }
+      await ctx.account.confirmEmail(f.code.value);
+      f.reset();
+      emStage(false);
+      f.hidden = true;
+    });
+    pair("[data-pwbtn]", "[data-pwform]", null, async (f, m) => {
+      await ctx.account.password(f.current.value, f.password.value);
+      f.reset();
+      say(m, "Password changed.", true);
+    });
+    pair("[data-delbtn]", "[data-delform]", null, async (f) => {
+      await ctx.account.remove(f.password.value);
+      f.reset();
+      f.hidden = true;
+    });
+  },
+  enter(root, ctx) {
+    const me = ctx.account.me;
+    const st = this.st;
+    $("[data-auth]", root).hidden = !!me;
+    $("[data-mine]", root).hidden = !me;
+    ctx.wash(null);
+    if (!me) {
+      if (st.was) {
+        st.form.reset();
+        st.show("in");
+      } else st.show(st.state);
+      st.was = false;
+      return;
+    }
+    if (!st.was) {
+      st.form.reset();
+      st.show("in");
+    }
+    st.was = true;
+    const c = AVATARS[me.color] || AVATARS[0];
+    const av = $("[data-pf]", root), pass = $("[data-pass]", root), up = $("[data-up]", root);
+    av.textContent = me.pic ? "" : initials(me.display);
+    av.style.background = me.pic ? 'center/cover url("' + me.pic + '")' : "linear-gradient(145deg," + c[0] + "," + c[1] + ")";
+    up.innerHTML = me.pic ? '<img alt="" src="' + esc(me.pic) + '">' : ico("plus");
+    up.classList.toggle("on", !!me.pic);
+    pass.style.backgroundImage = me.cover ? 'linear-gradient(180deg,rgba(18,10,4,.12),rgba(18,10,4,.72)),url("' + still(me.cover, "w780") + '")' : "";
+    pass.classList.toggle("img", !!me.cover);
+    $("[data-name]", root).textContent = me.display;
+    $("[data-user]", root).textContent = "@" + me.name;
+    $("[data-since]", root).textContent = new Date(me.created).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+    $$("[data-av]", root).forEach((b) => b.classList.toggle("on", !me.pic && +b.dataset.av === me.color));
+    $$("[data-cov]", root).forEach((b) => b.classList.toggle("on", b.dataset.cov === me.cover));
+    $("[data-vdn]", root).textContent = me.display;
+    $("[data-vem]", root).textContent = me.email;
+    const ab = $("[data-abform]", root);
+    if (!ab.dataset.dirty) ab.about.value = me.about;
+    this.privacy(root);
+  },
+  async covers(root, ctx) {
+    const box = $("[data-covs]", root);
+    if (box.childElementCount) return;
+    const btn = (path, name) =>
+      '<button class="cov" type="button" data-cov="' + esc(path) + '" aria-label="' + esc(name) + '">' + (path ? '<img alt="" src="' + still(path, "w300") + '">' : "") + "</button>";
+    box.innerHTML = btn("", "Boba");
+    let list = [];
+    try {
+      list = (await get("/api/watch/home?type=movie")).rows[0].items.filter((x) => x.backdrop).slice(0, 7).map((x) => [x.backdrop, x.name]);
+    } catch {}
+    const mine = ctx.account.me && ctx.account.me.cover;
+    if (mine && !list.some(([p]) => p === mine)) list.unshift([mine, "Cover"]);
+    box.innerHTML = btn("", "Boba") + list.map(([p, n]) => btn(p, n)).join("");
+    $$("[data-cov]", box).forEach((b) => b.classList.toggle("on", b.dataset.cov === (mine || "")));
+  },
+  privacy(root) {
+    const on = !!store.get("keep", true);
+    const k = $("[data-keep]", root);
+    k.classList.toggle("on", on);
+    k.setAttribute("aria-checked", on);
+    const seg = $("[data-forget]", root), f = String(store.get("forget", 0) || 0);
+    $$("button", seg).forEach((b) => b.classList.toggle("on", b.dataset.fg === f));
+    segThumb(seg);
+  },
+};
+const settings = {
+  html: () => {
+    return '<div class="set"><h1 class="r">Settings</h1>' +
+      '<div class="gt r" style="--d:.04s">Look</div><section class="grp gl g2 r" style="--d:.04s">' +
+      '<div class="lr">' + lic("tv", "#7d8ba0", "#4a5566") + "<h3>Theme</h3></div>" +
+      '<div class="thms" data-themes>' + THEMES.map(([v, n, m]) => '<button class="thm" type="button" data-v="' + v + '" data-pal="' + v + '" data-mode="' + m + '" aria-label="' + n + '"><span class="pv"></span><span>' + n + "</span></button>").join("") + "</div>" +
+      '<div class="lr">' + lic("star", "#ffb547", "#ff7a1a") + '<h3>Accent</h3><div class="sws" data-acc>' +
+      ACCENTS.map((c, i) => '<button class="sw" data-i="' + i + '" aria-label="Accent ' + (i + 1) + '" style="background:' + c[0] + '"></button>').join("") + "</div></div>" +
+      '<div class="lr">' + lic("ask", "#c084fc", "#7c3aed") + '<h3>Effects</h3><div class="seg" data-fx><span class="th"></span><button data-v="full">Full</button><button data-v="lite">Lite</button></div></div></section>' +
+      '<div class="gt r" style="--d:.08s">Browsing</div><section class="grp gl g2 r" style="--d:.08s">' +
+      '<div class="lr">' + lic("web", "#43c2ff", "#3058f0") + '<h3>Default mode</h3><div class="seg" data-dmode><span class="th"></span><button data-v="swift">Swift</button><button data-v="deep">Deep</button></div></div>' +
+      '<div class="lr">' + lic("shield", "#5ee08a", "#139b48") + '<h3>Block ads</h3><div class="tg" data-ads><i></i></div></div>' +
+      '<div class="lr">' + lic("link", "#2be0e6", "#0b8f86") + '<h3>Connection</h3><span class="netst"><i data-cn></i><span data-cnm>Checking</span></span></div></section>' +
+      '<div class="gt r" style="--d:.12s">This tab</div><section class="grp gl g2 r" style="--d:.12s">' +
+      '<div class="lr">' + lic("lock", "#8b93a3", "#555e6e") + '<h3>Disguise</h3><select data-dz aria-label="Disguise"><option value="">Off</option>' +
+      Object.keys(DISGUISES).map((k) => '<option value="' + k + '">' + k + "</option>").join("") + "</select></div>" +
+      '<div class="lr">' + lic("out", "#ff7ac0", "#9b6bff") + '<h3>Detached window</h3><button class="btn k s" data-detach>Open</button></div>' +
+      '<div class="lr">' + lic("signout", "#ffbe2e", "#ff4f2b") + "<h3>Quick exit</h3><span><kbd>Shift</kbd> <kbd>Esc</kbd></span></div>" +
+      '<div class="lr">' + lic("trash", "#ff6b6b", "#d62e4a") + '<h3>Wipe everything</h3><button class="btn s" style="background:rgba(229,72,77,.12);color:#d62e4a" data-wipe>Wipe</button></div></section></div>';
+  },
+  mount(root, ctx) {
+    root.addEventListener("click", (e) => {
+      const b = e.target.closest(".seg button[data-v]");
+      if (b) {
+        const seg = b.closest(".seg");
+        if (seg.matches("[data-fx]")) ctx.setFx(b.dataset.v);
+        if (seg.matches("[data-dmode]")) store.set("mode", b.dataset.v);
+        return this.paint(root, ctx);
+      }
+      const th = e.target.closest(".thm[data-v]");
+      if (th) {
+        const t = THEMES.find((x) => x[0] === th.dataset.v);
+        if (t && t[3] !== undefined) ctx.setAccent(t[3]);
+        ctx.setTheme(th.dataset.v);
+        return this.paint(root, ctx);
+      }
+      const sw = e.target.closest(".sw[data-i]");
+      if (sw) {
+        ctx.setAccent(+sw.dataset.i);
+        return this.paint(root, ctx);
+      }
+      if (e.target.closest("[data-ads]")) {
+        const on = !store.get("ads", true);
+        store.set("ads", on);
+        ctx.engine.setAdblock(on);
+        return this.paint(root, ctx);
+      }
+      if (e.target.closest("[data-detach]")) return ctx.detach();
+      if (e.target.closest("[data-wipe]")) return ctx.wipe();
+    });
+    $("[data-dz]", root).addEventListener("change", (e) => ctx.disguise(e.target.value));
+  },
+  paint(root) {
+    const set = (sel, v) => {
+      const seg = $(sel, root);
+      $$("button", seg).forEach((x) => x.classList.toggle("on", x.dataset.v === v));
+      segThumb(seg);
+    };
+    const theme = store.get("theme", "boba");
+    $$(".thm", root).forEach((t) => {
+      t.classList.toggle("on", t.dataset.v === theme);
+      t.setAttribute("aria-pressed", t.dataset.v === theme);
+    });
+    set("[data-fx]", store.get("fx", "full"));
+    set("[data-dmode]", store.get("mode", "deep"));
+    const acc = store.get("accent", 6);
+    $$(".sw", root).forEach((s) => s.classList.toggle("on", +s.dataset.i === acc));
+    $("[data-ads]", root).classList.toggle("on", store.get("ads", true));
+    $("[data-dz]", root).value = store.get("disguise", "");
+  },
+  enter(root, ctx) {
+    this.paint(root, ctx);
+    ctx.wash(null);
+    ctx.engine.boot().then(
+      () => {
+        $("[data-cn]", root).classList.remove("off");
+        $("[data-cnm]", root).textContent = "Connected";
+      },
+      () => {
+        $("[data-cn]", root).classList.add("off");
+        $("[data-cnm]", root).textContent = "Offline";
+      }
+    );
+  },
+};
+
+export const VIEWS = { home, watch, listen, play, ask, account, settings };
+export { metaRow, posterTile, runtime };
