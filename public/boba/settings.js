@@ -1,3 +1,4 @@
+import {openAboutBlank} from './about-blank.js';
 import {$,$$,ico,lic,THEMES,ACCENTS,applyPrefs,segThumb,api} from './common.js';
 const identityPresets={
  celestial:['Celestial','/assets/celestial-star.svg'],
@@ -21,6 +22,9 @@ export function applyTabAppearance(){
  let icon=document.querySelector('link[rel="icon"]');
  if(!icon){icon=document.createElement('link');icon.rel='icon';document.head.append(icon)}
  icon.href=identity.icon;
+ if(window.parent!==window){
+  try{window.parent.postMessage({type:'celestial:appearance',title:identity.title,icon:identity.icon},location.origin)}catch{}
+ }
  document.dispatchEvent(new CustomEvent('celestial:tab-appearance',{detail:identity}));
  return identity;
 }
@@ -42,6 +46,8 @@ export const settings = {
       '<div class="lr" data-custom-icon hidden><h3>Custom icon URL</h3><label class="fld"><input type="url" data-tab-icon maxlength="500" placeholder="https://example.com/favicon.ico" aria-label="Custom favicon URL"></label></div>' +
       '<div class="lr native-tab-preview"><img data-preview-icon width="28" height="28" alt=""><div><h3 data-preview-title>Celestial</h3><small>Browser tab preview · title and icon only</small></div><button class="btn s" type="button" data-tab-reset>Reset</button></div>' +
       '<p class="native-tab-note">Cloaking only changes how this tab looks. It does not change the address, browser history, network activity, or school monitoring.</p>' +
+      '<div class="lr"><h3>Open in about:blank</h3><button type="button" class="btn s" data-tab-blank>Open cloaked tab</button></div>' +
+      '<p class="native-tab-note">Some browsers block popups and embedded sites. Scramjet requires a standalone tab; the wrapper does not bypass browser or network restrictions.</p>' +
       '<div class="lr">' + lic("trash", "#ff6b6b", "#d62e4a") + '<h3>Reset local preferences</h3><button class="btn s" data-reset>Reset</button></div></section></div>';
   },
 
@@ -61,6 +67,11 @@ export const settings = {
     tab.onchange=()=>{localStorage.setItem('boba.tab.preset',tab.value);tabPaint()};
     title.oninput=()=>{localStorage.setItem('boba.tab.title',title.value);tabPaint()};
     iconInput.onchange=()=>{localStorage.setItem('boba.tab.icon',iconInput.value.trim());tabPaint()};
+    $('[data-tab-blank]',root).onclick=()=>{
+     const identity=applyTabAppearance();
+     const result=openAboutBlank(location.origin+'/boba/index.html',{title:identity.title,icon:identity.icon});
+     if(!result.ok)alert(result.message);
+    };
     $('[data-tab-reset]',root).onclick=()=>{for(const key of ['boba.tab.preset','boba.tab.title','boba.tab.icon'])localStorage.removeItem(key);tab.value='celestial';title.value='';iconInput.value='';tabPaint()};
     tabPaint();
     paint();return paint;
