@@ -19,7 +19,20 @@ const engine={
  normalise(input){const q=String(input||'').trim();if(!q)return '';try{const u=new URL(q);if(['http:','https:'].includes(u.protocol))return u.href}catch{}if(/^[\\w-]+(\\.[\\w-]+)+(?:[/:?#]|$)/.test(q))return 'https://'+q;return 'https://www.google.com/search?q='+encodeURIComponent(q)},
  boot:getProxyController,recover:getProxyController,
  decode(url){try{const src=new URL(url,location.origin);if(!src.pathname.startsWith('/~/sj/'))return '';const decode=window.$scramjetController?.config?.prefix?window.$scramjetController?.decodeUrl:null;return typeof decode==='function'?decode(url):''}catch{return ''}},
- failed(d){return !!(d&&/scramjet.*error|failed to fetch/i.test((d.title||'').slice(0,100)))},
+ failed(d){
+   if(!d)return false;
+   const title=String(d.title||'').slice(0,120);
+   if(/scramjet.*error|failed to fetch/i.test(title))return true;
+   // An unclaimed service-worker route used to serve Celestial's own landing
+   // page. Treat that as a transport failure rather than a successful page.
+   try{
+     const location=new URL(d.URL);
+     if(!location.pathname.startsWith('/~/sj/'))return false;
+     if(d.querySelector('meta[http-equiv="refresh"][content*="/boba/index.html"]'))return true;
+     const text=(d.body?.textContent||'').slice(0,300);
+     return /Proxy worker did not intercept|The proxy engine is unavailable|Proxy transport failed/i.test(text);
+   }catch{return false}
+ },
  async openFrame(el,url,onNavigate,onPopup){
    if(!window.isSecureContext)throw Error('Scramjet requires HTTPS. Open Celestial in a secure tab.');
    if(!window.crossOriginIsolated)throw Error(window.top!==window?'Open Celestial in its own tab: the launcher does not provide the isolation Scramjet needs.':'Browser isolation is not active. Reload the page; if this persists, check the server headers.');
