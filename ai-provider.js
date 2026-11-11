@@ -45,9 +45,10 @@ export function activeRoleplay(messages){
 export async function completeAi({
   apiKey,model=TEXT_MODEL,backupModel=DEFAULT_BACKUP,
   messages,stream=true,signal,fetcher=fetch,onStatus=()=>{},
-  onDelta=()=>{},onReasoning=()=>{},budgets=[18000,23000],maxTokens=1200
+  onDelta=()=>{},onReasoning=()=>{},budgets=[18000,23000],maxTokens=1200,effort='smart'
 }){
   // Prefer the configured model, but always try a known hosted text model before the multimodal backup.
+  const mode=['instant','smart','ultra'].includes(effort)?effort:'smart';
   const configured=[model,TEXT_MODEL,backupModel].filter((name,index,array)=>name&&array.indexOf(name)===index);
   // Once a model times out, start subsequent chats with the working alternative.
   // A failed model is tried again later, rather than permanently disabled.
@@ -74,10 +75,10 @@ export async function completeAi({
           "Accept":stream?"text/event-stream":"application/json"},
         body:JSON.stringify({
           model:name,messages,stream,
-          max_tokens:Math.max(32,Math.min(2048,Math.floor(Number(maxTokens)||1200),
-            Number(process.env.NVIDIA_MAX_TOKENS)||1200)),
+          max_tokens:Math.max(32,Math.min(8192,Math.floor(Number(maxTokens)||1200),
+            Number(process.env.NVIDIA_MAX_TOKENS)||8192)),
           temperature:name.includes("nemotron")||name.includes("muse-glimmer")?1:0.65,
-          ...(name.includes("nemotron-3")?{chat_template_kwargs:{enable_thinking:false}}:{})
+          ...(name.includes("nemotron-3")?{chat_template_kwargs:{enable_thinking:mode!=='instant'},...(mode==='instant'?{}:{reasoning_budget:mode==='ultra'?3072:768})}:{})
         }),
         signal:controller.signal
       });
