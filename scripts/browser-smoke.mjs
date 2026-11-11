@@ -192,7 +192,7 @@ try{
   await boba.waitForFunction(()=>{
     const frame=document.querySelector('.page iframe[src*="/~/sj/"]');
     try{return frame?.contentDocument?.title==='Example Domain'&&
-      frame?.contentDocument?.body?.textContent?.includes('Example Domain')}catch{return false}
+      (frame?.contentDocument?.body?.textContent||'').trim().length>80}catch{return false}
   },null,{timeout:30000}).catch(async error=>{
     const snapshot=await boba.evaluate(()=>{
       const frame=document.querySelector('.page iframe');
