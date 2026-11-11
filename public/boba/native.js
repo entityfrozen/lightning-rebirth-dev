@@ -8,27 +8,16 @@ import {N} from './icons.js';
 applyPrefs();
 async function start(){
  const data=await api('/api/me');
- if(!data.user){location.replace('/boba/auth.html');return}
+ if(!data.user){location.replace('/login');return}
  const user=data.user,views=$('#views'),dock=$('#dock');
  const items=[['home','Home','home'],['browser','Browser','web'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
  if(user.role==='admin')items.splice(items.length-1,0,['admin','Administration','shield']);
  const view=id=>$('[data-view="'+id+'"]');
  let current='home',paintSettings=()=>{},loadAdmin=()=>{};
  const browser=mountBrowser(view('home'));
- // about:blank wrappers are not cross-origin isolated. Promote browser use
- // to a genuine top-level document instead of trying to run Scramjet nested.
- const standaloneFromWrapper=()=>{
-  if(window===window.top||window.crossOriginIsolated)return false;
-  try{
-   if(window.top.location.href!=='about:blank')return false;
-   window.top.location.replace(location.origin+'/boba/index.html#browser');
-   return true;
-  }catch{return false}
- };
- const open=url=>{if(standaloneFromWrapper())return;navigate('browser');browser.navigate(url,true)};
+ const open=url=>{navigate('browser');browser.navigate(url,true)};
  function navigate(id){
   if(!items.some(x=>x[0]===id))id='home';
-  if(id==='browser'&&standaloneFromWrapper())return;
   current=id;
   if(id!=='browser'&&id!=='home'){$('[data-wv]')?.classList.remove('max');dock.classList.remove('hide')}
   const active=id==='browser'?'home':id;
@@ -37,7 +26,9 @@ async function start(){
   if(id==='browser'&&!browser.tabs.length) $('[data-wnew]').click();
   if(id==='settings')paintSettings();
   if(id==='admin')loadAdmin();
-  history.replaceState(null,'','/boba/index.html#'+id);
+  // Short public URL: page selection stays in memory rather than the address bar.
+  sessionStorage.setItem('celestial.lastView',id);
+  if(location.pathname!=='/'||location.hash)history.replaceState(null,'','/');
  }
  const updateDock=()=>{
   const ai=$('.dk[data-section="ai"]',dock);
@@ -51,8 +42,8 @@ async function start(){
  view('settings').innerHTML=settings.html();paintSettings=settings.mount(view('settings'));
  updateDock();
  views.hidden=false;dock.hidden=false;
- navigate(location.hash.slice(1)||'home');
- window.addEventListener('hashchange',()=>navigate(location.hash.slice(1)));
+ navigate(location.hash.slice(1)||sessionStorage.getItem('celestial.lastView')||'home');
+ window.addEventListener('hashchange',()=>{if(location.hash)navigate(location.hash.slice(1))});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dock.classList.contains('hide')){$('[data-wv]').classList.remove('max');dock.classList.remove('hide')}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='l'){e.preventDefault();navigate('browser');$('[data-omni]').focus()}});
 }
 start().catch(err=>{const p=document.createElement('p');p.className='native-start-error';p.textContent='Unable to load Celestial: '+err.message;document.body.append(p)});
