@@ -124,7 +124,9 @@ try{
   await boba.locator('[data-section="ai"]').click();
   await boba.locator('[data-view="ai"].on .ai-hi .sugs button').first().waitFor({timeout:10000});
   assert.equal(await boba.locator('#celestialWorkspace,iframe.boba-app-host,script[src="/bundle/main.js"]').count(),0);
-  assert.ok(await boba.locator('body').evaluate(()=>[...document.styleSheets].some(s=>s.href?.includes('/boba/original.css'))));
+  assert.ok(await boba.locator('body').evaluate(()=>[...document.styleSheets].some(s=>s.href?.includes('/boba/dist/assets/'))));
+  assert.equal(await boba.locator('script[src="/boba/native.js"],link[href="/boba/original.css"]').count(),0);
+  assert.equal(await boba.locator('script[src*="/boba/dist/assets/app-"]').count(),1);
   await boba.locator('[data-section="apps"]').click();
   await boba.locator('[data-view="apps"].on .native-tile').first().waitFor({timeout:10000});
   await boba.screenshot({path:path.join(screenshots,'boba-native-apps.png'),fullPage:true});
