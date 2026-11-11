@@ -79,7 +79,7 @@ try{
       response.status()+' '+response.url().slice(0,120));
   });
   await launcher.goto('about:blank');
-  await launcher.setContent(`<iframe title="Lightning launcher" src="${base}/legacy.html?legacy=1#apps"
+  await launcher.setContent(`<iframe title="Lightning launcher" src="${base}/legacy.html?legacy=1#browser"
     style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>`);
   try{
     const embedded=launcher.frameLocator('iframe');
@@ -113,7 +113,7 @@ try{
   await boba.locator('input[name="password"]').fill(password);
   await boba.locator('form button[type="submit"]').click();
   await boba.locator('nav#dock .dk').first().waitFor({timeout:25000});
-  assert.equal(await boba.locator('#dock .dk').count(),9);
+  assert.equal(await boba.locator('#dock .dk').count(),7);
   await boba.locator('[data-section="admin"]').click();
   await boba.locator('[data-view="admin"].on [data-nvidia]').filter({hasText:'Not set'}).waitFor({timeout:10000});
   await boba.locator('[data-view="admin"] input[name="nvidia"]').fill('test-nvidia-not-a-real-key');
@@ -127,23 +127,14 @@ try{
   assert.ok(await boba.locator('body').evaluate(()=>[...document.styleSheets].some(s=>s.href?.includes('/boba/dist/assets/'))));
   assert.equal(await boba.locator('script[src="/boba/native.js"],link[href="/boba/original.css"]').count(),0);
   assert.equal(await boba.locator('script[src*="/boba/dist/assets/app-"]').count(),1);
-  await boba.locator('[data-section="apps"]').click();
-  await boba.locator('[data-view="apps"].on .native-tile').first().waitFor({timeout:10000});
-  await boba.screenshot({path:path.join(screenshots,'boba-native-apps.png'),fullPage:true});
-  // 2048 must run locally; it must not redirect back into Celestial.
-  await boba.locator('[data-section="games"]').click();
-  await boba.locator('[data-open-game="2048"]').click();
-  await boba.locator('.native-2048-cell').first().waitFor({timeout:10000});
-  assert.equal(await boba.locator('.native-2048-cell').count(),16);
-  assert.equal(await boba.locator('.native-game-player').isVisible(),true);
-  await boba.locator('[data-close-game]').click();
-  const embeddedGame=await boba.evaluate(async()=>{
-    const result=await fetch('/?embedded=1&game=2048');
-    return {status:result.status,body:(await result.text()).slice(0,2500)};
-  });
-  assert.equal(embeddedGame.status,200);
-  assert.ok(embeddedGame.body.includes('/bundle/main.js'),'Legacy game route must serve legacy app, not Boba redirect');
+  assert.equal(await boba.locator('[data-section="apps"],[data-section="games"]').count(),0);
+  assert.equal(await boba.locator('[data-view="apps"],[data-view="games"]').count(),0);
+  await boba.locator('[data-section="browser"]').click();
+  assert.equal(await boba.locator('[data-direct]').count(),1);
+  assert.equal(await boba.locator('[data-standalone]').count(),1);
   await boba.locator('[data-section="settings"]').click();
+  await boba.locator('[data-tab-blank]').waitFor({timeout:10000});
+
   await boba.locator('[data-view="settings"].on [data-v="matcha"]').click();
   assert.equal(await boba.locator('html').getAttribute('data-palette'),'matcha');
   await boba.locator('[data-section="account"]').click();
@@ -277,11 +268,9 @@ try{
     'Desktop navigation should be a compact centered dock');
   await page.getByRole('button',{name:'Quick switch (Ctrl+K)'}).click();
   await page.getByRole('dialog',{name:'Switch to a page'})
-    .getByRole('textbox',{name:'Find a page'}).fill('apps');
+    .getByRole('textbox',{name:'Find a page'}).fill('browser');
   await page.getByRole('dialog',{name:'Switch to a page'})
-    .getByRole('button',{name:/Apps/}).click();
-  await page.locator('.celestial-apps-page').waitFor({timeout:15000});
-  await page.getByRole('button',{name:'Browser',exact:true}).first().click();
+    .getByRole('button',{name:/Browser/}).click();
   await page.locator('.forest-browser-home input[aria-label="Search or enter a URL"]')
     .waitFor({timeout:25000});
   await page.screenshot({path:path.join(screenshots,'navigation-desktop.png'),fullPage:true});
@@ -417,19 +406,6 @@ try{
   await page.getByText('No matching accounts').waitFor({timeout:10000});
   await page.getByRole('textbox',{name:'Search account requests'}).fill('');
   await page.screenshot({path:path.join(screenshots,'administration.png'),fullPage:true});
-  // A native fullscreen game should preserve its own component and board.
-  await page.getByRole('button',{name:'Apps',exact:true}).first().click();
-  await page.locator('.celestial-app-tile').filter({hasText:'2048'}).click();
-  await page.locator('.celestial-embedded-game').waitFor({timeout:15000});
-  await page.getByRole('button',{name:'Fullscreen game'}).click();
-  await page.waitForFunction(()=>document.fullscreenElement?.classList.contains('celestial-tool-shell'),
-    null,{timeout:10000});
-  await page.screenshot({path:path.join(screenshots,'game-fullscreen.png'),fullPage:true});
-  await page.getByRole('button',{name:'Exit game fullscreen'}).click();
-  await page.waitForFunction(()=>!document.fullscreenElement,null,{timeout:10000});
-  assert.ok(await page.locator('.celestial-embedded-game').count(),
-    'Fullscreen must preserve the active game');
-
   console.log(JSON.stringify({
     ok:true,launcherWorks,worker,state,scriptPaths:[...scriptPaths],
     consoleErrors:events.slice(-12),screenshots
