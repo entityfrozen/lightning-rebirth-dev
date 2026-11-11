@@ -141,7 +141,7 @@ try{
   assert.equal(await boba.locator('.cel-ttt-cell').count(),9);
   await boba.locator('[data-back]').click();
   await boba.locator('[data-game="rps"]').click();
-  assert.equal(await boba.locator('[data-pick]').count(),3);
+  assert.equal(await boba.locator('.cel-rps-choices [data-pick]').count(),3);
   await boba.locator('[data-back]').click();
   await boba.locator('[data-section="ai"]').click();
   assert.equal(await boba.locator('[data-effort]').inputValue(),'instant');
