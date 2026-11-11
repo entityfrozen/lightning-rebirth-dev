@@ -253,7 +253,7 @@ const home = {
         failPage(t.frame,url,()=>navigate(url),error.message);
         return;
       }
-      loading(t);
+      if(t.busy)loading(t);
       ctx.history.push({ kind: "site", key: "site:" + t.title, name: t.title, url });
       paint();
     };
