@@ -3,6 +3,7 @@ import {readLocal,saveLocal} from './constants.js';
 export const cloakPresets={
   study:{label:'Study Portal',title:'Study Portal | Research Workspace',icon:'/assets/study-portal.svg'},
   celestial:{label:'Celestial',title:'Celestial',icon:'/assets/celestial-star.svg'},
+  brightpath:{label:'Brightpath',title:'Brightpath | Learning Workspace',icon:'/assets/brightpath.svg'},
   workspace:{label:'Workspace',title:'Workspace',icon:'/assets/celestial-star.svg'},
   notes:{label:'My Notes',title:'My Notes',icon:'/assets/celestial-star.svg'},
   dcss:{label:'DCSS Portal',title:'DCSS Portal',icon:'https://www.google.com/s2/favicons?domain=portal.dcssga.org&sz=64'},
