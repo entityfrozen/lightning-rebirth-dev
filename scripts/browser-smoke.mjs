@@ -129,7 +129,9 @@ try{
   assert.equal(await boba.locator('script[src*="/boba/dist/assets/app-"]').count(),1);
   assert.equal(await boba.locator('[data-section="apps"],[data-section="games"]').count(),0);
   assert.equal(await boba.locator('[data-view="apps"],[data-view="games"]').count(),0);
+  assert.equal(new URL(boba.url()).pathname,'/','Signed-in Celestial should use the root URL');
   await boba.locator('[data-section="browser"]').click();
+  assert.equal(new URL(boba.url()).pathname,'/','Switching sections must not expose internal routes');
   assert.equal(await boba.locator('[data-direct]').count(),1);
   assert.equal(await boba.locator('[data-standalone]').count(),1);
   await boba.locator('[data-section="settings"]').click();
@@ -140,11 +142,11 @@ try{
   ]);
   assert.equal(cloakedPopup.url(),'about:blank');
   const wrappedUrl=await cloakedPopup.locator('iframe').first().getAttribute('src');
-  assert.ok(wrappedUrl?.includes('/boba/index.html'),'Cloaking must open the native Celestial view in about:blank');
+  assert.equal(new URL(wrappedUrl).pathname,'/','Cloaked Celestial should use the shortest entry URL');
   // The wrapper always provides a standalone recovery action even if the
   // nested iframe was denied by browser local-network protections.
   await cloakedPopup.locator('[data-open-standalone]').click();
-  await cloakedPopup.waitForURL(url=>url.pathname==='/boba/index.html'&&url.hash==='#browser',{timeout:15000,waitUntil:'domcontentloaded'});
+  await cloakedPopup.waitForURL(url=>url.pathname==='/',{timeout:15000,waitUntil:'domcontentloaded'});
   assert.equal(await cloakedPopup.evaluate(()=>window.top===window&&window.crossOriginIsolated),true,
     'Scramjet must have a top-level cross-origin isolated document');
   await cloakedPopup.close();
