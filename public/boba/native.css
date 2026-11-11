@@ -86,3 +86,67 @@
 .native-browser-error>div{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
 .native-browser-error a.btn{text-decoration:none}
 
+
+
+/* Celestial home: own identity, never a duplicate browser start page. */
+.cel-dock-star{width:24px;height:24px;object-fit:contain;display:block;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--acc),transparent 65%))}
+.cel-home,.cel-games{height:100%;overflow:auto;position:relative;color:var(--ink);padding:clamp(24px,4vw,52px) clamp(22px,5vw,78px) 48px}
+.cel-home{display:flex;flex-direction:column;align-items:stretch;min-height:0}
+.cel-home-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.cel-home-kicker,.cel-home-date,.cel-home-eyebrow{font-size:11px;font-weight:740;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.cel-home-date{font-weight:500;letter-spacing:.03em;text-transform:none}
+.cel-home-hero{display:flex;flex-direction:column;align-items:center;text-align:center;margin:clamp(30px,7vh,90px) auto 0;max-width:680px}
+.cel-star-halo{position:relative;width:136px;height:136px;display:grid;place-items:center;margin-bottom:23px}
+.cel-star-halo:before,.cel-star-halo:after{content:'';position:absolute;inset:2px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--acc),transparent 82%),transparent 70%);box-shadow:0 0 70px color-mix(in srgb,var(--acc),transparent 83%)}
+.cel-star-halo:after{inset:19px;border:1px solid color-mix(in srgb,var(--acc),transparent 73%);background:transparent}
+.cel-home-star{position:relative;z-index:1;width:104px;height:104px;object-fit:contain;filter:drop-shadow(0 12px 22px color-mix(in srgb,var(--acc),transparent 72%));animation:cel-float 8s ease-in-out infinite}
+@keyframes cel-float{50%{transform:translateY(-8px) rotate(4deg)}}
+.cel-home-eyebrow{color:var(--acc);margin:0 0 10px}
+.cel-home-hero h1{font-weight:780;font-size:clamp(32px,4.5vw,55px);line-height:1.07;letter-spacing:-.05em;text-wrap:balance}
+.cel-home-hero p{font-size:15px;margin:15px 0 26px;color:var(--ink-2)}
+.cel-home-primary{display:flex;align-items:center;gap:11px;border-radius:999px;background:var(--ink);color:var(--base);padding:13px 22px;font-weight:680;font-size:14px;box-shadow:var(--sh);transition:transform .2s}
+.cel-home-primary:hover{transform:translateY(-2px)}
+.cel-home-primary svg{width:18px;height:18px;fill:currentColor}
+.cel-home-links{margin:clamp(45px,9vh,95px) auto 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;width:min(100%,990px)}
+.cel-home-links button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:7px;border:1px solid var(--hair);background:var(--g2);border-radius:20px;padding:19px;min-height:153px;transition:transform .2s,background .2s}
+.cel-home-links button:hover{background:var(--g3);transform:translateY(-4px)}
+.cel-short-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:13px;color:var(--acc);background:var(--g3);margin-bottom:4px}
+.cel-short-icon svg{width:19px;height:19px;fill:currentColor}
+.cel-home-links strong{font-size:14px;font-weight:700}.cel-home-links small{font-size:12px;line-height:1.4;color:var(--ink-3)}
+.cel-home-foot{display:flex;align-items:center;justify-content:center;gap:7px;font-size:11px;color:var(--ink-3);margin:32px auto 0}
+.cel-home-foot img{width:16px;height:16px;opacity:.6}
+.cel-games-head{display:flex;justify-content:space-between;align-items:center;gap:22px;margin-bottom:28px}
+.cel-games-head h1{font-size:clamp(30px,4vw,44px);font-weight:780;letter-spacing:-.05em;margin:5px 0}
+.cel-games-head p{color:var(--ink-2);font-size:14px}
+.cel-games-search{display:flex;align-items:center;gap:10px;padding:12px 16px;min-width:230px;border-radius:15px;background:var(--g2);border:1px solid var(--hair)}
+.cel-games-search svg{width:17px;height:17px;fill:var(--ink-3)}.cel-games-search input{min-width:0;width:100%;font-size:14px;color:var(--ink)}
+.cel-games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+.cel-game-card{display:flex;flex-direction:column;text-align:left;align-items:flex-start;padding:16px;border-radius:23px;background:var(--g2);border:1px solid var(--hair);min-height:260px;transition:transform .2s,background .2s}
+.cel-game-card:hover{transform:translateY(-4px);background:var(--g3)}
+.cel-game-symbol{display:flex;align-items:center;justify-content:center;width:100%;height:108px;border-radius:16px;background:linear-gradient(145deg,color-mix(in srgb,var(--acc),transparent 86%),var(--g3));font-size:34px;font-weight:800;letter-spacing:-.08em;color:var(--ink);margin-bottom:15px}
+.cel-game-category{text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:var(--acc);font-weight:750;margin-bottom:7px}
+.cel-game-card strong{font-size:17px;font-weight:750;letter-spacing:-.02em}.cel-game-card small{font-size:12px;color:var(--ink-3);margin-top:4px}
+.cel-game-launch{margin-top:auto;padding-top:16px;font-size:12px;font-weight:700;color:var(--acc)}
+.cel-game-stage{max-width:800px;margin:0 auto}.cel-game-stage>header{display:flex;align-items:center;gap:20px;margin-bottom:25px}
+.cel-game-stage h2{font-size:23px;font-weight:760;letter-spacing:-.03em}
+.cel-2048,.cel-simple-game{max-width:480px;margin:10px auto;display:grid;gap:17px}
+.cel-game-toolbar,.cel-rps-score{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:center}
+.cel-game-toolbar span,.cel-rps-score span{display:grid;place-items:center;border-radius:12px;padding:7px 14px;background:var(--g3);font-size:11px;color:var(--ink-2)}
+.cel-game-toolbar span b,.cel-rps-score strong{font-size:20px;color:var(--ink);margin-top:2px}
+.cel-2048-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;aspect-ratio:1;padding:12px;border-radius:20px;background:var(--g3);touch-action:none}
+.cel-2048-tile{display:grid;place-items:center;min-width:0;border-radius:11px;background:var(--tile);font-size:clamp(17px,3vw,30px);font-weight:800}
+.cel-2048-tile[data-value="2"],.cel-2048-tile[data-value="4"]{background:#e9dac0;color:#564331}
+.cel-2048-tile[data-value="8"],.cel-2048-tile[data-value="16"]{background:#eda566;color:#512b13}
+.cel-2048-tile[data-value="32"],.cel-2048-tile[data-value="64"]{background:#de7867;color:#fff}
+.cel-2048-tile[data-value="128"],.cel-2048-tile[data-value="256"],.cel-2048-tile[data-value="512"]{background:#dfc46d;color:#473519}
+.cel-2048-tile[data-value="1024"],.cel-2048-tile[data-value="2048"]{background:#9bb96c;color:#273e1c}
+.cel-game-help{text-align:center;font-size:13px;color:var(--ink-2);line-height:1.5;min-height:24px}
+.cel-ttt-board{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;aspect-ratio:1;max-width:360px;width:100%;margin:auto}
+.cel-ttt-cell{background:var(--g3);border-radius:16px;font-size:clamp(40px,7vw,70px);font-weight:650;color:var(--acc)}
+.cel-ttt-cell:disabled{opacity:1;cursor:default}
+.cel-simple-game>.btn{justify-self:center}
+.cel-rps-choices{display:flex;gap:13px;justify-content:center;flex-wrap:wrap}.cel-rps-choices button{min-width:112px;min-height:115px;border-radius:20px;display:grid;place-items:center;background:var(--g2);font-size:43px}
+.cel-rps-choices button:hover{background:var(--g3)}.cel-rps-choices button:disabled{opacity:.5}.cel-rps-choices small{font-size:12px;text-transform:capitalize}
+@media(max-width:750px){.cel-home-links{grid-template-columns:repeat(2,minmax(0,1fr))}.cel-games-head{flex-direction:column;align-items:stretch}.cel-games-search{width:100%}.cel-home-hero{margin-top:25px}.cel-home,.cel-games{padding:23px 20px 40px}}
+@media(max-width:430px){.cel-home-links{gap:9px}.cel-home-links button{min-height:138px;padding:15px}.cel-2048-board{gap:6px;padding:7px}}
+@media(prefers-reduced-motion:reduce){.cel-home-star{animation:none}}
