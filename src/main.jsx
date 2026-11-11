@@ -20,6 +20,7 @@ import './refinement.css';
 import './auth.css';
 import './navigation.css';
 import './flare-shell.css';
+import './boba-shell.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
@@ -311,7 +312,7 @@ function App() {
   return <>
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
     <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced||['home','browser','chat','apps','settings'].includes(view)}/></Suspense></SceneBoundary>
-    <div className={'celestial-workspace '+(dockOpen?'nav-wide':'nav-compact')}>
+    <div className={'celestial-workspace boba-workspace '+(dockOpen?'nav-wide':'nav-compact')}>
       <main className="celestial-stage" id="main-content">
         <div className={'celestial-activity-layout '+(showCompanion?'with-chat':'')}>
           <div className="celestial-activity-main">
@@ -365,7 +366,7 @@ function App() {
       <div className={'dock-shell '+(!dockOpen?'closed':'')}>
         <nav className="dock" aria-label="Main navigation">
           <div className="dock-brand" aria-label="Celestial">
-            <span className="dock-brand-icon" aria-hidden="true">✦</span>
+            <span className="dock-brand-icon" aria-hidden="true"><img src="/assets/celestial-star.svg" alt=""/></span>
             <span className="dock-brand-name">celestial</span>
           </div>
           <button type="button" className="dock-command" title="Quick switch (Ctrl+K)"
