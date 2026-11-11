@@ -79,7 +79,7 @@ try{
       response.status()+' '+response.url().slice(0,120));
   });
   await launcher.goto('about:blank');
-  await launcher.setContent(`<iframe title="Lightning launcher" src="${base}/?legacy=1#apps"
+  await launcher.setContent(`<iframe title="Lightning launcher" src="${base}/legacy.html?legacy=1#apps"
     style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>`);
   try{
     const embedded=launcher.frameLocator('iframe');
@@ -100,39 +100,44 @@ try{
   await launcher.screenshot({path:path.join(screenshots,'about-blank-launcher.png')});
   await launcher.close();
 
-  // Check the actual Boba shell separately from the legacy workspace regression suite.
+  // The default site is now the native Boba application, without React.
   const boba=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
+  boba.on('pageerror',e=>events.push('Native: '+e.message));
   await boba.goto(base+'/',{waitUntil:'domcontentloaded',timeout:30000});
-  const bobaAuth=boba.frameLocator('iframe.boba-auth-host');
-  await bobaAuth.locator('.auth.gl.g2').waitFor({timeout:25000});
-  assert.equal(await bobaAuth.locator('body').evaluate(()=>
-    [...document.styleSheets].some(sheet=>sheet.href?.includes('/boba/original.css'))),true);
+  await boba.locator('.auth.gl.g2').waitFor({timeout:25000});
   await boba.screenshot({path:path.join(screenshots,'boba-login.png'),fullPage:true});
-  await bobaAuth.getByRole('button',{name:'Create account',exact:true}).click();
-  await bobaAuth.locator('input[name="confirmPassword"]').waitFor({timeout:5000});
-  await boba.screenshot({path:path.join(screenshots,'boba-register.png'),fullPage:true});
-  await bobaAuth.getByRole('button',{name:'Sign in',exact:true}).click();
-  await bobaAuth.locator('input[name="username"]').fill('SmokeAdmin');
-  await bobaAuth.locator('input[name="password"]').fill(password);
-  await bobaAuth.locator('form button[type="submit"]').click();
-  const bobaShell=boba.frameLocator('iframe.boba-app-host');
-  await bobaShell.locator('nav#dock .dk').first().waitFor({timeout:25000});
-  assert.equal(await bobaShell.locator('nav#dock .dk').count(),7,
-    'Boba shell must expose the original dock structure');
-  const hasOriginalCss=await bobaShell.locator('body').evaluate(()=>
-    [...document.styleSheets].some(sheet=>sheet.href?.includes('/boba/original.css')));
-  assert.equal(hasOriginalCss,true,'Boba must load its original stylesheet');
-  const dockRight=await bobaShell.locator('#dock').evaluate(node=>node.getBoundingClientRect().right);
-  assert.ok(Math.abs(dockRight-1440)<5,'Boba dock should sit on the right');
-  await bobaShell.locator('[data-section="apps"]').click();
-  await bobaShell.locator('[data-view="workspace"].on').waitFor({timeout:15000});
-  await bobaShell.frameLocator('#celestialWorkspace').locator('.celestial-apps-page')
-    .waitFor({timeout:25000});
-  await boba.screenshot({path:path.join(screenshots,'boba-shell-desktop.png'),fullPage:true});
+  await boba.getByRole('button',{name:'Create account',exact:true}).click();
+  await boba.locator('input[name="confirmPassword"]').waitFor({timeout:5000});
+  await boba.getByRole('button',{name:'Sign in',exact:true}).click();
+  await boba.locator('input[name="username"]').fill('SmokeAdmin');
+  await boba.locator('input[name="password"]').fill(password);
+  await boba.locator('form button[type="submit"]').click();
+  await boba.locator('nav#dock .dk').first().waitFor({timeout:25000});
+  assert.equal(await boba.locator('#dock .dk').count(),7);
+  assert.equal(await boba.locator('#celestialWorkspace,iframe.boba-app-host,script[src="/bundle/main.js"]').count(),0);
+  assert.ok(await boba.locator('body').evaluate(()=>[...document.styleSheets].some(s=>s.href?.includes('/boba/original.css'))));
+  await boba.locator('[data-section="apps"]').click();
+  await boba.locator('[data-view="apps"].on .native-tile').first().waitFor({timeout:10000});
+  await boba.screenshot({path:path.join(screenshots,'boba-native-apps.png'),fullPage:true});
+  await boba.locator('[data-section="settings"]').click();
+  await boba.locator('[data-view="settings"].on [data-v="matcha"]').click();
+  assert.equal(await boba.locator('html').getAttribute('data-palette'),'matcha');
+  await boba.locator('[data-section="account"]').click();
+  await boba.locator('[data-view="account"].on [data-admin]:not([hidden])').waitFor({timeout:10000});
+  await boba.locator('[data-section="chat"]').click();
+  await boba.locator('[data-view="chat"].on [data-status]').filter({hasText:'Live'}).waitFor({timeout:10000});
+  await boba.locator('.native-compose input').fill('Native Boba smoke message');
+  await boba.locator('.native-compose button').click();
+  await boba.locator('.native-feed').getByText('Native Boba smoke message',{exact:true}).waitFor({timeout:10000});
+  await boba.locator('[data-section="browser"]').click();
+  await boba.locator('[data-omni]').fill('https://example.com/');
+  await boba.locator('[data-omni]').press('Enter');
+  await boba.waitForFunction(()=>Array.from(document.querySelectorAll('.page iframe')).some(f=>f.src.includes('/~/sj/')),{},{timeout:45000});
+  await boba.screenshot({path:path.join(screenshots,'boba-native-browser.png'),fullPage:true});
   await boba.close();
 
   const mobile=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});
-  await mobile.goto(base+'/?legacy=1',{waitUntil:'domcontentloaded',timeout:30000});
+  await mobile.goto(base+'/legacy.html?legacy=1',{waitUntil:'domcontentloaded',timeout:30000});
   await mobile.locator('.auth-sheet--v2').waitFor({timeout:25000});
   await mobile.screenshot({path:path.join(screenshots,'login-mobile.png'),fullPage:true});
   await mobile.getByRole('button',{name:'Create account',exact:true}).click();
@@ -181,7 +186,7 @@ try{
     if(msg.type()==='error')events.push('console: '+msg.text().slice(0,350));
   });
   page.on('pageerror',error=>events.push('page: '+error.message.slice(0,500)));
-  await page.goto(base+'/?legacy=1#browser',{waitUntil:'domcontentloaded',timeout:30000});
+  await page.goto(base+'/legacy.html?legacy=1#browser',{waitUntil:'domcontentloaded',timeout:30000});
   await page.locator('.auth-sheet--v2').waitFor({timeout:25000});
   await page.screenshot({path:path.join(screenshots,'login-desktop.png'),fullPage:true});
   await page.getByRole('button',{name:'Create account',exact:true}).click();
