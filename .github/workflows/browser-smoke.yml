@@ -2,7 +2,7 @@ name: Browser and Chat smoke test
 
 on:
   push:
-    branches: [main, 'feature/**']
+    branches: [main, celestial-boba-shell, 'feature/**']
   pull_request:
 
 permissions:
@@ -22,7 +22,12 @@ jobs:
       - name: Install Chromium automation
         run: |
           npm install --no-save playwright@1.65.0 --no-audit --no-fund --ignore-scripts
-          npx playwright install --with-deps chromium
+          if command -v google-chrome-stable >/dev/null || command -v google-chrome >/dev/null; then
+            echo "PLAYWRIGHT_CHROME_CHANNEL=chrome" >> "$GITHUB_ENV"
+            echo "Using installed Google Chrome for Chromium smoke tests"
+          else
+            npx playwright install chromium
+          fi
       - name: Verify Scramjet and Chat in a real browser
         run: node scripts/browser-smoke.mjs
       - name: Save browser screenshots
