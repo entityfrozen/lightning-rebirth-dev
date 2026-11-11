@@ -94,3 +94,10 @@
 
 .native-chat-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.native-clear-chat{font-size:12px;min-height:30px;white-space:nowrap;color:#bb4e5b}.native-clear-chat:hover{background:var(--g2);color:#db5666}
 @media(max-width:500px){.native-clear-chat{padding:5px 9px;font-size:11px}}
+
+/* Lightning's proxy readiness checks now back the Boba browser interface. */
+.native-browser-error{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:28px;background:var(--bg);color:var(--ink)}
+.native-browser-error h2{font-size:20px;font-weight:700;letter-spacing:-.035em}
+.native-browser-error p{max-width:480px;font-size:13px;line-height:1.6;color:var(--ink-2)}
+.native-browser-error>div{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.native-browser-error a.btn{text-decoration:none}
