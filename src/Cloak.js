@@ -5,6 +5,13 @@ export const cloakPresets={
   celestial:{label:'Celestial',title:'Celestial',icon:'/assets/celestial-star.svg'},
   workspace:{label:'Workspace',title:'Workspace',icon:'/assets/celestial-star.svg'},
   notes:{label:'My Notes',title:'My Notes',icon:'/assets/celestial-star.svg'},
+  dcss:{label:'DCSS Portal',title:'DCSS Portal',icon:'https://www.google.com/s2/favicons?domain=portal.dcssga.org&sz=64'},
+  classroom:{label:'Google Classroom',title:'Google Classroom',icon:'https://ssl.gstatic.com/classroom/favicon.ico'},
+  docs:{label:'Google Docs',title:'Google Docs',icon:'https://www.google.com/s2/favicons?domain=docs.google.com&sz=64'},
+  drive:{label:'Google Drive',title:'Google Drive',icon:'https://drive.google.com/favicon.ico'},
+  clever:{label:'Clever Portal',title:'Clever | Portal',icon:'https://www.clever.com/favicon.ico'},
+  canvas:{label:'Canvas',title:'Dashboard',icon:'https://canvas.instructure.com/favicon.ico'},
+  wikipedia:{label:'Wikipedia',title:'Wikipedia',icon:'https://www.wikipedia.org/static/favicon/wikipedia.ico'},
   blank:{label:'Untitled',title:'Untitled',icon:'/assets/celestial-star.svg'},
   custom:{label:'Custom',title:'',icon:''}
 };
