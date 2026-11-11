@@ -1,4 +1,6 @@
 import {$,$$,ico,lic,THEMES,ACCENTS,applyPrefs,segThumb,api} from './common.js';
+const identityPresets={celestial:['Celestial','/assets/celestial-star.svg'],workspace:['Workspace','/assets/celestial-star.svg'],notes:['My Notes','/assets/celestial-star.svg'],custom:['','/assets/celestial-star.svg']};
+export function applyTabAppearance(){const preset=localStorage.getItem('boba.tab.preset')||'celestial';const entry=identityPresets[preset]||identityPresets.celestial;document.title=(preset==='custom'?localStorage.getItem('boba.tab.title'):entry[0])||'Celestial';let icon=document.querySelector('link[rel="icon"]');if(icon)icon.href=entry[1];}
 export const settings = {
   html: () => {
     return '<div class="set"><h1 class="r">Settings</h1>' +
@@ -11,6 +13,8 @@ export const settings = {
       '<div class="gt r" style="--d:.08s">Browsing</div><section class="grp gl g2 r" style="--d:.08s">' +
       '<div class="lr">' + lic("link", "#2be0e6", "#0b8f86") + '<h3>Connection</h3><span class="netst"><i data-cn></i><span data-cnm>Checking</span></span></div></section>' +
       '<div class="gt r" style="--d:.12s">This tab</div><section class="grp gl g2 r" style="--d:.12s">' +
+      '<div class="lr">' + lic("tv", "#7d8ba0", "#4a5566") + '<h3>Tab appearance</h3><select data-tab aria-label="Tab appearance"><option value="celestial">Celestial</option><option value="workspace">Workspace</option><option value="notes">My Notes</option><option value="custom">Custom</option></select></div>' +
+      '<div class="lr" data-custom-tab hidden><h3>Tab title</h3><label class="fld"><input data-tab-title maxlength="70" aria-label="Tab title"></label></div>' +
       '<div class="lr">' + lic("trash", "#ff6b6b", "#d62e4a") + '<h3>Reset local preferences</h3><button class="btn s" data-reset>Reset</button></div></section></div>';
   },
 
@@ -18,6 +22,11 @@ export const settings = {
     const paint=()=>{applyPrefs();const p=localStorage.getItem('celestial.boba.theme')||'boba';$$('.thm',root).forEach(b=>b.classList.toggle('on',b.dataset.v===p));$$('.sw',root).forEach(b=>b.classList.toggle('on',Number(b.dataset.i)===Number(localStorage.getItem('boba.accent')||0)));const seg=$('[data-fx]',root);$$('button',seg).forEach(b=>b.classList.toggle('on',b.dataset.v===document.documentElement.dataset.fx));segThumb(seg)};
     root.addEventListener('click',e=>{const t=e.target.closest('.thm'),a=e.target.closest('.sw'),f=e.target.closest('[data-fx] button');if(t)localStorage.setItem('celestial.boba.theme',t.dataset.v);if(a)localStorage.setItem('boba.accent',a.dataset.i);if(f)localStorage.setItem('boba.fx',f.dataset.v);if(e.target.closest('[data-reset]')){for(const k of ['celestial.boba.theme','boba.accent','boba.fx'])localStorage.removeItem(k)}paint()});
     api('/api/browser/status').then(d=>{$('[data-cnm]',root).textContent=d.proxy?'Available':'Unavailable'}).catch(()=>{$('[data-cnm]',root).textContent='Offline'});
+    const tab=$('[data-tab]',root),title=$('[data-tab-title]',root);
+    tab.value=localStorage.getItem('boba.tab.preset')||'celestial';title.value=localStorage.getItem('boba.tab.title')||'';
+    const tabPaint=()=>{$('[data-custom-tab]',root).hidden=tab.value!=='custom';applyTabAppearance()};
+    tab.onchange=()=>{localStorage.setItem('boba.tab.preset',tab.value);tabPaint()};
+    title.oninput=()=>{localStorage.setItem('boba.tab.title',title.value);applyTabAppearance()};tabPaint();
     paint();return paint;
   }
 };
