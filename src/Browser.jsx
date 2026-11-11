@@ -69,7 +69,7 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
         if(!user)throw Error('Sign in to browse in Celestial.');
         if(!window.isSecureContext)throw Error('The browser needs a secure HTTPS connection.');
         // Probe the real Scramjet controller instead of rejecting an embedded
-        // page solely because crossOriginIsolated is false. if this persists, the server needs a configuration update.');
+        // page solely because crossOriginIsolated is false.
         const status=await api('/api/browser/status');
         if(!status.authenticated)throw Error('Sign in to browse in Celestial.');
         if(!status.proxy)throw Error('The browser engine is unavailable on this server.');
