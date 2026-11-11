@@ -37,7 +37,7 @@ export function openAboutBlank(target,appearance={}){
   // A Scramjet controller needs a top-level isolated HTTPS document.
   // Keep an escape hatch in the *wrapper*, not in the framed application:
   // privacy checks or frame restrictions can prevent the iframe loading.
-  if(destination.origin===location.origin&&destination.pathname==='/boba/index.html'){
+  if(destination.origin===location.origin&&(destination.pathname==='/'||destination.pathname==='/boba/index.html')){
    label.textContent='Browser requires a standalone Celestial tab.';
    const standalone=doc.createElement('button');
    standalone.type='button';
@@ -45,15 +45,21 @@ export function openAboutBlank(target,appearance={}){
    standalone.textContent='Open Browser';
    standalone.style.cssText='border:0;border-radius:7px;padding:7px 10px;background:#75d4df;color:#06141b;font-weight:700;cursor:pointer;white-space:nowrap';
    standalone.onclick=()=>{
-    const browser=new URL('/boba/index.html#browser',destination.origin);
+    const browser=new URL('/',destination.origin);
     popup.location.assign(browser.href);
    };
    notice.insertBefore(standalone,fallback);
   }
   doc.body.append(frame,notice);
-  // Only trust appearance messages from the iframe we created on our origin.
+  // The iframe handles its own sign-in redirect. The parent also refreshes it
+  // on a successful login in case the browser delays child navigation.
+  // Only trust messages from the iframe we created on our origin.
   popup.addEventListener('message',event=>{
    if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
+   if(event.data?.type==='celestial:auth-success'){
+    frame.src=destination.origin+'/';
+    return;
+   }
    if(event.data?.type!=='celestial:appearance')return;
    doc.title=String(event.data.title||doc.title).slice(0,70);
    try{const icon=new URL(event.data.icon,location.origin);
