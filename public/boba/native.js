@@ -11,7 +11,7 @@ async function start(){
  const data=await api('/api/me');
  if(!data.user){location.replace('/boba/auth.html');return}
  const user=data.user,views=$('#views'),dock=$('#dock');
- const items=[['home','Home','home'],['browser','Browser','web'],['apps','Tools','play'],['games','Apps','gamepad-2'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
+ const items=[['home','Home','home'],['browser','Browser','web'],['apps','Tools','play'],['games','Apps','grid-2x2'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
  if(user.role==='admin')items.splice(items.length-1,0,['admin','Administration','shield']);
  const view=id=>$('[data-view="'+id+'"]');
  let current='home',paintSettings=()=>{},loadAdmin=()=>{};
