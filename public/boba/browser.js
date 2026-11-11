@@ -95,7 +95,7 @@ const home = {
     '<span class="wsep"></span><div class="wtabs" data-tabs></div>' +
     '<button class="cb sm gh" data-wnew aria-label="New tab">' + ico("plus") + "</button>" +
     '<button class="cb sm gh" data-direct title="Open direct in about:blank" aria-label="Open Direct">' + ico("link") + '</button>' +
-    '<button class="cb sm gh" data-standalone title="Open Celestial standalone for Scramjet" aria-label="Open standalone browser">' + ico("expand") + '</button>' +
+
     '<button class="cb sm gh" data-wmax aria-label="Full screen">' + ico("expand") + "</button></div>" +
     '<span class="wtip" data-tip></span>' +
     '<div class="page" data-page><div class="gload off" data-bl>' + cup() + '</div><div class="home" data-nt>' +
