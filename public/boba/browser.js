@@ -170,12 +170,12 @@ const home = {
     const loaded=t=>{
       let d=null;
       try{d=t.frame?.contentDocument}catch{}
-      if(!t.frame?.src.includes('/~/sj/')||!d||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
+      if(!t.frame?.src.includes('/~/sj/')||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
       if(ctx.engine.failed(d)){showError(t,'The proxied site returned an error.');return true}
       clearInterval(t.lt);t.busy=false;sync();clearError(t);track(t);return true;
     };
     const loading=t=>{
-      clearInterval(t.lt);clearError(t);t.busy=true;sync();
+      clearInterval(t.lt);clearError(t);try{t.previousDoc=t.frame?.contentDocument||null}catch{t.previousDoc=null}t.busy=true;sync();
       const started=Date.now();
       t.lt=setInterval(()=>{
         if(loaded(t))return;
