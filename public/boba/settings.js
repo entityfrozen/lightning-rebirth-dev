@@ -69,7 +69,7 @@ export const settings = {
     iconInput.onchange=()=>{localStorage.setItem('boba.tab.icon',iconInput.value.trim());tabPaint()};
     $('[data-tab-blank]',root).onclick=()=>{
      const identity=applyTabAppearance();
-     const result=openAboutBlank(location.origin+'/boba/index.html',{title:identity.title,icon:identity.icon});
+     const result=openAboutBlank(location.origin+'/',{title:identity.title,icon:identity.icon});
      if(!result.ok)alert(result.message);
     };
     $('[data-tab-reset]',root).onclick=()=>{for(const key of ['boba.tab.preset','boba.tab.title','boba.tab.icon'])localStorage.removeItem(key);tab.value='celestial';title.value='';iconInput.value='';tabPaint()};
