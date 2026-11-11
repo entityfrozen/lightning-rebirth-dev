@@ -18,7 +18,7 @@ export function mountChat(root,user){
   return '<small title="'+esc(exact)+'" datetime="'+esc(date.toISOString())+'">'+esc(clock)+'</small>';
  };
  const input=$r('.native-compose textarea'),picker=$r('[data-mentions]');
- const mentionHTML=text=>esc(String(text||'')).replace(/(^|[^\\w])@([A-Za-z0-9_.-]+)/g,(_m,prefix,name)=>prefix+'<span class="cel-mention'+(name.toLowerCase()===user.username.toLowerCase()?' mine':'')+'">@'+name+'</span>');
+ const mentionHTML=text=>esc(String(text||'')).replace(/(^|[^\w])@([A-Za-z0-9_.-]+)/g,(_m,prefix,name)=>prefix+'<span class="cel-mention'+(name.toLowerCase()===user.username.toLowerCase()?' mine':'')+'">@'+name+'</span>');
  const server=()=>servers.find(s=>s.id===serverId)||servers[0];
  const channel=()=>server()?.channels?.find(c=>c.id===channelId)||server()?.channels?.[0];
  const say=t=>{$r('[data-error]').hidden=!t;$r('[data-error]').textContent=t||''};
@@ -31,7 +31,7 @@ export function mountChat(root,user){
   $r('[data-title]').textContent=dm?dm.username:'# '+(c?.name||'general');$r('[data-status]').textContent=socket?.readyState===WebSocket.OPEN?'Live':'Reconnecting…';
   const feed=$r('.native-feed'),near=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100;
   const roster=new Map((s?.members||[]).map(p=>[p.id,p]));for(const p of people)roster.set(p.id,{...roster.get(p.id),...p});const all=[...roster.values()];const rows=dm?dmRows:(s?.messages?.[c?.id]||[]);
-  feed.innerHTML=rows.map(m=>{const p=roster.get(dm?m.from:m.userId)||all.find(x=>(x.username||x.name)===(dm?m.author:m.by||m.username));const name=dm?m.author:m.by||m.username||p?.username||'Member';return '<article class="native-message"><span class="native-person-icon">'+esc(name.slice(0,2).toUpperCase())+'</span><div><div class="native-message-meta"><b>'+esc(name)+'</b>'+badge(p)+timestamp(m)+'</div><p>'+esc(dm?m.text:m.message)+'</p></div>'+(!dm&&(user.role==='admin'||m.userId===user.id)?'<button type="button" class="native-delete-message" aria-label="Delete message" title="Delete message" data-delete-message="'+esc(m.id)+'" data-delete-channel="'+esc(c?.id||'')+'">'+ico('trash')+'</button>':'')+'</article>'}).join('');
+  feed.innerHTML=rows.map(m=>{const p=roster.get(dm?m.from:m.userId)||all.find(x=>(x.username||x.name)===(dm?m.author:m.by||m.username));const name=dm?m.author:m.by||m.username||p?.username||'Member';return '<article class="native-message'+(new RegExp('(^|[^a-z0-9_])@'+user.username+'(?![a-z0-9_])','i').test(dm?m.text:m.message)?' mentioned':'')+'"><span class="native-person-icon">'+esc(name.slice(0,2).toUpperCase())+'</span><div><div class="native-message-meta"><b>'+esc(name)+'</b>'+badge(p)+timestamp(m)+'</div><p>'+mentionHTML(dm?m.text:m.message)+'</p></div><button class="cel-reply-action" type="button" data-reply-id="'+esc(m.id)+'" aria-label="Reply">↩</button>'+(!dm&&(user.role==='admin'||m.userId===user.id)?'<button type="button" class="native-delete-message" aria-label="Delete message" title="Delete message" data-delete-message="'+esc(m.id)+'" data-delete-channel="'+esc(c?.id||'')+'">'+ico('trash')+'</button>':'')+'</article>'}).join('');
   if(near)feed.scrollTop=feed.scrollHeight;
   $r('[data-member-count]').textContent=all.length;
   input.placeholder=dm?'Message @'+dm.username:'Message #'+(c?.name||'general');
@@ -69,7 +69,7 @@ export function mountChat(root,user){
  };
  $r('[data-full]').onclick=()=>document.fullscreenElement?document.exitFullscreen():root.requestFullscreen();
  const suggestions=()=>{
-   const match=input.value.slice(0,input.selectionStart).match(/(?:^|\\s)@([A-Za-z0-9_.-]*)$/);
+   const match=input.value.slice(0,input.selectionStart).match(/(?:^|\s)@([A-Za-z0-9_.-]*)$/);
    mentionMatches=match?people.filter(p=>p.id!==user.id&&(p.username||p.name||'').toLowerCase().startsWith(match[1].toLowerCase())).slice(0,7):[];
    picker.hidden=!mentionMatches.length;
    picker.innerHTML=mentionMatches.map((p,i)=>'<button type="button" data-mention="'+i+'" role="option"><span class="native-person-icon">'+esc((p.username||p.name).slice(0,2).toUpperCase())+'</span>@'+esc(p.username||p.name)+'</button>').join('');
