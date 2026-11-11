@@ -3,7 +3,7 @@
   "version": "8.2.0",
   "private": true,
   "type": "module",
-  "description": "Celestial — Xylora-faithful browser shell, aurora theme and Bolt-powered games/chat/AI/browser",
+  "description": "Celestial — Xylora-faithful browser shell, aurora theme and Bolt-powered chat/AI/browser",
   "scripts": {
     "start": "node server.js",
     "dev": "npm run build && node server.js",
@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@mercuryworkshop/proxy-bootstrap": "^0.0.5",
-    "chess.js": "^1.4.0",
     "ws": "^8.18.3",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
