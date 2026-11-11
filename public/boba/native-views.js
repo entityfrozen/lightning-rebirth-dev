@@ -10,7 +10,7 @@ const originalAsk = {
     '<textarea data-aq rows="1" maxlength="2500" placeholder="Ask anything" aria-label="Ask anything"></textarea>' +
     '<div class="ai-tools"><button class="ai-t" type="button" data-add aria-label="Attach a text file">' + ico("plus") + "</button>" +
     '<button class="ai-t" type="button" data-web aria-pressed="false" disabled>' + ico("web") + "Search</button>" +
-    '<label class="ai-t celestial-effort"><span class="tv">' + ico("ask") + '</span><select data-effort aria-label="AI reasoning mode"><option value="instant">Instant</option><option value="smart" selected>Smart</option><option value="ultra">Ultra Smart</option></select></label>' +
+    '<label class="ai-t celestial-effort"><span class="tv">' + ico("ask") + '</span><select data-effort aria-label="AI reasoning mode"><option value="instant" selected>Instant</option><option value="smart">Smart</option><option value="ultra">Ultra Smart</option></select></label>' +
     '<span class="sp"></span><button class="cb" type="submit" data-asend aria-label="Send">' + ico("send") + "</button></div>" +
     '<input type="file" data-pick hidden accept=".txt,.md,.csv,.json,.js,.ts,.py,.java,.html,.css,.xml,.yml,.yaml"></form></section></div>',
 };
