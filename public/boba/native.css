@@ -91,3 +91,6 @@
 .native-message:hover .native-delete-message,.native-delete-message:focus-visible{opacity:1}
 .native-delete-message:hover{color:#d45661;background:var(--g2)}
 @media(hover:none){.native-delete-message{opacity:1}}
+
+.native-chat-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}.native-clear-chat{font-size:12px;min-height:30px;white-space:nowrap;color:#bb4e5b}.native-clear-chat:hover{background:var(--g2);color:#db5666}
+@media(max-width:500px){.native-clear-chat{padding:5px 9px;font-size:11px}}
