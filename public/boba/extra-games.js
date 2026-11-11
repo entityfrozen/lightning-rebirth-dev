@@ -8,7 +8,6 @@ export const extraGames=[
  {id:'chess',title:'Chess',subtitle:'Legal moves, checkmates, and a computer rival.',kind:'strategy',symbol:'♞'},
  {id:'connect4',title:'Connect Four',subtitle:'Four in a row wins. Watch the diagonals.',kind:'strategy',symbol:'🔴'},
  {id:'mines',title:'Minesweeper',subtitle:'Reveal safe cells. Mark every mine.',kind:'puzzle',symbol:'✳'},
- {id:'memory',title:'Memory Match',subtitle:'Flip cards and find every pair.',kind:'puzzle',symbol:'✦'},
  {id:'snake',title:'Snake',subtitle:'Chase fruit, grow longer, beat your best.',kind:'arcade',symbol:'🐍'}
 ];
 
@@ -81,14 +80,6 @@ export function playMines(stage){
  board.onclick=e=>{const target=e.target.closest('[data-cell]');if(target)open(Number(target.dataset.cell))};
  board.oncontextmenu=e=>{const target=e.target.closest('[data-cell]');if(target){e.preventDefault();open(Number(target.dataset.cell),true)}};
  stage.querySelector('[data-action=reset]').onclick=reset;reset();return()=>{};
-}
-export function playMemory(stage){
- const icons=['🌙','✦','◆','☁','☀','♢','☘','❖'];let cards=[],flipped=[],turns=0,locked=false,matched=0,active=true;
- stage.innerHTML='<div class="cel-extra-game"><h3>Memory Match</h3><p class="cel-game-help" data-state>Flip two cards to find a pair.</p><div data-board class="cel-memory-grid"></div>'+button('Shuffle','reset')+'</div>';
- const board=stage.querySelector('[data-board]'),state=stage.querySelector('[data-state]');const draw=()=>{state.textContent=matched===8?'All pairs found in '+turns+' turns!':'Pairs '+matched+'/8 · Turns '+turns;board.innerHTML=cards.map((v,i)=>'<button data-cell="'+i+'" class="cel-memory-cell'+(flipped.includes(i)||v.matched?' showing':'')+'" aria-label="Card '+(i+1)+'">'+(flipped.includes(i)||v.matched?v.icon:'?')+'</button>').join('')};
- const reset=()=>{cards=icons.flatMap(icon=>[{icon,matched:false},{icon,matched:false}]).sort(()=>Math.random()-.5);flipped=[];turns=0;matched=0;locked=false;draw()};
- board.onclick=e=>{const b=e.target.closest('[data-cell]');if(!b||locked)return;const i=Number(b.dataset.cell);if(cards[i].matched||flipped.includes(i))return;flipped.push(i);if(flipped.length===2){turns++;const [a,b]=flipped;if(cards[a].icon===cards[b].icon){cards[a].matched=cards[b].matched=true;matched++;flipped=[]}else{locked=true;setTimeout(()=>{if(!active)return;flipped=[];locked=false;draw()},650)}}draw()};
- stage.querySelector('[data-action=reset]').onclick=reset;reset();return()=>{active=false};
 }
 export function playSnake(stage){
  const N=16;let snake,food,dir,next,points,timer=null,ended=false;
