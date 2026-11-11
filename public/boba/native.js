@@ -36,7 +36,7 @@ async function start(){
  };
  window.addEventListener('celestial:dock-settings',updateDock);
  items.forEach(([id,label,key])=>{const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)});
- mountApps(view('apps'),open,navigate);mountGames(view('games'));mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
+ mountApps(view('apps'),open,navigate);mountGames(view('games'),open);mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
  if(user.role==='admin')loadAdmin=mountAdmin(view('admin'),user);
  view('settings').innerHTML=settings.html();paintSettings=settings.mount(view('settings'));
  updateDock();
