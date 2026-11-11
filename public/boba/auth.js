@@ -77,8 +77,10 @@
       }
       if (!data.user) throw Error('Could not sign in. Please try again.');
       field('password').value = '';
-      if (window.parent !== window) window.parent.postMessage({type:'celestial:auth-success'}, location.origin);
-      else location.replace('/');
+      // Redirect the authenticating frame itself, whether top-level or inside
+      // the about:blank wrapper. Do not depend on the parent message listener.
+      if(window.parent!==window)window.parent.postMessage({type:'celestial:auth-success'},location.origin);
+      location.replace('/');
     } catch (error) { say(error.message || 'Something went wrong.'); }
     finally { busy = sub.disabled = false; }
   });
