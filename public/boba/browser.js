@@ -15,9 +15,21 @@ const get=async()=>[];
 function failPage(frame,url,retry,message='The page could not load.'){const doc=frame.contentDocument;if(!doc)return;doc.body?.replaceChildren();const p=doc.createElement('p');p.textContent=message;const b=doc.createElement('button');b.textContent='Retry';b.onclick=retry;doc.body?.append(p,b);}
 const frames=new WeakMap();
 const engine={
- normalise(input){const q=String(input||'').trim();if(!q)return '';try{const u=new URL(q);if(['http:','https:'].includes(u.protocol))return u.href}catch{}if(/^[\w-]+(\.[\w-]+)+(?:[/:?#]|$)/.test(q))return 'https://'+q;return 'https://www.google.com/search?q='+encodeURIComponent(q)},
- boot:getProxyController,recover:getProxyController,decode(){return ''},failed(){return false},
- async openFrame(el,url,onNavigate,onPopup){let f=frames.get(el);if(!f){f=await createProxyFrame(el,onNavigate,onPopup);frames.set(el,f)}f.go(url)},
+ normalise(input){const q=String(input||'').trim();if(!q)return '';try{const u=new URL(q);if(['http:','https:'].includes(u.protocol))return u.href}catch{}if(/^[\\w-]+(\\.[\\w-]+)+(?:[/:?#]|$)/.test(q))return 'https://'+q;return 'https://www.google.com/search?q='+encodeURIComponent(q)},
+ boot:getProxyController,recover:getProxyController,
+ decode(url){try{const src=new URL(url,location.origin);if(!src.pathname.startsWith('/~/sj/'))return '';const decode=window.$scramjetController?.config?.prefix?window.$scramjetController?.decodeUrl:null;return typeof decode==='function'?decode(url):''}catch{return ''}},
+ failed(d){return !!(d&&/scramjet.*error|failed to fetch/i.test((d.title||'').slice(0,100)))},
+ async openFrame(el,url,onNavigate,onPopup){
+   if(!window.isSecureContext)throw Error('Scramjet requires HTTPS. Open Celestial in a secure tab.');
+   if(!window.crossOriginIsolated)throw Error(window.top!==window?'Open Celestial in its own tab: the launcher does not provide the isolation Scramjet needs.':'Browser isolation is not active. Reload the page; if this persists, check the server headers.');
+   const status=await fetch('/api/browser/status',{credentials:'same-origin'}).then(r=>r.json());
+   if(!status.authenticated)throw Error('Sign in to browse with Scramjet.');
+   if(!status.proxy)throw Error('Scramjet is unavailable on this server.');
+   let frame=frames.get(el);
+   if(!frame){frame=await createProxyFrame(el,onNavigate,onPopup);frames.set(el,frame)}
+   frame.go(url);
+ },
+ action(el,kind){const f=frames.get(el);if(!f)return false;const method={back:'back',fwd:'forward',reload:'reload'}[kind];if(!method||typeof f[method]!=='function')return false;f[method]();return true},
  dispose(el){disposeProxyFrame(frames.get(el));frames.delete(el)}
 };
 const QL_MAX = 12;
@@ -144,47 +156,31 @@ const home = {
         }
       });
     };
-    const loaded = (t) => {
-      clearInterval(t.lt);
-      let d = null;
-      try {
-        d = t.frame.contentDocument;
-      } catch {}
-      if (ctx.engine.failed(d)) {
-        if (!t.again) {
-          t.again = true;
-          return retry(t);
-        }
-        failPage(t.frame, t.url, () => {
-          t.again = false;
-          retry(t);
-        });
-      } else if (d && d.URL !== "about:blank") t.again = false;
-      t.busy = false;
-      sync();
-      track(t);
-      try {
-        t.frame.contentWindow.addEventListener("beforeunload", () => loading(t));
-      } catch {}
+    const clearError=t=>{t.errorEl?.remove();t.errorEl=null;};
+    const showError=(t,message)=>{
+      clearInterval(t.lt);t.busy=false;sync();clearError(t);
+      const panel=document.createElement('div');panel.className='native-browser-error';
+      const heading=document.createElement('h2');heading.textContent="This page couldn't be opened";
+      const detail=document.createElement('p');detail.textContent=message||'Scramjet could not load this site.';
+      const buttons=document.createElement('div');
+      const again=document.createElement('button');again.className='btn k s';again.textContent='Try again';again.onclick=()=>navigate(t.url);
+      const direct=document.createElement('a');direct.className='btn s';direct.textContent='Open site directly';direct.href=t.url;direct.target='_blank';direct.rel='noopener noreferrer';
+      buttons.append(again,direct);panel.append(heading,detail,buttons);page.append(panel);t.errorEl=panel;
     };
-    const loading = (t) => {
-      clearInterval(t.lt);
-      t.busy = true;
-      let old = null;
-      try {
-        old = t.frame.contentDocument;
-      } catch {}
-      const t0 = Date.now();
-      t.lt = setInterval(() => {
-        let d = null;
-        try {
-          d = t.frame.contentDocument;
-        } catch {}
-        const fresh = d && d !== old && d.URL !== "about:blank";
-        const painted = fresh && (d.readyState !== "loading" || (d.body && d.body.childElementCount && [...d.querySelectorAll("head link[rel~=stylesheet]")].every((l) => l.sheet)));
-        if (painted || Date.now() - t0 > 15000) loaded(t);
-      }, 200);
-      sync();
+    const loaded=t=>{
+      let d=null;
+      try{d=t.frame?.contentDocument}catch{}
+      if(!t.frame?.src.includes('/~/sj/')||!d||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
+      if(ctx.engine.failed(d)){showError(t,'The proxied site returned an error.');return true}
+      clearInterval(t.lt);t.busy=false;sync();clearError(t);track(t);return true;
+    };
+    const loading=t=>{
+      clearInterval(t.lt);clearError(t);t.busy=true;sync();
+      const started=Date.now();
+      t.lt=setInterval(()=>{
+        if(loaded(t))return;
+        if(Date.now()-started>26000)showError(t,'The website did not finish loading. Try again or open it directly.');
+      },180);
     };
 
     const paint = () => {
@@ -213,7 +209,7 @@ const home = {
     const closeTab = (id) => {
       const i = st.tabs.findIndex((t) => t.id === id);
       if (i < 0) return;
-      clearInterval(st.tabs[i].lt);
+      clearInterval(st.tabs[i].lt);clearError(st.tabs[i]);
       if (st.tabs[i].frame) { ctx.engine.dispose(st.tabs[i].frame); st.tabs[i].frame.remove(); }
       st.tabs.splice(i, 1);
       if (st.active === id && st.tabs.length) st.active = st.tabs[Math.min(i, st.tabs.length - 1)].id;
@@ -240,7 +236,7 @@ const home = {
       if(first){
         t.frame=el('<iframe title="Page" allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"></iframe>');
         page.appendChild(t.frame);
-        t.frame.addEventListener("load",()=>{try{if(t.frame.contentWindow.location.href==="about:blank")return;}catch{} loaded(t);});
+        t.frame.addEventListener("load",()=>loaded(t));
       }
       t.url=url;
       paint();
@@ -249,11 +245,10 @@ const home = {
           t.url=real;t.title=hostOf(real)||"Page";paint();
         },popup=>navigate(popup,true));
       }catch(error){
-        t.busy=false;clearInterval(t.lt);sync();
-        failPage(t.frame,url,()=>navigate(url),error.message);
+        showError(t,error.message);
         return;
       }
-      if(t.busy)loading(t);
+      if(t.busy)loaded(t);
       ctx.history.push({ kind: "site", key: "site:" + t.title, name: t.title, url });
       paint();
     };
@@ -400,9 +395,7 @@ const home = {
         const t = tab();
         if (!t || !t.frame) return;
         try {
-          if (nb.dataset.wb === "back") t.frame.contentWindow.history.back();
-          if (nb.dataset.wb === "fwd") t.frame.contentWindow.history.forward();
-          if (nb.dataset.wb === "reload") t.frame.contentWindow.location.reload();
+          if(!ctx.engine.action(t.frame,nb.dataset.wb))throw Error("Frame unavailable");
         } catch {
           if (nb.dataset.wb === "reload") t.frame.src = t.frame.src;
         }
