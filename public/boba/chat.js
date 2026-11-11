@@ -1,6 +1,6 @@
 import {$,$$,esc,ico,api} from './common.js';
 export function mountChat(root,user){
- root.innerHTML='<div class="native-messenger"><aside class="native-rooms"><h3>Community</h3><select aria-label="Server" data-server></select><div data-channels></div><button class="btn s" data-join hidden>Join server</button><button class="btn s" data-new-server>New server</button></aside><section class="native-conversation"><header class="native-chat-head"><div><h2 data-title>Chat</h2><small data-status>Connecting…</small></div><button class="cb sm gh" aria-label="Fullscreen chat" data-full>'+ico('expand')+'</button></header><div class="native-feed srl" role="log"></div><form class="native-compose gl g2"><input aria-label="Message" maxlength="600" placeholder="Write a message"><button class="cb" type="submit" aria-label="Send message">'+ico('send')+'</button></form><p class="msg" data-error hidden></p></section><aside class="native-members"><h3>Members</h3><label class="fld"><input data-search placeholder="Find a member" aria-label="Find a member"></label><div data-people></div></aside></div>';
+ root.innerHTML='<div class="native-messenger"><aside class="native-rooms"><h3>Community</h3><select aria-label="Server" data-server></select><div data-channels></div><button class="btn s" data-join hidden>Join server</button><button class="btn s" data-new-server>New server</button></aside><section class="native-conversation"><header class="native-chat-head"><div><h2 data-title>Chat</h2><small data-status>Connecting…</small></div><div class="native-chat-actions"><button class="btn s native-clear-chat" type="button" data-clear-chat hidden>Clear chat</button><button class="cb sm gh" aria-label="Fullscreen chat" data-full>'+ico('expand')+'</button></div></header><div class="native-feed srl" role="log"></div><form class="native-compose gl g2"><input aria-label="Message" maxlength="600" placeholder="Write a message"><button class="cb" type="submit" aria-label="Send message">'+ico('send')+'</button></form><p class="msg" data-error hidden></p></section><aside class="native-members"><h3>Members</h3><label class="fld"><input data-search placeholder="Find a member" aria-label="Find a member"></label><div data-people></div></aside></div>';
  let socket,servers=[],people=[],online=[],serverId='',channelId='',dm=null,dmRows=[],closed=false,revision=0;
  const $r=s=>$(s,root),send=d=>{if(socket?.readyState!==WebSocket.OPEN)return false;socket.send(JSON.stringify(d));return true},role=p=>({admin:'ADMIN',owner:'OWNER',account_manager:'STAFF',moderator:'MOD'}[p?.platformRole||p?.role]||'');
  const badge=p=>role(p)?'<span class="native-role role-'+esc(role(p).toLowerCase())+'">'+role(p)+'</span>':'';
@@ -24,6 +24,8 @@ export function mountChat(root,user){
   const s=server(),c=channel(),sel=$r('[data-server]');if(s)serverId=s.id;if(c)channelId=c.id;sel.innerHTML=servers.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');sel.value=serverId;
   $r('[data-channels]').innerHTML=(s?.channels||[]).map(x=>'<button class="native-chat-link '+(!dm&&x.id===channelId?'on':'')+'" data-channel="'+esc(x.id)+'"># '+esc(x.name||x.id)+'</button>').join('');
   $r('[data-join]').hidden=!s||s.members?.some(p=>p.id===user.id);
+  $r('[data-clear-chat]').hidden=!dm&&user.role!=='admin';
+  $r('[data-clear-chat]').textContent=dm?'Clear DM':'Clear channel';
   $r('[data-title]').textContent=dm?dm.username:'# '+(c?.name||'general');$r('[data-status]').textContent=socket?.readyState===WebSocket.OPEN?'Live':'Reconnecting…';
   const feed=$r('.native-feed'),near=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100;
   const roster=new Map((s?.members||[]).map(p=>[p.id,p]));for(const p of people)roster.set(p.id,{...roster.get(p.id),...p});const all=[...roster.values()];const rows=dm?dmRows:(s?.messages?.[c?.id]||[]);
@@ -44,6 +46,18 @@ export function mountChat(root,user){
  });
  $r('[data-server]').onchange=e=>{serverId=e.target.value;channelId='';dm=null;render()};$r('[data-channels]').onclick=e=>{const b=e.target.closest('[data-channel]');if(b){dm=null;channelId=b.dataset.channel;render()}};$r('[data-search]').oninput=render;$r('[data-people]').onclick=e=>{const b=e.target.closest('[data-person]');if(b&&b.dataset.person!==user.id){dm=people.find(p=>p.id===b.dataset.person);if(dm){dmRows=[];render();readDM()}}};
  $r('[data-join]').onclick=()=>send({type:'v2Join',serverId:serverId});$r('[data-new-server]').onclick=()=>{const name=prompt('Server name');if(name?.trim())send({type:'v2Create',name:name.trim(),description:'A Celestial community',icon:'✦'})};
+ $r('[data-clear-chat]').onclick=async()=>{
+  if(dm){
+    const target=dm.id,name=dm.username;
+    if(!confirm('Clear your conversation with '+name+'? This only hides messages for you.'))return;
+    try{await api('/api/dms/'+encodeURIComponent(target)+'/clear',{});dmRows=[];render();await readDM();say('Conversation cleared from your view.')}catch(e){say(e.message)}
+    return;
+  }
+  if(user.role!=='admin'||!server()||!channel())return;
+  const channelName=channel().name||channel().id;
+  if(!confirm('Clear every message in #'+channelName+' for everyone? This cannot be undone.'))return;
+  if(!send({type:'v2ClearChannel',serverId,channel:channelId}))say('Chat is reconnecting. Try again.');
+ };
  $r('[data-full]').onclick=()=>document.fullscreenElement?document.exitFullscreen():root.requestFullscreen();
  $r('form').onsubmit=async e=>{e.preventDefault();const input=$r('.native-compose input'),text=input.value.trim();if(!text)return;try{if(dm){await api('/api/dms/'+encodeURIComponent(dm.id),{text});await readDM()}else if(!send({type:'v2Message',serverId,channel:channelId,message:text,replyTo:''}))throw Error('Chat is reconnecting.');input.value='';say('')}catch(err){say(err.message)}};
  connect();refresh();setInterval(refresh,30000);setInterval(()=>{if(dm)readDM()},4000);window.addEventListener('pagehide',()=>{closed=true;socket?.close()});
