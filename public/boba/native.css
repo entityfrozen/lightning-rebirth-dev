@@ -38,3 +38,9 @@
 .native-conversation .msg{padding:6px 2px}
 @media(max-width:850px){.native-messenger{grid-template-columns:140px minmax(0,1fr)}.native-members{display:none}.native-rooms{padding:16px 8px}.native-conversation{padding:0 10px 10px}.native-app-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}}
 @media(max-width:500px){.native-messenger{grid-template-columns:100px minmax(0,1fr)}.native-rooms h3{font-size:13px}.native-rooms select{padding:6px;font-size:11px}.native-rooms .btn{padding:0 8px;font-size:11px}.native-profile{margin-top:0}.native-chat-link{padding:8px 5px}.native-message{gap:6px}.native-person-icon{width:26px;height:26px}.native-chat-head h2{font-size:15px}.native-tile{min-height:100px}}
+
+/* Keep the home watermark legible on every palette, including warm pastels. */
+.hwm img{opacity:.24;filter:brightness(0);mix-blend-mode:normal}
+:root[data-theme="dark"] .hwm img{opacity:.19;filter:brightness(0) invert(1)}
+/* A neutral AI glyph, independent of the provider. */
+.dk[data-section="ai"] svg,.native-app-icon .cel-ai-icon{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
