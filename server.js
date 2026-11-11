@@ -488,13 +488,19 @@ async function staticFile(req,res,url) {
   let filename;
   try {filename=decodeURIComponent(url.pathname);}catch{return fail(res,400,'Bad path');}
   if(filename==='/' || (!path.extname(filename) && !filename.startsWith('/assets/')))filename='/index.html';
+  // Only expose compiled native assets; the source modules and HTML templates
+  // remain in the repository for maintenance, not on the production network.
+  if(/^\/boba\/(?:native|browser|common|chat|native-views|admin|settings|icons|proxy|auth)\.js$/.test(filename) ||
+     /^\/boba\/(?:original|native|auth)\.css$/.test(filename) ||
+     /^\/boba\/(?:index|auth)\.template\.html$/.test(filename) ||
+     filename==='/boba/dist/.vite/manifest.json')return fail(res,404,'File not found');
   const filepath=path.resolve(PUBLIC,'.'+filename);
   if(!(filepath===PUBLIC||filepath.startsWith(PUBLIC+path.sep)))return fail(res,403,'Invalid file path');
   const type=types[path.extname(filepath)];if(!type)return fail(res,404,'File not found');
   try {
     const info=await stat(filepath);if(!info.isFile())throw Error('Not a file');
     const content=await readFile(filepath);
-    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'credentialless','Cross-Origin-Resource-Policy':type.startsWith('text/html')?'cross-origin':'same-origin','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com; connect-src 'self' data: https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'",'Cache-Control':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
+    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'credentialless','Cross-Origin-Resource-Policy':type.startsWith('text/html')?'cross-origin':'same-origin','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com; connect-src 'self' data: https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'",'Cache-Control':/^\/boba\/dist\/assets\//.test(filename)?'public, max-age=31536000, immutable':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
     return res.end(req.method==='HEAD'?undefined:content);
   }catch{return fail(res,404,'File not found');}
 }
