@@ -3,6 +3,7 @@ import {mountBrowser} from './browser.js';
 import {mountApps,mountAsk,mountAccount} from './native-views.js';
 import {mountChat} from './chat.js';
 import {settings} from './settings.js';
+import {mountAdmin} from './admin.js';
 import {N} from './icons.js';
 applyPrefs();
 async function start(){
@@ -10,8 +11,9 @@ async function start(){
  if(!data.user){location.replace('/boba/auth.html');return}
  const user=data.user,views=$('#views'),dock=$('#dock');
  const items=[['home','Home','home'],['browser','Browser','web'],['apps','Apps','play'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
+ if(user.role==='admin')items.splice(items.length-1,0,['admin','Administration','shield']);
  const view=id=>$('[data-view="'+id+'"]');
- let current='home',paintSettings=()=>{};
+ let current='home',paintSettings=()=>{},loadAdmin=()=>{};
  const browser=mountBrowser(view('home'));
  const open=url=>{navigate('browser');browser.navigate(url,true)};
  function navigate(id){
@@ -23,10 +25,12 @@ async function start(){
   $$('.dk',dock).forEach(el=>{const on=el.dataset.section===id;el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')});
   if(id==='browser'&&!browser.tabs.length) $('[data-wnew]').click();
   if(id==='settings')paintSettings();
+  if(id==='admin')loadAdmin();
   history.replaceState(null,'','/boba/index.html#'+id);
  }
  items.forEach(([id,label,key])=>{const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)});
  mountApps(view('apps'),open,navigate);mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
+ if(user.role==='admin')loadAdmin=mountAdmin(view('admin'),user);
  view('settings').innerHTML=settings.html();paintSettings=settings.mount(view('settings'));
  views.hidden=false;dock.hidden=false;
  navigate(location.hash.slice(1)||'home');
