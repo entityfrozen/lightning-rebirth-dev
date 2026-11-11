@@ -2,6 +2,7 @@ import {openAboutBlank} from './about-blank.js';
 import {$,$$,ico,lic,THEMES,ACCENTS,applyPrefs,segThumb,api} from './common.js';
 const identityPresets={
  celestial:['Celestial','/assets/celestial-star.svg'],
+ brightpath:['Brightpath | Learning Workspace','/assets/brightpath.svg'],
  workspace:['Workspace','/assets/celestial-star.svg'],
  notes:['My Notes','/assets/celestial-star.svg'],
  dcss:['DCSS Portal','https://www.google.com/s2/favicons?domain=portal.dcssga.org&sz=64'],
@@ -41,7 +42,7 @@ export const settings = {
       '<div class="gt r" style="--d:.08s">Browsing</div><section class="grp gl g2 r" style="--d:.08s">' +
       '<div class="lr">' + lic("link", "#2be0e6", "#0b8f86") + '<h3>Connection</h3><span class="netst"><i data-cn></i><span data-cnm>Checking</span></span></div></section>' +
       '<div class="gt r" style="--d:.12s">This tab</div><section class="grp gl g2 r" style="--d:.12s">' +
-      '<div class="lr">' + lic("tv", "#7d8ba0", "#4a5566") + '<h3>Tab appearance</h3><select data-tab aria-label="Tab appearance"><option value="celestial">Celestial</option><option value="workspace">Workspace</option><option value="notes">My Notes</option><option value="dcss">DCSS Portal</option><option value="classroom">Google Classroom</option><option value="docs">Google Docs</option><option value="drive">Google Drive</option><option value="clever">Clever Portal</option><option value="canvas">Canvas</option><option value="wikipedia">Wikipedia</option><option value="custom">Custom title & icon</option></select></div>' +
+      '<div class="lr">' + lic("tv", "#7d8ba0", "#4a5566") + '<h3>Tab appearance</h3><select data-tab aria-label="Tab appearance"><option value="celestial">Celestial</option><option value="brightpath">Brightpath</option><option value="workspace">Workspace</option><option value="notes">My Notes</option><option value="dcss">DCSS Portal</option><option value="classroom">Google Classroom</option><option value="docs">Google Docs</option><option value="drive">Google Drive</option><option value="clever">Clever Portal</option><option value="canvas">Canvas</option><option value="wikipedia">Wikipedia</option><option value="custom">Custom title & icon</option></select></div>' +
       '<div class="lr" data-custom-tab hidden><h3>Custom title</h3><label class="fld"><input data-tab-title maxlength="70" aria-label="Tab title"></label></div>' +
       '<div class="lr" data-custom-icon hidden><h3>Custom icon URL</h3><label class="fld"><input type="url" data-tab-icon maxlength="500" placeholder="https://example.com/favicon.ico" aria-label="Custom favicon URL"></label></div>' +
       '<div class="lr native-tab-preview"><img data-preview-icon width="28" height="28" alt=""><div><h3 data-preview-title>Celestial</h3><small>Browser tab preview · title and icon only</small></div><button class="btn s" type="button" data-tab-reset>Reset</button></div>' +
