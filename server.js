@@ -410,7 +410,7 @@ async function handleAPI(req,res,url) {
   }
   // Clearing a DM only removes it from the current user's view. The other
   // participant's history stays intact, and newer messages remain visible.
-  const clearDM=pathname.match(/^\\/api\\/dms\\/(usr_[a-zA-Z0-9_-]{8,40}|[a-f0-9]{24})\\/clear$/);
+  const clearDM=pathname.match(/^\/api\/dms\/(usr_[a-zA-Z0-9_-]{8,40}|[a-f0-9]{24})\/clear$/);
   if(clearDM&&req.method==='POST'){
     const other=db.users.find(member=>member.id===clearDM[1]&&member.id!==user.id&&activeAccount(member));
     if(!other)return fail(res,404,'Member not found');
