@@ -1,7 +1,7 @@
 /*
   Celestial / focused workspace
-  Keep the landscape on the homepage; browsing and playing need a quiet,
-  readable work surface. The live chat rail never unmounts the active app.
+  Keep the landscape on the homepage; browsing need a quiet,
+  readable work surface. The live chat rail never unmounts the active browser.
 */
 :root{
   --workspace-chat-width:clamp(310px,27vw,380px);
@@ -259,39 +259,6 @@
 .celestial-browser-failure p{color:#a9bdc9}
 .celestial-browser-failure-icon{border-radius:16px}
 
-/* A game runs as a focused app. The old oversized launch cards are gone. */
-.celestial-apps-page{padding-top:88px}
-.celestial-apps-group{margin-top:34px}
-.celestial-apps-grid{gap:11px}
-.celestial-app-tile{min-height:92px;padding:14px;border-radius:13px;box-shadow:0 8px 25px #0003}
-.celestial-app-tile-symbol{flex:0 0 47px;width:47px;height:47px;border-radius:12px}
-.celestial-app-tile-symbol svg{width:23px;height:23px}
-.celestial-tool-shell:has(.celestial-embedded-game){
-  width:min(1180px,100%);min-height:400px;padding:0;
-  overflow:hidden;background:rgba(8,22,31,.94);border-color:var(--workspace-line);
-}
-.celestial-embedded-game{width:100%;min-height:400px}
-.celestial-embedded-game .forest-game-stage{
-  width:100%;min-height:430px;margin:0;
-  padding:clamp(16px,3vw,30px);
-  background:transparent!important;border:0!important;border-radius:0;
-  box-shadow:none!important;backdrop-filter:none!important;
-}
-.celestial-embedded-game .forest-game-stage h2{color:#ecf9fa}
-.celestial-embedded-game .forest-game-stage p{color:#a9c4cc}
-.celestial-embedded-game .forest-game-controls button{
-  border-color:rgba(160,213,209,.27);border-radius:9px;
-  background:rgba(31,67,76,.66);color:#dcf4f5;
-}
-.celestial-embedded-game .forest-game-controls button:first-child{
-  color:#092c32;background:var(--accent)!important;font-weight:750;
-}
-.celestial-embedded-game .forest-2048-board{
-  box-shadow:0 10px 35px #0005;border:1px solid rgba(154,219,211,.2)
-}
-.celestial-embedded-game .forest-chess-board{box-shadow:0 9px 29px #0005}
-.celestial-embedded-game .forest-uma iframe{min-height:520px;max-height:70dvh}
-
 /* Avoid clipping essential controls when chat is open at mid-size widths. */
 @media(max-width:1220px){
   :root{--workspace-chat-width:324px}
@@ -342,95 +309,7 @@
   color:#f5fdff;
 }
 
-/* Game-specific controls get one coherent palette rather than six old themes. */
-.celestial-apps-heading h1{font-size:clamp(33px,3.8vw,49px)}
-.celestial-embedded-game .forest-game-heading{
-  border-color:var(--workspace-line);padding-bottom:17px;
-}
-.celestial-embedded-game .forest-game-heading h2{
-  font-size:clamp(22px,3vw,28px);letter-spacing:-.045em;
-}
-.celestial-embedded-game .forest-game-heading>span{
-  color:#9dcdd0;font-size:10px;letter-spacing:.07em;
-}
-.celestial-embedded-game .forest-2048-board{
-  width:min(390px,100%);padding:10px;gap:8px;border-radius:12px;
-  background:#102833;
-}
-.celestial-embedded-game .forest-2048-tile{
-  background:#1a3946;color:#e9f8fa;border-radius:8px;
-  font-size:clamp(19px,2.5vw,26px);
-}
-.celestial-embedded-game .forest-2048-tile[data-value="2"],
-.celestial-embedded-game .forest-2048-tile[data-value="4"]{background:#3c7579}
-.celestial-embedded-game .forest-2048-tile[data-value="8"],
-.celestial-embedded-game .forest-2048-tile[data-value="16"]{background:#428f8c}
-.celestial-embedded-game .forest-2048-tile[data-value="32"],
-.celestial-embedded-game .forest-2048-tile[data-value="64"]{background:#5c9f99}
-.celestial-embedded-game .forest-2048-tile[data-value="128"],
-.celestial-embedded-game .forest-2048-tile[data-value="256"],
-.celestial-embedded-game .forest-2048-tile[data-value="512"],
-.celestial-embedded-game .forest-2048-tile[data-value="1024"],
-.celestial-embedded-game .forest-2048-tile[data-value="2048"]{
-  background:#c9e8d5;color:#19313a;
-}
-.celestial-embedded-game .forest-mines-board{
-  gap:5px;max-width:410px;
-}
-.celestial-embedded-game .forest-mine{
-  border:1px solid rgba(146,207,205,.2);
-  border-radius:7px;background:#1e424f;
-  transition:background .14s,transform .14s;
-}
-.celestial-embedded-game .forest-mine:hover{background:#285a65;transform:scale(.97)}
-.celestial-embedded-game .forest-mine.revealed{
-  background:#0b2430;border-color:#143542;
-}
-.celestial-embedded-game .forest-chess-board{
-  border-radius:12px;border-color:rgba(183,227,222,.2);
-  overflow:hidden;
-}
-.celestial-embedded-game .forest-chess-square.dark{
-  background:#29505b;color:#e7f7f6;
-}
-.celestial-embedded-game .forest-chess-square.light{
-  background:#bad0cc;color:#193540;
-}
-.celestial-embedded-game .forest-chess-square.selected{
-  background:#6cb6aa;box-shadow:inset 0 0 0 3px #d3fff1;
-}
-.celestial-embedded-game .forest-chess-square.target{
-  background:#81b6a1;box-shadow:inset 0 0 0 2px #d9fbea;
-}
-.celestial-embedded-game .forest-chess-layout aside,
-.celestial-embedded-game .forest-world-layout aside{
-  padding:16px;border:1px solid var(--workspace-line);
-  border-radius:12px;background:rgba(13,36,47,.64);
-}
-.celestial-embedded-game .forest-rps-scores>div{
-  border-color:var(--workspace-line);background:#12323e;border-radius:12px;
-}
-.celestial-embedded-game .forest-rps-scores>b{color:var(--accent)}
-.celestial-embedded-game .forest-rps-choices button{
-  min-width:100px;border:1px solid var(--workspace-line);
-  background:#173c49;border-radius:12px;
-}
-.celestial-embedded-game .forest-rps-choices button:hover{
-  background:#225766;border-color:var(--accent);
-}
-.celestial-embedded-game .forest-world-layout canvas{
-  border:1px solid var(--workspace-line);
-  border-radius:12px;box-shadow:0 10px 35px rgba(0,0,0,.4);
-}
-@media(max-width:740px){
-  .celestial-embedded-game .forest-chess-layout,
-  .celestial-embedded-game .forest-world-layout{grid-template-columns:minmax(0,1fr)}
-}
-@media(prefers-reduced-motion:reduce){
-  .celestial-embedded-game .forest-mine{transition:none}
-}
-
-/* Keep the new-tab screen restrained; the site or game is the actual product. */
+/* Keep the new-tab screen restrained; the site is the actual product. */
 .forest-browser:not(.is-browsing) .forest-browser-home{
   width:min(560px,100%);
   padding:24px;
