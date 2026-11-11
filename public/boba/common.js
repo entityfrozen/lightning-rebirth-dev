@@ -1,0 +1,11 @@
+import {I,N} from './icons.js';
+export const $=(s,r=document)=>r.querySelector(s);
+export const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const ico=(k,cl='')=>'<svg class="'+cl+'" viewBox="0 0 256 256" aria-hidden="true">'+(I[k]||I.link||'')+'</svg>';
+export const lic=(k,a,b)=>'<span class="lic" style="background:linear-gradient(145deg,'+a+','+b+')">'+ico(k)+'</span>';
+export async function api(path,body){const r=await fetch(path,{credentials:'same-origin',...(body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}
+export const THEMES=[['boba','Boba','light'],['light','Light','light'],['dark','Dark','dark'],['strawberry','Strawberry','light'],['matcha','Matcha','light'],['mango','Mango','light'],['sky','Sky','light'],['taro','Taro','dark'],['midnight','Midnight','dark'],['brown','Brown','dark'],['black','Black','dark']];
+export const ACCENTS=[['#8a5631','#fff'],['#ea6b96','#fff'],['#4c9461','#fff'],['#d69c31','#fff'],['#397cc9','#fff'],['#8d62db','#fff'],['#252b39','#fff']];
+export function applyPrefs(){const root=document.documentElement;const v=localStorage.getItem('celestial.boba.theme')||'boba';root.dataset.palette=v;root.dataset.theme=THEMES.find(t=>t[0]===v)?.[2]||'light';root.dataset.fx=localStorage.getItem('boba.fx')||'full';const a=ACCENTS[Number(localStorage.getItem('boba.accent')||0)];if(a){root.style.setProperty('--acc',a[0]);root.style.setProperty('--acc-ink',a[1])}}
+export function segThumb(seg){const b=seg.querySelector('button.on');if(b){seg.querySelector('.th').style.width=b.offsetWidth+'px';seg.querySelector('.th').style.transform='translateX('+(b.offsetLeft-3)+'px)'}}
