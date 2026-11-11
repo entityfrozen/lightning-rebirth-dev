@@ -23,7 +23,7 @@ async function start(){
   $$('.dk',dock).forEach(el=>{const on=el.dataset.section===id;el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')});
   if(id==='browser'&&!browser.tabs.length) $('[data-wnew]').click();
   if(id==='settings')paintSettings();
-  history.replaceState(null,'','/#'+id);
+  history.replaceState(null,'','/boba/index.html#'+id);
  }
  items.forEach(([id,label,key])=>{const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)});
  mountApps(view('apps'),open,navigate);mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
