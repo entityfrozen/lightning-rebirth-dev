@@ -11,7 +11,6 @@
   const paths = {
     home: '<path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
     browser: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>',
-    apps: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
     chat: '<path d="M20 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-3.7-.8L3 21l1.8-4.8A8.5 8.5 0 1 1 20 11.5Z"/><path d="M8 11h8M8 14h5"/>',
     ai: '<path d="m12 2 2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4Z"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="m20 12 1.5-1.3-1.7-3-2 .5-1.5-.9-.4-2.1h-3.4l-.4 2.1-1.5.9-2-.5-1.7 3L8 12l-1.5 1.3 1.7 3 2-.5 1.5.9.4 2.1h3.4l.4-2.1 1.5-.9 2 .5 1.7-3Z" transform="translate(-2 0)"/>',
@@ -20,7 +19,6 @@
   const sections = [
     ["home", "Home"],
     ["browser", "Browser"],
-    ["apps", "Apps"],
     ["chat", "Chat"],
     ["ai", "Ask AI"],
     ["settings", "Settings"]
