@@ -1,4 +1,5 @@
 import {esc} from './common.js';
+import {createProxyFrame,disposeProxyFrame} from './proxy.js';
 
 const DISTRIBUTORS=[
   ['All','All games'],
@@ -108,17 +109,29 @@ export function openDistributorGame(stage,game){
   frame.referrerPolicy='no-referrer';frame.sandbox='allow-scripts allow-same-origin allow-forms allow-pointer-lock';
   frame.allow='fullscreen; gamepad';frame.setAttribute('allowfullscreen','');
   const attribution=document.createElement('p');attribution.className='cel-dist-attribution';
-  function switchSource(){
+  let proxyFrame=null,epoch=0;
+  async function switchSource(){
     const item=game.sources[Number(sourceSelect.value)];
-    frame.src='about:blank';frame.src=item.url;
+    const run=++epoch;
+    frame.src='about:blank';
+    notice.textContent='Connecting game through Scramjet…';
+    try {
+      proxyFrame ||=await createProxyFrame(frame);
+      if(run!==epoch)return;
+      proxyFrame.go(item.url);
+      notice.textContent='This game uses the Scramjet browser engine. If it fails to load, try another source or open the original.';
+    }catch(error){
+      if(run!==epoch)return;
+      notice.textContent='Scramjet could not load this game: '+String(error.message||'Connection unavailable')+'. Try another source or open the original.';
+    }
     sourceLink.href=item.url;
     attribution.textContent='Source: '+item.name+(item.creator?' · Credit: '+item.creator:'')+' · Artwork and game rights belong to their respective creators.';
-    notice.textContent='If this game blocks embedding, use “Open original” or try another source.';
+
   }
   sourceSelect.onchange=switchSource;
   fullscreen.onclick=()=>frame.requestFullscreen?.();
   bar.append(sourceSelect,sourceLink,fullscreen);
   stage.append(bar,frame,notice,attribution);
   switchSource();
-  return()=>{frame.src='about:blank'};
+  return()=>{epoch++;disposeProxyFrame(proxyFrame);proxyFrame=null;frame.src='about:blank'};
 }
