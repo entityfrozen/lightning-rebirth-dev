@@ -4,7 +4,7 @@ export function mountApps(root,open,navigate){
  const apps=[['browser','Browser','web'],['chat','Chat','people'],['ai','Ask','ask'],['notes','Notes','notes'],['calculator','Calculator','bolt'],['focus','Focus timer','clock'],['music','Music','listen'],['2048','2048','play'],['chess','Chess','play'],['rps','Rock Paper Scissors','play'],['mines','Minesweeper','play'],['world','WorldPvP','play'],['uma','Uma Versus','play']];
  const grid=$('.native-app-grid',root),tool=$('.native-tool',root);
  const originals=new Set(['2048','chess','rps','mines','world']);
- const sources=[['Selenite','https://selenite.cc/resources/games.json'],['WASM.rip','https://wasm.rip/games.json'],['GN-Math','https://raw.githubusercontent.com/gn-math/assets/main/zones.json']];
+
  const safeUrl=(value,base)=>{if(typeof value!=='string'||!value.trim())return '';try{const u=new URL(value,base);return u.protocol==='https:'?u.href:''}catch{return ''}};
  const key=name=>name.normalize('NFKD').toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]/g,'');
  const nativeGameKeys=new Set(['2048','chess','minesweeper','rockpaperscissors','worldpvp','umaversus']);
@@ -48,7 +48,14 @@ export function mountApps(root,open,navigate){
   }
  }
  status.textContent='Loading game catalogs…';
- Promise.allSettled(sources.map(async ([name,url])=>{try{const response=await fetch(url,{signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Catalog unavailable');const rows=await response.json();if(!Array.isArray(rows))throw Error('Invalid catalog');ingest(name,rows)}catch{failed.push(name)}})).then(()=>{status.textContent=external.size.toLocaleString()+' games'+(failed.length?' · Could not load '+failed.join(', '):'');paint()});
+ api('/api/games/catalog').then(data=>{
+  for(const catalog of data.catalogs||[]){
+    if(catalog.error)failed.push(catalog.name);
+    if(Array.isArray(catalog.rows))ingest(catalog.name,catalog.rows);
+  }
+  status.textContent=external.size.toLocaleString()+' games'+(failed.length?' · Catalog unavailable: '+failed.join(', '):'');
+  paint();
+ }).catch(()=>{status.textContent='Game catalogs are temporarily unavailable. Celestial Originals still work.';paint()});
  let timer=0;
  function showTool(name){clearInterval(timer);tool.hidden=false;tool.innerHTML='<div class="lr"><h3>'+esc(name)+'</h3><button class="btn s" data-close>Close</button></div><div class="native-tool-body"></div>';$('[data-close]',tool).onclick=()=>{clearInterval(timer);tool.hidden=true;tool.replaceChildren()};return $('.native-tool-body',tool)}
  grid.addEventListener('click',e=>{const game=byId.get(e.target.closest('[data-external]')?.dataset.external);if(game){
