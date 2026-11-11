@@ -5,7 +5,7 @@ export function mountApps(root,open,navigate){
  const grid=$('.native-app-grid',root),tool=$('.native-tool',root);
  const originals=new Set(['2048','chess','rps','mines','world']);
  const sources=[['Selenite','https://selenite.cc/resources/games.json'],['WASM.rip','https://wasm.rip/games.json'],['GN-Math','https://raw.githubusercontent.com/gn-math/assets/main/zones.json']];
- const safeUrl=(value,base)=>{try{const u=new URL(value,base);return u.protocol==='https:'?u.href:''}catch{return ''}};
+ const safeUrl=(value,base)=>{if(typeof value!=='string'||!value.trim())return '';try{const u=new URL(value,base);return u.protocol==='https:'?u.href:''}catch{return ''}};
  const key=name=>name.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g,'');
  const external=new Map(),byId=new Map();let filter='All',limit=80,failed=[];
  const filters=$('.native-library-filters',root),status=$('.native-library-status',root),more=$('[data-more-games]',root);
@@ -33,6 +33,7 @@ export function mountApps(root,open,navigate){
    if(source==='WASM.rip'){cover=safeUrl(row.imageUrl||'','https://wasm.rip/');url=safeUrl(row.gameUrl||'','https://wasm.rip/');credit=row.porter||''}
    if(source==='GN-Math'){const resolve=v=>String(v||'').replaceAll('{COVER_URL}','https://raw.githubusercontent.com/gn-math/covers/main').replaceAll('{HTML_URL}','https://cdn.jsdelivr.net/gh/gn-math/html@main');cover=safeUrl(resolve(row.cover),'https://gn-math.github.io/');url=safeUrl(resolve(row.url),'https://gn-math.github.io/');credit=row.author||''}
    if(!url||!key(row.name))continue;
+   if(new URL(url).origin===location.origin)continue;
    const id=key(row.name),game=external.get(id)||{id,name:row.name,sources:[]};
    if(!game.sources.some(s=>s.url===url))game.sources.push({source,cover,url,credit:String(credit)});
    external.set(id,game);byId.set(id,game);
