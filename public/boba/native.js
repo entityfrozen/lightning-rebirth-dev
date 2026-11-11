@@ -1,3 +1,4 @@
+import {mountShell} from './shell.js';
 import {$,$$,ico,api,applyPrefs} from './common.js';
 import {mountBrowser} from './browser.js';
 import {mountHome} from './home.js';
@@ -7,6 +8,7 @@ import {mountChat} from './chat.js';
 import {settings} from './settings.js';
 import {mountAdmin} from './admin.js';
 import {N} from './icons.js';
+mountShell();
 applyPrefs();
 async function start(){
  const data=await api('/api/me');
