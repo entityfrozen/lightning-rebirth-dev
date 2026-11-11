@@ -49,7 +49,7 @@ function SelectServer({servers,server,onSelect}){
   </select>;
 }
 
-/** Shared full-size Chat and the companion Chat beside the browser/games. */
+/** Shared full-size Chat and the companion Chat beside the browser. */
 export function Messenger({user,live,compact=false,onClose,onOpenChat}){
   const [serverId,setServerId]=useState(MAIN_SERVER);
   const [channelId,setChannelId]=useState('general');
