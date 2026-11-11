@@ -1,0 +1,36 @@
+import {$,$$,ico,api,applyPrefs} from './common.js';
+import {mountBrowser} from './browser.js';
+import {mountApps,mountAsk,mountAccount} from './native-views.js';
+import {mountChat} from './chat.js';
+import {settings} from './settings.js';
+import {N} from './icons.js';
+applyPrefs();
+async function start(){
+ const data=await api('/api/me');
+ if(!data.user){location.replace('/boba/auth.html');return}
+ const user=data.user,views=$('#views'),dock=$('#dock');
+ const items=[['home','Home','home'],['browser','Browser','web'],['apps','Apps','play'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
+ const view=id=>$('[data-view="'+id+'"]');
+ let current='home',paintSettings=()=>{};
+ const browser=mountBrowser(view('home'));
+ const open=url=>{navigate('browser');browser.navigate(url,true)};
+ function navigate(id){
+  if(!items.some(x=>x[0]===id))id='home';
+  current=id;
+  if(id!=='browser'&&id!=='home'){$('[data-wv]')?.classList.remove('max');dock.classList.remove('hide')}
+  const active=id==='browser'?'home':id;
+  $$('.view',views).forEach(el=>{const on=el.dataset.view===active;el.classList.toggle('on',on);el.setAttribute('aria-hidden',String(!on));el.inert=!on});
+  $$('.dk',dock).forEach(el=>{const on=el.dataset.section===id;el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')});
+  if(id==='browser'&&!browser.tabs.length) $('[data-wnew]').click();
+  if(id==='settings')paintSettings();
+  history.replaceState(null,'','/#'+id);
+ }
+ items.forEach(([id,label,key])=>{const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)});
+ mountApps(view('apps'),open,navigate);mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
+ view('settings').innerHTML=settings.html();paintSettings=settings.mount(view('settings'));
+ views.hidden=false;dock.hidden=false;
+ navigate(location.hash.slice(1)||'home');
+ window.addEventListener('hashchange',()=>navigate(location.hash.slice(1)));
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dock.classList.contains('hide')){$('[data-wv]').classList.remove('max');dock.classList.remove('hide')}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='l'){e.preventDefault();navigate('browser');$('[data-omni]').focus()}});
+}
+start().catch(err=>{const p=document.createElement('p');p.className='native-start-error';p.textContent='Unable to load Celestial: '+err.message;document.body.append(p)});
