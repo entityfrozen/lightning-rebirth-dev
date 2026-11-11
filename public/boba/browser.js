@@ -413,7 +413,7 @@ const home = {
       }
       if(e.target.closest('[data-standalone]')){
         // Scramjet requires a top-level cross-origin isolated document.
-        window.open(location.origin+'/boba/index.html#browser','_blank','noopener,noreferrer');
+        window.open(location.origin+'/','_blank','noopener,noreferrer');
         return;
       }
       if (e.target.closest("[data-wnew]")) return newTab();
