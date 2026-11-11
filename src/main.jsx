@@ -37,6 +37,7 @@ const ForestParticles=React.lazy(()=>import('./ForestParticles.jsx').then(mod=>(
 const WorkspaceChat=React.lazy(()=>import('./WorkspaceChat.jsx').then(mod=>({default:mod.WorkspaceChat})));
 
 const embeddedWorkspace=new URLSearchParams(location.search).has('embedded');
+if(embeddedWorkspace)document.documentElement.classList.add('celestial-embedded');
 const sections=new Set(['home','browser','apps','chat','ai','settings']);
 const dockItems=[
   {id:'home',label:'Home',icon:Home24Filled,detail:'Your starting point'},
