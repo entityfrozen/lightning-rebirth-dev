@@ -163,6 +163,15 @@ try{
   await boba.locator('[data-omni]').fill('https://example.com/');
   await boba.locator('[data-omni]').press('Enter');
   await boba.waitForFunction(()=>Array.from(document.querySelectorAll('.page iframe')).some(f=>f.src.includes('/~/sj/')),{},{timeout:45000});
+  await boba.waitForFunction(()=>{
+    const frame=document.querySelector('.page iframe[src*="/~/sj/"]');
+    try{
+      const doc=frame?.contentDocument;
+      return !!(doc&&doc.URL!=='about:blank'&&doc.readyState!=='loading'&&doc.body&&(doc.body.children.length>0||doc.body.textContent?.trim()));
+    }catch{return false}
+  },{},{timeout:45000});
+  assert.equal(await boba.locator('.native-browser-error').count(),0,'Scramjet should render a real page instead of an error');
+
   await boba.screenshot({path:path.join(screenshots,'boba-native-browser.png'),fullPage:true});
   await boba.close();
 
