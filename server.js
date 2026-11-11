@@ -531,7 +531,12 @@ async function staticFile(req,res,url) {
   // Embedded Lightning games still launch from /?embedded=1&game=... .
   // Those URLs must load the legacy app, not the native-home redirect.
   if(filename==='/'&&(url.searchParams.has('embedded')||url.searchParams.has('legacy')))filename='/legacy.html';
-  else if(filename==='/' || (!path.extname(filename) && !filename.startsWith('/assets/')))filename='/index.html';
+  else if(filename==='/')filename='/index.html';
+  // A missed Scramjet service-worker interception must fail clearly rather
+  // than silently serving index.html inside the browser iframe.
+  if(filename.startsWith('/~/sj/'))return fail(res,502,'Proxy worker did not intercept this navigation; reload the browser.');
+  // Unknown asset/route requests are not Celestial homepage navigation.
+  if(!path.extname(filename)&&!filename.startsWith('/assets/'))return fail(res,404,'Page not found');
   // Only expose compiled native assets; the source modules and HTML templates
   // remain in the repository for maintenance, not on the production network.
   if(/^\/boba\/(?:native|browser|common|chat|native-views|admin|settings|icons|proxy|auth)\.js$/.test(filename) ||
