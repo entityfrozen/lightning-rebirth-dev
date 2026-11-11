@@ -1,0 +1,40 @@
+/* Celestial-only additions to Boba's original UI. */
+[hidden]{display:none!important}
+.native-profile{margin-top:auto}
+.native-start-error{position:fixed;inset:0;display:grid;place-items:center;z-index:50}
+.native-app-grid{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:14px;align-items:stretch}
+.native-tile{position:relative;display:grid;place-items:center;width:100%;min-height:130px;aspect-ratio:1;background:var(--tile);box-shadow:var(--tile-hi),var(--sh);border-radius:22px;overflow:hidden;transition:transform .4s var(--spring)}
+.native-tile:hover{transform:translateY(-4px)}
+.native-app-icon{color:var(--acc);width:48px;height:48px;margin-bottom:22px}
+.native-app-icon svg{width:100%;height:100%;fill:currentColor}
+.native-tile .mw-i{position:absolute;bottom:0;width:100%;padding:14px;text-align:center;color:var(--ink);background:none}
+.native-tool{margin-top:24px;overflow:hidden}
+.native-tool-body{padding:22px;display:grid;gap:14px}
+.native-tool-body textarea{min-height:200px;resize:vertical;width:100%;border-radius:14px;padding:14px;background:var(--g2);color:var(--ink)}
+.native-calc{display:flex;align-items:center;gap:10px}.native-calc .fld{flex:1;min-width:0}.native-calc select{padding:8px;border-radius:10px;background:var(--g2)}
+.native-avatar{display:grid;place-items:center;background:linear-gradient(145deg,#b5a1e0,#7454aa);color:white}
+.native-chat-link{display:block;width:100%;text-align:left;border-radius:12px;padding:10px 12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-2);font-size:13px}
+.native-chat-link:hover,.native-chat-link.on{background:var(--ink-4);color:var(--ink)}
+.native-chat-link.on{font-weight:650}.native-pre{white-space:pre-wrap}
+.native-messenger{height:100%;min-height:0;display:grid;grid-template-columns:minmax(155px,225px) minmax(0,1fr) minmax(155px,225px);background:var(--g1);overflow:hidden}
+.native-rooms,.native-members{padding:22px 14px;min-height:0;overflow:auto;background:var(--g1)}
+.native-rooms{border-right:1px solid var(--hair)}.native-members{border-left:1px solid var(--hair)}
+.native-rooms h3,.native-members h3{font-weight:700;font-size:15px;margin:0 0 18px}
+.native-rooms select{width:100%;padding:12px;border-radius:12px;background:var(--g2);color:var(--ink);margin-bottom:16px}
+.native-rooms>.btn{margin-top:10px}
+.native-conversation{display:flex;flex-direction:column;min-width:0;min-height:0;padding:0 18px 14px}
+.native-chat-head{display:flex;align-items:center;justify-content:space-between;padding:18px 2px;border-bottom:1px solid var(--hair);gap:12px}
+.native-chat-head h2{font-size:18px;letter-spacing:-.03em;font-weight:700}.native-chat-head small{color:var(--ink-3);font-size:12px}
+.native-feed{min-height:0;flex:1;overflow:auto;padding:16px 2px;display:flex;flex-direction:column;gap:18px}
+.native-message{display:flex;align-items:flex-start;gap:11px;min-width:0}
+.native-message>div{min-width:0}.native-message p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;font-size:14px;margin-top:3px}
+.native-person-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;flex-shrink:0;background:var(--tile);color:var(--acc);font-size:11px;font-weight:800}
+.native-message-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px}.native-message-meta small{font-size:11px;color:var(--ink-3)}
+.native-role{font-size:10px;letter-spacing:.025em;font-weight:800;color:#417bd1;margin-left:4px}.role-owner{color:#b073d5}.role-mod{color:#248b65}.role-staff{color:#a66b20}
+.native-member{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:10px 5px;border-radius:10px;font-size:12px}
+.native-member:hover{background:var(--ink-4)}.native-member i{width:8px;height:8px;border-radius:50%;background:var(--ink-3);flex:none}.native-member i.online{background:#4ebd83}
+.native-compose{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:20px}
+.native-compose input{flex:1;min-width:0;font-size:14px}.native-members .fld{padding:0 8px;height:36px;margin-bottom:8px}
+.native-conversation .msg{padding:6px 2px}
+@media(max-width:850px){.native-messenger{grid-template-columns:140px minmax(0,1fr)}.native-members{display:none}.native-rooms{padding:16px 8px}.native-conversation{padding:0 10px 10px}.native-app-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}}
+@media(max-width:500px){.native-messenger{grid-template-columns:100px minmax(0,1fr)}.native-rooms h3{font-size:13px}.native-rooms select{padding:6px;font-size:11px}.native-rooms .btn{padding:0 8px;font-size:11px}.native-profile{margin-top:0}.native-chat-link{padding:8px 5px}.native-message{gap:6px}.native-person-icon{width:26px;height:26px}.native-chat-head h2{font-size:15px}.native-tile{min-height:100px}}
