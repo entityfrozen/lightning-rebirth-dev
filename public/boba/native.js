@@ -1,5 +1,7 @@
 import {$,$$,ico,api,applyPrefs} from './common.js';
 import {mountBrowser} from './browser.js';
+import {mountHome} from './home.js';
+import {mountGames} from './games.js';
 import {mountAsk,mountAccount} from './native-views.js';
 import {mountChat} from './chat.js';
 import {settings} from './settings.js';
@@ -10,17 +12,19 @@ async function start(){
  const data=await api('/api/me');
  if(!data.user){location.replace('/login');return}
  const user=data.user,views=$('#views'),dock=$('#dock');
- const items=[['home','Home','home'],['browser','Browser','web'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
+ const items=[['home','Home','star'],['browser','Browser','web'],['games','Games','play'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
  if(user.role==='admin')items.splice(items.length-1,0,['admin','Administration','shield']);
  const view=id=>$('[data-view="'+id+'"]');
  let current='home',paintSettings=()=>{},loadAdmin=()=>{};
- const browser=mountBrowser(view('home'));
+ const browser=mountBrowser(view('browser'));
+ mountHome(view('home'),user,navigate);
+ mountGames(view('games'));
  const open=url=>{navigate('browser');browser.navigate(url,true)};
  function navigate(id){
   if(!items.some(x=>x[0]===id))id='home';
   current=id;
-  if(id!=='browser'&&id!=='home'){$('[data-wv]')?.classList.remove('max');dock.classList.remove('hide')}
-  const active=id==='browser'?'home':id;
+  if(id!=='browser'){$('[data-wv]')?.classList.remove('max');dock.classList.remove('hide')}
+  const active=id;
   $$('.view',views).forEach(el=>{const on=el.dataset.view===active;el.classList.toggle('on',on);el.setAttribute('aria-hidden',String(!on));el.inert=!on});
   $$('.dk',dock).forEach(el=>{const on=el.dataset.section===id;el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')});
   if(id==='browser'&&!browser.tabs.length) $('[data-wnew]').click();
@@ -36,7 +40,7 @@ async function start(){
   if(current==='ai'&&ai?.hidden)navigate('home');
  };
  window.addEventListener('celestial:dock-settings',updateDock);
- items.forEach(([id,label,key])=>{const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)});
+ items.forEach(([id,label,key])=>{const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='home'?'<img src="/assets/celestial-star.svg" alt="" class="cel-dock-star">':id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)});
  mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
  if(user.role==='admin')loadAdmin=mountAdmin(view('admin'),user);
  view('settings').innerHTML=settings.html();paintSettings=settings.mount(view('settings'));
