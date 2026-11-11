@@ -189,12 +189,23 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     result=await call('/api/dms/'+ownerId);
     assert.equal(result.data.messages.length,1);
     assert.equal(result.data.messages[0].text,'A private message from TestPeer');
+    const peerCookie=cookie;
     cookie=ownerCookie;
     result=await call('/api/dms/'+peerId);
     assert.equal(result.data.messages.length,1);
     assert.equal(result.data.messages[0].author,'TestPeer');
     result=await call('/api/dms');
     assert.ok(result.data.threads.some(t=>t.user.id===peerId));
+    result=await call('/api/dms/'+peerId+'/clear','POST',{});
+    assert.equal(result.response.status,200);
+    result=await call('/api/dms/'+peerId);
+    assert.deepEqual(result.data.messages,[]);
+    result=await call('/api/dms');
+    assert.ok(!result.data.threads.some(t=>t.user.id===peerId));
+    cookie=peerCookie;
+    result=await call('/api/dms/'+ownerId);
+    assert.equal(result.data.messages.length,1,'other participant must keep their copy');
+    cookie=ownerCookie;
 
     result=await call('/api/drops','POST',{title:'New Theme',description:'My favorite purple palette',theme:palette});assert.equal(result.response.status,201);
     const dropId=result.data.drop.id;
