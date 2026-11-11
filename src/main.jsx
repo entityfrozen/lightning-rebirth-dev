@@ -230,6 +230,16 @@ function App() {
   useEffect(()=>saveLocal('workspace-chat-open',chatOpen),[chatOpen]);
   useEffect(()=>{applyCloak();},[]);
   useEffect(()=>{
+    const onAuthMessage=event=>{
+      const frame=document.querySelector('iframe.boba-auth-host');
+      if(event.origin!==location.origin||!frame||event.source!==frame.contentWindow||
+         event.data?.type!=='celestial:auth-success')return;
+      api('/api/me').then(data=>{if(data.user)setUser(data.user);}).catch(()=>{});
+    };
+    window.addEventListener('message',onAuthMessage);
+    return()=>window.removeEventListener('message',onAuthMessage);
+  },[]);
+  useEffect(()=>{
     if(!embeddedWorkspace)return;
     const onBobaMessage=event=>{
       if(event.origin!==location.origin||event.source!==window.parent||event.data?.type!=='celestial:boba-open')return;
@@ -321,6 +331,13 @@ function App() {
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
     <div className="celestial-entry-loading">✧ Celestial</div>
   </div>;
+
+  if(!user&&!legacyWorkspace&&!embeddedWorkspace)return <iframe
+    className="boba-auth-host"
+    title="Celestial sign in"
+    src="/boba/auth.html"
+    style={{position:'fixed',inset:0,width:'100%',height:'100%',border:0,display:'block'}}
+  />;
 
   if(!user) return <div className="celestial-entry">
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
