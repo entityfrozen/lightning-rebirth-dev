@@ -1,4 +1,5 @@
 import {esc,ico} from './common.js';
+import {mountDistributorLibrary,openDistributorGame} from './catalog-ui.js';
 
 // Source stays readable in Git. Production is bundled/minified; selected
 // interface strings are encoded in the shipped bundle as an extra deterrent.
@@ -59,9 +60,15 @@ export function mountGames(root){
  root.innerHTML='<div class="cel-games"><header class="cel-games-head"><div><span class="cel-home-kicker">CELESTIAL ORIGINALS</span><h1 data-heading></h1><p>Small games, built right into your space.</p></div><label class="cel-games-search">'+ico('search')+'<input type="search" placeholder="Search games" aria-label="Search games"></label></header><section class="cel-games-grid" data-grid></section><section class="cel-game-stage" data-stage hidden><header><button class="btn s" type="button" data-back>← All games</button><h2 data-game-title></h2></header><div data-play-area></div></section></div>';
  root.querySelector('[data-heading]').textContent=gameWord;
  const grid=root.querySelector('[data-grid]'),stage=root.querySelector('[data-stage]'),area=root.querySelector('[data-play-area]');
+ const distributor=mountDistributorLibrary(root,{launch:game=>{
+  dispose?.();area.replaceChildren();grid.hidden=true;distributor.hide();
+  stage.hidden=false;active=null;root.querySelector('[data-game-title]').textContent=game.name;
+  dispose=openDistributorGame(area,game);
+  stage.scrollIntoView({block:'start',behavior:'smooth'});
+ }});
  const paint=()=>{const visible=games.filter(g=>(g.title+' '+g.kind).toLowerCase().includes(search));grid.innerHTML=visible.map(g=>'<button class="cel-game-card" data-game="'+g.id+'"><span class="cel-game-symbol">'+esc(g.symbol)+'</span><span class="cel-game-category">'+esc(g.kind)+'</span><strong>'+esc(g.title)+'</strong><small>'+esc(g.subtitle)+'</small><span class="cel-game-launch">Play now →</span></button>').join('')||'<p>No matching games.</p>'};
- root.querySelector('input[type=search]').addEventListener('input',e=>{search=e.target.value.trim().toLowerCase();paint()});
- grid.onclick=e=>{const b=e.target.closest('[data-game]');if(!b)return;const item=games.find(g=>g.id===b.dataset.game);if(!item)return;dispose?.();area.replaceChildren();grid.hidden=true;stage.hidden=false;active=item;root.querySelector('[data-game-title]').textContent=item.title;dispose=item.id==='2048'?play2048(area):item.id==='ttt'?playTicTacToe(area):playRps(area)};
- root.querySelector('[data-back]').onclick=()=>{dispose?.();dispose=null;active=null;area.replaceChildren();grid.hidden=false;stage.hidden=true;paint()};
+ root.querySelector('input[type=search]').addEventListener('input',e=>{search=e.target.value.trim().toLowerCase();paint();distributor.setQuery(search)});
+ grid.onclick=e=>{const b=e.target.closest('[data-game]');if(!b)return;const item=games.find(g=>g.id===b.dataset.game);if(!item)return;dispose?.();area.replaceChildren();grid.hidden=true;distributor.hide();stage.hidden=false;active=item;root.querySelector('[data-game-title]').textContent=item.title;dispose=item.id==='2048'?play2048(area):item.id==='ttt'?playTicTacToe(area):playRps(area)};
+ root.querySelector('[data-back]').onclick=()=>{dispose?.();dispose=null;active=null;area.replaceChildren();grid.hidden=false;distributor.show();stage.hidden=true;paint()};
  paint();
 }
