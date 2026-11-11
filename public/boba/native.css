@@ -180,3 +180,66 @@
 .cel-dist-attribution{margin-top:12px;font-size:12px;line-height:1.6;color:var(--ink-3)}
 .cel-dist-empty{font-size:13px;color:var(--ink-3);padding:12px 0}
 @media(max-width:600px){.cel-dist-header{align-items:start;flex-direction:column}.cel-dist-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cel-dist-card{border-radius:14px;padding:6px}.cel-dist-frame{min-height:290px;height:60vh}}
+
+/* Discord-inspired social layout with Boba's own materials and typography */
+.celestial-discord{grid-template-columns:68px minmax(200px,248px) minmax(0,1fr) minmax(175px,230px);background:color-mix(in srgb,var(--g2),var(--bg) 32%);border-radius:18px;box-shadow:var(--sh)}
+.cel-chat-rail{padding:15px 10px;display:flex;flex-direction:column;align-items:center;gap:15px;background:color-mix(in srgb,var(--g3),var(--bg) 40%);border-right:1px solid var(--hair)}
+.cel-chat-logo,.cel-chat-rail-node{display:grid;place-items:center;width:45px;height:45px;border-radius:16px;background:var(--acc);color:var(--acc-ink);font-size:28px;font-weight:700;box-shadow:0 8px 22px color-mix(in srgb,var(--acc),transparent 78%)}
+.cel-chat-rail-node{width:32px;height:32px;background:var(--g2);color:var(--ink-2);font-size:20px;border-radius:50%}
+.celestial-discord .native-rooms{display:flex;flex-direction:column;padding:0 10px;background:color-mix(in srgb,var(--g1),var(--g2) 45%)}
+.cel-chat-brand{min-height:77px;padding:20px 12px 12px;border-bottom:1px solid var(--hair);margin:0 -10px 15px;display:flex;flex-direction:column;gap:3px}
+.cel-chat-brand strong{padding:0 11px;font-size:17px;letter-spacing:-.03em}
+.cel-chat-brand small{padding:0 11px;color:var(--ink-3);font-size:10px;letter-spacing:.15em}
+.celestial-discord .native-rooms select{margin:0 0 20px;border:1px solid var(--hair);font-size:12px}
+.cel-chat-side-title{padding:8px 8px 10px;color:var(--ink-3);font-weight:800;letter-spacing:.11em;font-size:10px}
+.celestial-discord .native-chat-link{display:flex;align-items:center;padding:10px 11px;border-radius:11px;font-size:13px;margin:2px 0;color:var(--ink-2);font-weight:520}
+.celestial-discord .native-chat-link.on{background:color-mix(in srgb,var(--acc),transparent 85%);color:var(--ink);font-weight:780;box-shadow:inset 3px 0 0 var(--acc)}
+.celestial-discord .native-chat-link:hover{background:var(--g3)}
+.cel-chat-side-title:nth-of-type(3){margin-top:22px}
+.cel-dm-list{display:flex;flex-direction:column;gap:3px;max-height:260px;overflow:auto}
+.cel-dm-link{display:flex;gap:9px;align-items:center;width:100%;padding:7px 10px;border-radius:10px;font-size:12px;text-align:left;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cel-dm-link:hover{background:var(--g3)}
+.cel-dm-link .native-person-icon{width:28px;height:28px;border-radius:11px;flex-shrink:0}
+.celestial-discord .native-rooms [data-new-server]{margin:16px 6px 10px;align-self:start}
+.cel-chat-self{display:flex;align-items:center;gap:10px;padding:13px 12px;margin:auto -10px 0;border-top:1px solid var(--hair);background:var(--g2)}
+.cel-chat-self .native-person-icon{border-radius:13px}.cel-chat-self>div{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.cel-chat-self strong{font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.cel-chat-self small{font-size:10px;color:var(--ink-3)}
+.cel-chat-self-dot{width:9px;height:9px;background:#48c88d;border-radius:50%;box-shadow:0 0 0 3px color-mix(in srgb,#48c88d,transparent 80%)}
+.celestial-discord .native-conversation{padding:0;background:color-mix(in srgb,var(--g1),var(--bg) 23%)}
+.celestial-discord .native-chat-head{height:74px;padding:15px 22px;margin:0;border-bottom:1px solid var(--hair)}
+.cel-chat-current{display:flex;gap:12px;align-items:center}
+.cel-chat-current>span{font-size:27px;font-weight:800;color:var(--ink-3)}
+.cel-chat-current h2{font-size:17px}.cel-chat-current small{font-size:11px}
+.celestial-discord .native-feed{padding:28px 20px 22px;gap:7px}
+.celestial-discord .native-message{position:relative;padding:8px 12px;border-radius:12px;gap:13px;transition:background .15s ease}
+.celestial-discord .native-message:hover{background:color-mix(in srgb,var(--g3),transparent 35%)}
+.celestial-discord .native-message .native-person-icon{width:40px;height:40px;border-radius:14px;background:color-mix(in srgb,var(--acc),var(--g2) 74%);color:var(--ink);font-size:12px}
+.celestial-discord .native-message-meta{gap:8px;line-height:1.2}
+.celestial-discord .native-message-meta b{font-size:13px;color:var(--ink);font-weight:790}
+.celestial-discord .native-message p{font-size:13px;line-height:1.65;margin-top:6px;overflow-wrap:anywhere}
+.celestial-discord .native-message.mentioned{background:color-mix(in srgb,#edbd67,transparent 87%);box-shadow:inset 3px 0 0 #e3ae47}
+.cel-mention{padding:1px 3px;border-radius:4px;background:color-mix(in srgb,#688fff,transparent 85%);color:#6d92e6;font-weight:720}
+.cel-mention.mine{color:#b07819;background:color-mix(in srgb,#e3ae47,transparent 75%)}
+.cel-reply-action{align-self:start;opacity:0;padding:3px 7px;border-radius:8px;font-size:19px;color:var(--ink-3)}
+.native-message:hover .cel-reply-action,.cel-reply-action:focus-visible{opacity:1}
+.cel-reply-action:hover{background:var(--g3);color:var(--acc)}
+.cel-compose-wrap{position:relative;margin:0 20px 15px}
+.celestial-discord .native-compose{display:flex;gap:9px;border:1px solid var(--hair);border-radius:17px;padding:10px 12px;background:var(--g2);align-items:end}
+.cel-compose-plus{font-size:23px;line-height:1;padding:3px 3px 7px;color:var(--ink-3)}
+.celestial-discord .native-compose textarea{background:none;border:0;outline:none;resize:none;color:var(--ink);font:inherit;font-size:13px;line-height:1.5;min-height:26px;max-height:150px;min-width:0;flex:1;padding:4px 0}
+.celestial-discord .native-compose .cb{width:33px;height:33px;border-radius:10px;background:var(--acc);color:var(--acc-ink)}
+.cel-compose-hint{font-size:10px;color:var(--ink-3);display:block;margin-top:7px;padding-left:8px}
+.cel-reply-preview{display:flex;justify-content:space-between;gap:12px;padding:10px 13px;border-radius:12px 12px 0 0;background:var(--g3);font-size:11px;color:var(--ink-2)}
+.cel-reply-preview button{font-size:18px;color:var(--ink-3)}
+.cel-mention-picker{position:absolute;left:0;right:0;bottom:calc(100% + 5px);z-index:7;background:var(--g1);border:1px solid var(--hair);box-shadow:var(--sh);border-radius:14px;padding:8px;max-height:260px;overflow:auto}
+.cel-mention-picker button{width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--ink);font-size:12px}
+.cel-mention-picker button:hover,.cel-mention-picker button:focus-visible{background:var(--g3)}
+.cel-mention-picker .native-person-icon{width:28px;height:28px}
+.celestial-discord .native-members{padding:23px 14px;background:color-mix(in srgb,var(--g1),var(--g2) 45%)}
+.celestial-discord .native-members h3{font-size:11px;color:var(--ink-3);letter-spacing:.1em}
+.celestial-discord .native-member{font-size:12px;border-radius:11px}
+.celestial-discord .native-member:hover{background:var(--g3)}
+@media(max-width:1050px){.celestial-discord{grid-template-columns:58px minmax(175px,225px) minmax(0,1fr)}.celestial-discord .native-members{display:none}}
+@media(max-width:640px){.celestial-discord{grid-template-columns:0 minmax(105px,145px) minmax(0,1fr)}.cel-chat-rail{display:none}.celestial-discord .native-rooms{padding:0 5px}.cel-chat-brand{padding:13px 7px;min-height:65px}.cel-chat-brand strong{font-size:12px}.cel-chat-brand small{font-size:9px}.celestial-discord .native-chat-link{font-size:11px;padding:9px 5px}.celestial-discord .native-chat-head{height:65px;padding:10px}.cel-chat-current h2{font-size:13px}.celestial-discord .native-feed{padding:12px 5px}.celestial-discord .native-message{padding:7px 4px;gap:6px}.celestial-discord .native-message .native-person-icon{width:30px;height:30px;font-size:9px}.cel-compose-wrap{margin:0 7px 8px}.cel-compose-hint{display:none}.cel-chat-self{padding:9px 4px}.cel-dm-list{max-height:190px}}
+@media(hover:none){.cel-reply-action{opacity:1}}
