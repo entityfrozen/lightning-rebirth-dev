@@ -1,6 +1,6 @@
 import {esc,ico} from './common.js';
 import {mountDistributorLibrary,openDistributorGame} from './catalog-ui.js';
-import {extraGames,playChess,playConnectFour,playMines,playMemory,playSnake} from './extra-games.js';
+import {extraGames,playChess,playConnectFour,playMines,playSnake} from './extra-games.js';
 
 // Source stays readable in Git. Production is bundled/minified; selected
 // interface strings are encoded in the shipped bundle as an extra deterrent.
@@ -70,7 +70,7 @@ export function mountGames(root){
  }});
  const paint=()=>{const visible=games.filter(g=>(g.title+' '+g.kind).toLowerCase().includes(search));grid.innerHTML=visible.map(g=>'<button class="cel-game-card" data-game="'+g.id+'"><span class="cel-game-symbol">'+esc(g.symbol)+'</span><span class="cel-game-category">'+esc(g.kind)+'</span><strong>'+esc(g.title)+'</strong><small>'+esc(g.subtitle)+'</small><span class="cel-game-launch">Play now →</span></button>').join('')||'<p>No matching games.</p>'};
  root.querySelector('input[type=search]').addEventListener('input',e=>{search=e.target.value.trim().toLowerCase();paint();distributor.setQuery(search)});
- grid.onclick=e=>{const b=e.target.closest('[data-game]');if(!b)return;const item=games.find(g=>g.id===b.dataset.game);if(!item)return;dispose?.();area.replaceChildren();grid.hidden=true;distributor.hide();stage.hidden=false;active=item;root.querySelector('[data-game-title]').textContent=item.title;dispose=({chess:playChess,connect4:playConnectFour,mines:playMines,memory:playMemory,snake:playSnake,'2048':play2048,ttt:playTicTacToe,rps:playRps}[item.id]||playRps)(area)};
+ grid.onclick=e=>{const b=e.target.closest('[data-game]');if(!b)return;const item=games.find(g=>g.id===b.dataset.game);if(!item)return;dispose?.();area.replaceChildren();grid.hidden=true;distributor.hide();stage.hidden=false;active=item;root.querySelector('[data-game-title]').textContent=item.title;dispose=({chess:playChess,connect4:playConnectFour,mines:playMines,snake:playSnake,'2048':play2048,ttt:playTicTacToe,rps:playRps}[item.id]||playRps)(area)};
  root.querySelector('[data-back]').onclick=()=>{dispose?.();dispose=null;active=null;area.replaceChildren();grid.hidden=false;distributor.show();stage.hidden=true;paint()};
  paint();
 }
