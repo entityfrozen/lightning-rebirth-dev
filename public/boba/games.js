@@ -1,11 +1,12 @@
 import {esc,ico} from './common.js';
 import {mountDistributorLibrary,openDistributorGame} from './catalog-ui.js';
+import {extraGames,playChess,playConnectFour,playMines,playMemory,playSnake} from './extra-games.js';
 
 // Source stays readable in Git. Production is bundled/minified; selected
 // interface strings are encoded in the shipped bundle as an extra deterrent.
 const label=(...points)=>String.fromCharCode(...points);
 const gameWord=label(71,97,109,101,115);
-const games=[
+const games=[...extraGames,
  {id:'2048',title:'2048',subtitle:'Slide. Merge. Repeat.',kind:'puzzle',symbol:'2048'},
  {id:'ttt',title:'Tic Tac Toe',subtitle:'You versus the computer.',kind:'strategy',symbol:'✕ ○'},
  {id:'rps',title:'Rock Paper Scissors',subtitle:'Best of five.',kind:'casual',symbol:'✊ ✋'}
@@ -16,7 +17,7 @@ function play2048(stage){
  const empty=()=>board.flatMap((row,y)=>row.flatMap((n,x)=>n?[]:[[y,x]]));
  const spawn=()=>{const spots=empty();if(!spots.length)return;const [y,x]=spots[rnd(spots.length)];board[y][x]=Math.random()<.9?2:4};
  const available=()=>empty().length||board.some((row,y)=>row.some((n,x)=>n===row[x+1]||n===board[y+1]?.[x]));
- const reset=()=>{board=Array.from({length:4},()=>Array(4).fill(0));score=0;previous=null;spawn();spawn();draw()};
+ const reset=()=>{board=Array.from({length:4},()=>Array(4).fill(0));score=0;previous=null;prior=Array(16).fill(0);spawn();spawn();draw()};
  const slide=list=>{const a=list.filter(Boolean),out=[];for(let i=0;i<a.length;i++){if(a[i]===a[i+1]){out.push(a[i]*2);score+=a[i]*2;i++}else out.push(a[i])}return out.concat(Array(4-out.length).fill(0))};
  const move=dir=>{
   const before=JSON.stringify(board),old=board.map(r=>r.slice()),oldScore=score;
@@ -26,7 +27,8 @@ function play2048(stage){
  };
  const bestKey='celestial.game.2048.best';
  stage.innerHTML='<div class="cel-2048"><div class="cel-game-toolbar"><span>Score <b data-score>0</b></span><span>Best <b data-best>0</b></span><button class="btn s" data-undo>Undo</button><button class="btn k s" data-reset>New game</button></div><div class="cel-2048-board" role="group" aria-label="2048 board" data-board></div><p class="cel-game-help" data-help>Use arrow keys, WASD, or swipe to join matching tiles.</p></div>';
- const draw=()=>{const best=Math.max(score,Number(localStorage.getItem(bestKey)||0));localStorage.setItem(bestKey,String(best));stage.querySelector('[data-score]').textContent=score;stage.querySelector('[data-best]').textContent=best;stage.querySelector('[data-undo]').disabled=!previous;stage.querySelector('[data-board]').innerHTML=board.flat().map(n=>'<div class="cel-2048-tile" data-value="'+n+'">'+(n||'')+'</div>').join('');stage.querySelector('[data-help]').textContent=board.flat().includes(2048)?'You reached 2048! Keep going.':available()?'Use arrow keys, WASD, or swipe to join matching tiles.':'No moves left. Start a new game.'};
+ let prior=Array(16).fill(0),animation=0;
+ const draw=()=>{const best=Math.max(score,Number(localStorage.getItem(bestKey)||0));localStorage.setItem(bestKey,String(best));stage.querySelector('[data-score]').textContent=score;stage.querySelector('[data-best]').textContent=best;stage.querySelector('[data-undo]').disabled=!previous;stage.querySelector('[data-board]').innerHTML=board.flat().map((n,i)=>'<div class="cel-2048-tile'+(n&&(!prior[i]||prior[i]!==n)?' is-new':'')+'" data-value="'+n+'" style="--delay:'+((i%4)*18)+'ms">'+(n||'')+'</div>').join('');prior=board.flat().slice();stage.querySelector('[data-help]').textContent=board.flat().includes(2048)?'You reached 2048! Keep going.':available()?'Use arrow keys, WASD, or swipe to join matching tiles.':'No moves left. Start a new game.'};
  stage.querySelector('[data-reset]').onclick=reset;
  stage.querySelector('[data-undo]').onclick=()=>{if(!previous)return;board=previous.board;score=previous.score;previous=null;draw()};
  const keys={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down',a:'left',d:'right',w:'up',s:'down'};
@@ -68,7 +70,7 @@ export function mountGames(root){
  }});
  const paint=()=>{const visible=games.filter(g=>(g.title+' '+g.kind).toLowerCase().includes(search));grid.innerHTML=visible.map(g=>'<button class="cel-game-card" data-game="'+g.id+'"><span class="cel-game-symbol">'+esc(g.symbol)+'</span><span class="cel-game-category">'+esc(g.kind)+'</span><strong>'+esc(g.title)+'</strong><small>'+esc(g.subtitle)+'</small><span class="cel-game-launch">Play now →</span></button>').join('')||'<p>No matching games.</p>'};
  root.querySelector('input[type=search]').addEventListener('input',e=>{search=e.target.value.trim().toLowerCase();paint();distributor.setQuery(search)});
- grid.onclick=e=>{const b=e.target.closest('[data-game]');if(!b)return;const item=games.find(g=>g.id===b.dataset.game);if(!item)return;dispose?.();area.replaceChildren();grid.hidden=true;distributor.hide();stage.hidden=false;active=item;root.querySelector('[data-game-title]').textContent=item.title;dispose=item.id==='2048'?play2048(area):item.id==='ttt'?playTicTacToe(area):playRps(area)};
+ grid.onclick=e=>{const b=e.target.closest('[data-game]');if(!b)return;const item=games.find(g=>g.id===b.dataset.game);if(!item)return;dispose?.();area.replaceChildren();grid.hidden=true;distributor.hide();stage.hidden=false;active=item;root.querySelector('[data-game-title]').textContent=item.title;dispose=({chess:playChess,connect4:playConnectFour,mines:playMines,memory:playMemory,snake:playSnake,'2048':play2048,ttt:playTicTacToe,rps:playRps}[item.id]||playRps)(area)};
  root.querySelector('[data-back]').onclick=()=>{dispose?.();dispose=null;active=null;area.replaceChildren();grid.hidden=false;distributor.show();stage.hidden=true;paint()};
  paint();
 }
