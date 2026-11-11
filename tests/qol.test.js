@@ -22,9 +22,9 @@ test('search engine preferences resolve domains and searches correctly',()=>{
   assert.ok(Object.keys(searchEngines).length>=3);
 });
 
-test('Games navigation is replaced with Apps, but core Chat and Browser routes remain',()=>{
+test('Removed Games and Apps routes do not return to primary navigation',()=>{
   const shell=read('src/main.jsx');
-  assert.match(shell,/id:'apps',label:'Apps'/);
+  assert.doesNotMatch(shell,/id:'apps',label:'Apps'/);
   assert.doesNotMatch(shell,/id:'study',label:'Games'/);
   assert.match(shell,/view==='apps'\?<Apps/);
   assert.match(shell,/view==='settings'\?<Settings/);
@@ -32,20 +32,6 @@ test('Games navigation is replaced with Apps, but core Chat and Browser routes r
   assert.match(shell,/\['home','browser'\]\.includes\(view\)\?<div/);
   assert.match(shell,/homeMode=\{view==='home'\}/);
   assert.match(shell,/return sections\.has\(route\)\?route:route==='community'\?'chat':route==='arcade'\?'apps':'home'/);
-});
-
-test('Apps contains real tools rather than placeholder game tiles',()=>{
-  const apps=read('src/Apps.jsx');
-  for(const name of ['Notes','Calculator','Focus Timer'])assert.ok(apps.includes(name));
-  assert.match(apps,/celestial-tool-notes/);
-  assert.match(apps,/celestial-tool-calculator/);
-  assert.match(apps,/celestial-tool-focus/);
-  assert.match(apps,/onNavigate\(id\)/);
-  for(const name of ['Chess','2048','Minesweeper','Rock Paper Scissors','WorldPvP','Uma Versus']){
-    assert.ok(apps.includes(name),'missing playable game: '+name);
-  }
-  assert.match(apps,/selected\.game\?<Arcade embedded/);
-  assert.match(read('src/Arcade.jsx'),/if\(embedded&&selected\)/);
 });
 
 test('Settings restores appearance, browser, cloaking and account controls',()=>{
@@ -73,7 +59,7 @@ test('Browser uses a real proxy controller and handles failures visibly',()=>{
   assert.match(proxy,/await controller\.wait\(\)/);
 });
 
-test('Browser, games and community Chat can stay mounted together',()=>{
+test('Browser and community Chat stay mounted together',()=>{
   const main=read('src/main.jsx');
   const side=read('src/WorkspaceChat.jsx');
   const messenger=read('src/Messenger.jsx');
