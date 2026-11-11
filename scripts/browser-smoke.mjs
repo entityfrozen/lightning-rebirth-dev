@@ -141,13 +141,12 @@ try{
   assert.equal(cloakedPopup.url(),'about:blank');
   const wrappedUrl=await cloakedPopup.locator('iframe').first().getAttribute('src');
   assert.ok(wrappedUrl?.includes('/boba/index.html'),'Cloaking must open the native Celestial view in about:blank');
-  // The original Lightning browser cannot run inside an unisolated
-  // about:blank iframe. Navigating to Browser must upgrade the wrapper
-  // to a top-level isolated Celestial document automatically.
-  await cloakedPopup.frameLocator('iframe').locator('[data-section="browser"]').click();
-  await cloakedPopup.waitForURL(url=>url.pathname==='/boba/index.html'&&url.hash==='#browser',{timeout:15000});
+  // The wrapper always provides a standalone recovery action even if the
+  // nested iframe was denied by browser local-network protections.
+  await cloakedPopup.locator('[data-open-standalone]').click();
+  await cloakedPopup.waitForURL(url=>url.pathname==='/boba/index.html'&&url.hash==='#browser',{timeout:15000,waitUntil:'domcontentloaded'});
   assert.equal(await cloakedPopup.evaluate(()=>window.top===window&&window.crossOriginIsolated),true,
-    'Browser must run top-level with cross-origin isolation');
+    'Scramjet must have a top-level cross-origin isolated document');
   await cloakedPopup.close();
 
   await boba.locator('[data-view="settings"].on [data-v="matcha"]').click();
