@@ -354,3 +354,27 @@ body:has(.boba-workspace) canvas{opacity:.32}
     line-height:1.1 !important;white-space:nowrap !important;
   }
 }
+
+
+/* Quick-switch remains available through the compact orbital dock and Ctrl+K. */
+@media(min-width:721px){
+  .celestial-workspace.boba-workspace .dock-command{
+    display:grid !important;place-items:center !important;
+    flex:0 0 44px !important;width:44px !important;height:44px !important;
+    min-height:44px !important;
+    margin:0 auto 8px !important;padding:0 !important;
+    border:1px solid rgba(69,83,120,.13) !important;
+    border-radius:50% !important;
+    background:rgba(255,255,255,.38) !important;
+    color:#7887a4 !important;
+  }
+  .celestial-workspace.boba-workspace .dock-command:hover{
+    background:rgba(113,133,204,.14) !important;
+    color:#5168a6 !important;
+  }
+  .celestial-workspace.boba-workspace .dock-command-icon{
+    display:block !important;font-size:25px !important;line-height:1 !important;
+  }
+  .celestial-workspace.boba-workspace .dock-command-label,
+  .celestial-workspace.boba-workspace .dock-command kbd{display:none !important}
+}
