@@ -200,6 +200,30 @@ function safeOrigin(req) {
   const target=`${req.headers['x-forwarded-proto']==='https'?'https':'http'}://${req.headers.host}`;
   return origin===target || origin===`http://${req.headers.host}` || origin===`https://${req.headers.host}`;
 }
+// Fixed upstream catalog endpoints only: never a user-controlled URL proxy.
+let gameCatalogCache={until:0,payload:null};
+const GAME_CATALOG_ENDPOINTS={
+  'Selenite':['https://selenite.cc/resources/games.json','https://git.ceres.rip/selenite/frontend/raw/branch/main/resources/games.json'],
+  'WASM.rip':['https://raw.githubusercontent.com/wasmdotrip/wasm.rip/main/games.json'],
+  'GN-Math':['https://raw.githubusercontent.com/gn-math/assets/main/zones.json']
+};
+async function gameCatalogs(){
+  if(gameCatalogCache.payload&&Date.now()<gameCatalogCache.until)return gameCatalogCache.payload;
+  const result=await Promise.all(Object.entries(GAME_CATALOG_ENDPOINTS).map(async ([name,endpoints])=>{
+    for(const endpoint of endpoints){
+      try{
+        const response=await fetch(endpoint,{signal:AbortSignal.timeout(12000),headers:{Accept:'application/json'}});
+        if(!response.ok||Number(response.headers.get('content-length')||0)>3000000)continue;
+        const rows=await response.json();
+        if(Array.isArray(rows))return {name,rows:rows.slice(0,1500)};
+      }catch{}
+    }
+    return {name,rows:[],error:'Catalog unavailable'};
+  }));
+  const payload={catalogs:result};
+  gameCatalogCache={until:Date.now()+(result.every(c=>!c.error)?300000:45000),payload};
+  return payload;
+}
 async function handleAPI(req,res,url) {
   const user=account(req);
   const pathname=url.pathname;
@@ -216,6 +240,10 @@ async function handleAPI(req,res,url) {
   if(req.method==='GET' && pathname==='/api/ai/status'){
     if(!user)return fail(res,401,'Sign in required');
     return respond(res,200,{configured:Boolean(providers.nvidia)});
+  }
+  if(req.method==='GET'&&pathname==='/api/games/catalog'){
+    if(!user)return fail(res,401,'Sign in required');
+    return respond(res,200,await gameCatalogs());
   }
   if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),authenticated:Boolean(user)});
   if(req.method==='GET' && pathname==='/api/community/members'){
