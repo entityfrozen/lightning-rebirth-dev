@@ -35,7 +35,9 @@ const engine={
  },
  async openFrame(el,url,onNavigate,onPopup){
    if(!window.isSecureContext)throw Error('Scramjet requires HTTPS. Open Celestial in a secure tab.');
-   if(!window.crossOriginIsolated)throw Error(window.top!==window?'Open Celestial in its own tab: the launcher does not provide the isolation Scramjet needs.':'Browser isolation is not active. Reload the page; if this persists, check the server headers.');
+   // Lightning's original browser did not preemptively reject embedded tabs.
+   // Let Scramjet's service worker and transport attempt initialization; a
+   // browser that actually blocks it will report the real failure below.
    const status=await fetch('/api/browser/status',{credentials:'same-origin'}).then(r=>r.json());
    if(!status.authenticated)throw Error('Sign in to browse with Scramjet.');
    if(!status.proxy)throw Error('Scramjet is unavailable on this server.');
