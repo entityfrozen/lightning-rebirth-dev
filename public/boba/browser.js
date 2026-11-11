@@ -1,3 +1,4 @@
+import {openAboutBlank} from './about-blank.js';
 import { I } from './icons.js';
 import { createProxyFrame, disposeProxyFrame, getProxyController } from './proxy.js';
 const $=(s,r=document)=>r.querySelector(s);
@@ -78,6 +79,8 @@ const home = {
     '<span class="disp" data-disp></span><div class="sugg gl g3" data-sugg></div></label>' +
     '<span class="wsep"></span><div class="wtabs" data-tabs></div>' +
     '<button class="cb sm gh" data-wnew aria-label="New tab">' + ico("plus") + "</button>" +
+    '<button class="cb sm gh" data-direct title="Open direct in about:blank" aria-label="Open Direct">' + ico("link") + '</button>' +
+    '<button class="cb sm gh" data-standalone title="Open Celestial standalone for Scramjet" aria-label="Open standalone browser">' + ico("expand") + '</button>' +
     '<button class="cb sm gh" data-wmax aria-label="Full screen">' + ico("expand") + "</button></div>" +
     '<span class="wtip" data-tip></span>' +
     '<div class="page" data-page><div class="gload off" data-bl>' + cup() + '</div><div class="home" data-nt>' +
@@ -387,6 +390,18 @@ const home = {
       if (tb) {
         st.active = +tb.dataset.tab;
         return paint();
+      }
+      if(e.target.closest('[data-direct]')){
+        const target=tab()?.url||ctx.engine.normalise(omni.value||bq.value);
+        if(!target)return;
+        const result=openAboutBlank(target,{title:hostOf(target)||'Website'});
+        if(!result.ok)alert(result.message);
+        return;
+      }
+      if(e.target.closest('[data-standalone]')){
+        // Scramjet requires a top-level cross-origin isolated document.
+        window.open(location.origin+'/boba/index.html#browser','_blank','noopener,noreferrer');
+        return;
       }
       if (e.target.closest("[data-wnew]")) return newTab();
       if (e.target.closest("[data-wmax]")) return ctx.focusWeb(!wv.classList.contains("max"));
