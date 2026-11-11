@@ -8,7 +8,7 @@ export function mountApps(root,open,navigate){
  const safeUrl=(value,base)=>{if(typeof value!=='string'||!value.trim())return '';try{const u=new URL(value,base);return u.protocol==='https:'?u.href:''}catch{return ''}};
  const key=name=>name.normalize('NFKD').toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]/g,'');
  const nativeGameKeys=new Set(['2048','chess','minesweeper','rockpaperscissors','worldpvp','umaversus']);
- const aliases=new Map([['geometrydashlite','geometrydash'],['tictactoe','tictactoe'],['ovo','ovo'],['fridaynightfunkin','fridaynightfunkin']]);
+ const aliases=new Map([['tictactoe','tictactoe'],['ovo','ovo'],['fridaynightfunkin','fridaynightfunkin']]);
  const canonical=name=>{const k=key(name);return aliases.get(k)||k};
  const artFallback=escText=>'<span class="native-game-fallback">'+esc(escText)+'</span>';
  const external=new Map(),byId=new Map();let filter='All',limit=80,failed=[];
@@ -37,7 +37,7 @@ export function mountApps(root,open,navigate){
    let cover='',url='',credit='';
    if(source==='Selenite'&&typeof row.directory==='string'){const base='https://selenite.cc/resources/semag/'+encodeURIComponent(row.directory)+'/';cover=safeUrl(row.image||'',base);url=safeUrl('index.html',base);credit=row.author||''}
    if(source==='WASM.rip'){cover=safeUrl(row.imageUrl||'','https://wasm.rip/');url=safeUrl(row.gameUrl||'','https://wasm.rip/');credit=row.porter||''}
-   if(source==='GN-Math'){const resolve=v=>String(v||'').replaceAll('{COVER_URL}','https://cdn.jsdelivr.net/gh/gn-math/covers@main').replaceAll('{HTML_URL}','https://cdn.jsdelivr.net/gh/gn-math/html@main');cover=safeUrl(resolve(row.cover),'https://gn-math.github.io/');url=safeUrl(resolve(row.url),'https://gn-math.github.io/');credit=row.author||''}
+   if(source==='GN-Math'){const resolve=v=>String(v||'').replaceAll('{COVER_URL}','https://raw.githubusercontent.com/gn-math/covers/main').replaceAll('{HTML_URL}','https://raw.githack.com/gn-math/html/main');cover=safeUrl(resolve(row.cover),'https://gn-math.github.io/');url=safeUrl(resolve(row.url),'https://gn-math.github.io/');credit=row.author||''}
    if(!url||!key(row.name))continue;
    if(new URL(url).origin===location.origin)continue;
    const id=canonical(row.name);
