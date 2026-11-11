@@ -15,9 +15,20 @@ async function start(){
  const view=id=>$('[data-view="'+id+'"]');
  let current='home',paintSettings=()=>{},loadAdmin=()=>{};
  const browser=mountBrowser(view('home'));
- const open=url=>{navigate('browser');browser.navigate(url,true)};
+ // about:blank wrappers are not cross-origin isolated. Promote browser use
+ // to a genuine top-level document instead of trying to run Scramjet nested.
+ const standaloneFromWrapper=()=>{
+  if(window===window.top||window.crossOriginIsolated)return false;
+  try{
+   if(window.top.location.href!=='about:blank')return false;
+   window.top.location.replace(location.origin+'/boba/index.html#browser');
+   return true;
+  }catch{return false}
+ };
+ const open=url=>{if(standaloneFromWrapper())return;navigate('browser');browser.navigate(url,true)};
  function navigate(id){
   if(!items.some(x=>x[0]===id))id='home';
+  if(id==='browser'&&standaloneFromWrapper())return;
   current=id;
   if(id!=='browser'&&id!=='home'){$('[data-wv]')?.classList.remove('max');dock.classList.remove('hide')}
   const active=id==='browser'?'home':id;
