@@ -101,3 +101,44 @@
 .native-browser-error p{max-width:480px;font-size:13px;line-height:1.6;color:var(--ink-2)}
 .native-browser-error>div{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
 .native-browser-error a.btn{text-decoration:none}
+
+/* One responsive Apps catalog for partner ports and Celestial Originals. */
+.native-games{height:100%;overflow:auto;padding-bottom:40px}
+.native-games-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:18px;margin:8px 0 20px}
+.native-games-header h1{font-size:29px;font-weight:750;letter-spacing:-.04em}
+.native-games-header p{font-size:13px;color:var(--ink-2);margin-top:5px}
+.native-games-header .mw-q{width:min(100%,330px)}
+.native-game-filters{display:flex;gap:8px;overflow-x:auto;padding:0 0 14px}
+.native-game-filters button{flex:none}.native-game-filters button.on{background:var(--acc);color:var(--acc-ink)}
+.native-game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin:18px 0}
+.native-game-card{min-width:0;display:flex;flex-direction:column;gap:7px;padding:10px;background:var(--g2);border:1px solid var(--hair);border-radius:19px;box-shadow:var(--sh)}
+.native-game-card h3{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.native-game-card p{font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.native-game-card>div:last-child{display:flex;align-items:center;gap:8px;margin-top:auto}
+.native-game-card>div:last-child>.btn{flex:1}
+.native-game-art{position:relative;aspect-ratio:1.22;display:grid;place-items:center;overflow:hidden;border-radius:12px;background:linear-gradient(135deg,var(--tile),var(--g3));font-size:28px;color:var(--acc);font-weight:800}
+.native-game-art img{width:100%;height:100%;object-fit:cover}
+.native-game-fav{font-size:22px;color:var(--acc);padding:4px;line-height:1}
+.native-game-credits{border-top:1px solid var(--hair);padding-top:20px;margin-top:25px;font-size:12px;color:var(--ink-2)}
+.native-game-credits p{margin:7px 0}
+.native-game-credits a{color:var(--acc);text-decoration:underline;text-underline-offset:3px}
+.native-game-player{padding:20px;margin:16px 0}
+.native-game-player .lr{display:flex;justify-content:space-between;align-items:center}
+.native-2048{max-width:480px;margin:0 auto;padding:10px}
+.native-2048 header{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.native-2048 h2{font-size:25px;font-weight:750}
+.native-2048 p{font-size:12px;color:var(--ink-2)}
+.native-2048-stats{display:flex;gap:8px}
+.native-2048-stats span{display:grid;min-width:65px;text-align:center;font-size:11px;padding:8px;background:var(--g2);border-radius:10px}
+.native-2048-stats b{font-size:21px}
+.native-2048-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;aspect-ratio:1;background:var(--g2);padding:12px;border-radius:17px;margin:22px 0 12px;touch-action:none}
+.native-2048-cell{display:grid;place-items:center;background:var(--tile);border-radius:9px;font-size:clamp(14px,3vw,29px);font-weight:800;color:var(--ink)}
+.native-2048-cell[data-value="2"],.native-2048-cell[data-value="4"]{background:#d5c7ae;color:#473f35}
+.native-2048-cell[data-value="8"],.native-2048-cell[data-value="16"]{background:#eca765;color:#50321b}
+.native-2048-cell[data-value="32"],.native-2048-cell[data-value="64"]{background:#df7967;color:#fff}
+.native-2048-cell[data-value="128"],.native-2048-cell[data-value="256"],.native-2048-cell[data-value="512"]{background:#d3b255;color:#453515}
+.native-2048-cell[data-value="1024"],.native-2048-cell[data-value="2048"]{background:#9db96c;color:#213316}
+.native-2048-controls{display:flex;justify-content:center;gap:10px}
+.native-2048-win{text-align:center;min-height:18px}
+.native-game-hint{text-align:center;margin-top:12px}
+@media(max-width:600px){.native-game-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.native-game-card{padding:8px}.native-games-header h1{font-size:25px}.native-2048-board{gap:6px;padding:7px}}
