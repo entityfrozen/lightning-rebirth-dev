@@ -1,14 +1,13 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {Icon} from './icons.jsx';
 import {
-  Grid20Filled,MusicNote220Filled,Cloud20Filled,Settings20Filled,Globe20Filled,Chat20Filled
+  MusicNote220Filled,Cloud20Filled,Settings20Filled,Globe20Filled,Chat20Filled
 } from '@fluentui/react-icons';
 import {api,readLocal,saveLocal} from './constants.js';
 import {browserAddress,browserPreferences} from './Preferences.js';
 import {createProxyFrame,disposeProxyFrame} from './BoltProxy.js';
 
 const shortcuts=[
-  {id:'apps',name:'apps',icon:Grid20Filled},
   {id:'browser',name:'browser',icon:Globe20Filled},
   {id:'music',name:'music',icon:MusicNote220Filled},
   {id:'cloud',name:'AI',icon:Cloud20Filled},
@@ -16,7 +15,6 @@ const shortcuts=[
 ];
 const homeDestinations=[
   {id:'browser',label:'Browser',detail:'Search & open tabs',icon:Globe20Filled},
-  {id:'apps',label:'Apps',detail:'Games and tools',icon:Grid20Filled},
   {id:'chat',label:'Chat',detail:'Talk to members',icon:Chat20Filled},
   {id:'cloud',label:'AI',detail:'Ask something',icon:Cloud20Filled}
 ];
@@ -70,7 +68,7 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
         if(!user)throw Error('Sign in to browse in Celestial.');
         if(!window.isSecureContext)throw Error('The browser needs a secure HTTPS connection.');
         if(!window.crossOriginIsolated)throw Error(window.self!==window.top
-          ? 'Scramjet needs its own isolated browser tab. Chat and Apps work here, but websites must open in standalone Celestial.'
+          ? 'Scramjet needs its own isolated browser tab. Chat works here, but websites must open in standalone Celestial.'
           : 'Browser isolation is not enabled. Reload Celestial once; if this persists, the server needs a configuration update.');
         const status=await api('/api/browser/status');
         if(!status.authenticated)throw Error('Sign in to browse in Celestial.');
