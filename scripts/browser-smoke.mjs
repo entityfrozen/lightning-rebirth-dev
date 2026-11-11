@@ -62,7 +62,7 @@ async function boot(){
 try{
   await mkdir(screenshots,{recursive:true});
   await boot();
-  browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage']});
+  browser=await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_CHROME_CHANNEL||undefined,args:['--disable-dev-shm-usage']});
   // Reproduce the unmodified launcher: about:blank is the top-level document,
   // with Celestial inside a cross-site iframe.
   const launcher=await browser.newPage({viewport:{width:1180,height:780}});
