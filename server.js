@@ -528,7 +528,10 @@ async function staticFile(req,res,url) {
   if(req.method!=='GET' && req.method!=='HEAD')return fail(res,405,'Method not allowed');
   let filename;
   try {filename=decodeURIComponent(url.pathname);}catch{return fail(res,400,'Bad path');}
-  if(filename==='/' || (!path.extname(filename) && !filename.startsWith('/assets/')))filename='/index.html';
+  // Embedded Lightning games still launch from /?embedded=1&game=... .
+  // Those URLs must load the legacy app, not the native-home redirect.
+  if(filename==='/'&&(url.searchParams.has('embedded')||url.searchParams.has('legacy')))filename='/legacy.html';
+  else if(filename==='/' || (!path.extname(filename) && !filename.startsWith('/assets/')))filename='/index.html';
   // Only expose compiled native assets; the source modules and HTML templates
   // remain in the repository for maintenance, not on the production network.
   if(/^\/boba\/(?:native|browser|common|chat|native-views|admin|settings|icons|proxy|auth)\.js$/.test(filename) ||
