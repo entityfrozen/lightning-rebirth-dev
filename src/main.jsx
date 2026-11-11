@@ -20,7 +20,7 @@ import './refinement.css';
 import './auth.css';
 import './navigation.css';
 import './flare-shell.css';
-import './boba-shell.css';
+import './boba-embedded.css';
 import {api, readLocal, saveLocal} from './constants.js';
 import {Icon} from './icons.jsx';
 import {useBoltLive} from './useBoltLive.js';
@@ -36,6 +36,7 @@ const AI=React.lazy(()=>import('./AI.jsx').then(mod=>({default:mod.AI})));
 const ForestParticles=React.lazy(()=>import('./ForestParticles.jsx').then(mod=>({default:mod.ForestParticles})));
 const WorkspaceChat=React.lazy(()=>import('./WorkspaceChat.jsx').then(mod=>({default:mod.WorkspaceChat})));
 
+const embeddedWorkspace=new URLSearchParams(location.search).has('embedded');
 const sections=new Set(['home','browser','apps','chat','ai','settings']);
 const dockItems=[
   {id:'home',label:'Home',icon:Home24Filled,detail:'Your starting point'},
@@ -227,6 +228,21 @@ function App() {
   useEffect(()=>saveLocal('workspace-chat-open',chatOpen),[chatOpen]);
   useEffect(()=>{applyCloak();},[]);
   useEffect(()=>{
+    if(!embeddedWorkspace)return;
+    const onBobaMessage=event=>{
+      if(event.origin!==location.origin||event.source!==window.parent||event.data?.type!=='celestial:boba-open')return;
+      const value=String(event.data.url||'');
+      if(!/^https?:\/\//i.test(value))return;
+      setBrowserLaunch({id:Date.now()+Math.random(),url:value});
+      setView('browser');
+      setActiveDock('browser');
+      if(location.hash!=='#browser')location.hash='#browser';
+    };
+    window.addEventListener('message',onBobaMessage);
+    return()=>window.removeEventListener('message',onBobaMessage);
+  },[]);
+
+  useEffect(()=>{
     let mounted=true;
     api('/api/me').then(data=>{if(mounted)setUser(data.user);}).catch(()=>{}).finally(()=>{
       if(mounted)setLoading(false);
@@ -309,10 +325,18 @@ function App() {
     <AuthSheet mode="login" locked close={()=>{}} onLoggedIn={person=>setUser(person)}/>
   </div>;
 
+  if(!embeddedWorkspace)return <iframe
+    className="boba-app-host"
+    title="Celestial"
+    src="/boba/index.html"
+    allow="fullscreen; clipboard-read; clipboard-write; picture-in-picture"
+    style={{position:'fixed',inset:0,width:'100%',height:'100%',border:0,display:'block'}}
+  />;
+
   return <>
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
     <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced||['home','browser','chat','apps','settings'].includes(view)}/></Suspense></SceneBoundary>
-    <div className={'celestial-workspace boba-workspace '+(dockOpen?'nav-wide':'nav-compact')}>
+    <div className={'celestial-workspace '+(dockOpen?'nav-wide':'nav-compact')}>
       <main className="celestial-stage" id="main-content">
         <div className={'celestial-activity-layout '+(showCompanion?'with-chat':'')}>
           <div className="celestial-activity-main">
@@ -323,7 +347,7 @@ function App() {
                   <Browser user={user} onAuth={setModal} onShortcut={openDock}
                     homeMode={view==='home'} onOpenBrowser={()=>selectSection('browser')}
                     onCloseBrowser={()=>selectSection('home')}
-                    launch={activeDock==='music'?browserLaunch:null}/>
+                    launch={browserLaunch}/>
                   {view==='home'&&!showHomeAI&&!showCompanion&&
                     <button type="button" className="celestial-show-home-ai"
                       aria-label="Show Celestial AI sidebar" title="Open AI beside Home"
