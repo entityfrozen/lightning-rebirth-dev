@@ -56,6 +56,7 @@ try {
   db = emptyStore();
 }
 if(!Array.isArray(db.dms))db.dms=[];
+if(!db.dmClears||typeof db.dmClears!=='object'||Array.isArray(db.dmClears))db.dmClears={};
 // Credentials are saved separately from account exports and never returned by an API.
 const PROVIDER_FILE=path.join(DATA_DIR,'celestial-providers.json');
 let providers={nvidia:'',tavily:'',model:TEXT_MODEL};
@@ -238,7 +239,7 @@ async function handleAPI(req,res,url) {
     if(!user)return fail(res,401,'Sign in to view direct messages');
     const people=db.users.filter(other=>other.id!==user.id&&activeAccount(other));
     const threads=people.map(other=>{
-      const messages=db.dms.filter(row=>(row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id));
+      const messages=db.dms.filter(row=>((row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id))&&row.createdAt>(db.dmClears[user.id]?.[other.id]||''));
       const last=messages.at(-1);
       return last?{user:{id:other.id,username:other.username},last:{id:last.id,text:last.text,createdAt:last.createdAt},count:messages.length}:null;
     }).filter(Boolean).sort((a,b)=>b.last.createdAt.localeCompare(a.last.createdAt)).slice(0,60);
@@ -249,7 +250,7 @@ async function handleAPI(req,res,url) {
     if(!user)return fail(res,401,'Sign in to view direct messages');
     const other=db.users.find(member=>member.id===directTarget[1]&&member.id!==user.id&&activeAccount(member));
     if(!other)return fail(res,404,'Member not found');
-    const messages=db.dms.filter(row=>(row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id)).slice(-150);
+    const messages=db.dms.filter(row=>((row.from===user.id&&row.to===other.id)||(row.to===user.id&&row.from===other.id))&&row.createdAt>(db.dmClears[user.id]?.[other.id]||'')).slice(-150);
     return respond(res,200,{user:{id:other.id,username:other.username},messages:messages.map(row=>({
       id:row.id,from:row.from,to:row.to,text:row.text,createdAt:row.createdAt,
       author:row.from===user.id?user.username:other.username
@@ -406,6 +407,18 @@ async function handleAPI(req,res,url) {
     target.reviewedBy=user.id;
     await persist();
     return respond(res,200,{ok:true,username:target.username,status:target.reviewStatus});
+  }
+  // Clearing a DM only removes it from the current user's view. The other
+  // participant's history stays intact, and newer messages remain visible.
+  const clearDM=pathname.match(/^\\/api\\/dms\\/(usr_[a-zA-Z0-9_-]{8,40}|[a-f0-9]{24})\\/clear$/);
+  if(clearDM&&req.method==='POST'){
+    const other=db.users.find(member=>member.id===clearDM[1]&&member.id!==user.id&&activeAccount(member));
+    if(!other)return fail(res,404,'Member not found');
+    if(limited(req,'dm-clear:'+user.id,10,60000))return fail(res,429,'Try again shortly');
+    db.dmClears[user.id]??={};
+    db.dmClears[user.id][other.id]=new Date().toISOString();
+    await persist();
+    return respond(res,200,{ok:true});
   }
   if(pathname.startsWith('/api/dms/')&&req.method==='POST'){
     const match=pathname.match(/^\/api\/dms\/(usr_[a-zA-Z0-9_-]{8,40}|[a-f0-9]{24})$/);
