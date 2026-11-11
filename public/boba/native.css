@@ -82,3 +82,12 @@
 .native-pref-switch{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;color:var(--ink-2);cursor:pointer}
 .native-pref-switch input{width:16px;height:16px;accent-color:var(--acc)}
 @media(max-width:500px){.native-tab-preview{flex-wrap:wrap}.native-pref-switch{margin-left:0}}
+
+/* Message moderation stays tucked away until a message is hovered or focused. */
+.native-message{position:relative}
+.native-message>div{flex:1}
+.native-delete-message{align-self:flex-start;flex:0 0 auto;display:grid;place-items:center;width:30px;height:30px;border-radius:10px;color:var(--ink-3);opacity:0;transition:opacity .16s ease,color .16s ease,background .16s ease}
+.native-delete-message svg{width:15px;height:15px;fill:currentColor}
+.native-message:hover .native-delete-message,.native-delete-message:focus-visible{opacity:1}
+.native-delete-message:hover{color:#d45661;background:var(--g2)}
+@media(hover:none){.native-delete-message{opacity:1}}
