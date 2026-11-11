@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Celestial</title>
   <link rel="icon" href="/assets/celestial-star.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/boba/original.css">
-  <link rel="stylesheet" href="/boba/celestial.css">
+  <link rel="stylesheet" href="/boba/native.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -24,37 +21,17 @@
   <div class="amb"></div><div class="wash" id="washA"></div><div class="wash" id="washB"></div>
   <div class="veil"></div><div class="grain"></div>
 </div>
-<main class="views" id="views">
-  <section class="view on" data-view="home" aria-label="Home">
-    <div class="home">
-      <div class="hwm" aria-hidden="true"><img src="/assets/celestial-star.svg" alt=""></div>
-      <div class="hcol">
-        <div class="cel-tagline">✦ YOUR SPACE, YOUR WAY</div>
-        <div class="clock"><div class="t" id="clockTime">--:--</div><div class="d" id="clockDate"></div></div>
-        <h1 class="cel-headline">Your universe, <em>uninterrupted.</em></h1>
-        <p class="cel-subtitle">Explore something new, or pick up right where you left off.</p>
-        <form id="quickSearch" class="cel-search gl g2">
-          <span class="cel-search-icon" aria-hidden="true">⌕</span>
-          <input name="query" placeholder="Search the web or enter a URL" autocomplete="off" aria-label="Search or enter a URL">
-          <button type="submit" aria-label="Search">↗</button>
-        </form>
-        <div class="cel-quick" id="quickLinks">
-          <button type="button" data-launch="browser">Browser <span>↗</span></button>
-          <button type="button" data-launch="apps">Apps <span>↗</span></button>
-          <button type="button" data-launch="chat">Community <span>↗</span></button>
-        </div>
-      </div>
-      <div class="cel-home-foot">CELESTIAL <span>✳</span> MADE FOR THE MOMENTS BETWEEN</div>
-    </div>
-  </section>
-  <section class="view flush" data-view="workspace" aria-label="Workspace">
-    <iframe id="celestialWorkspace" src="/?embedded=1#browser" title="Celestial workspace"
-      allow="fullscreen; clipboard-read; clipboard-write; picture-in-picture"></iframe>
-  </section>
+<main class="views" id="views" hidden>
+<section class="view flush" data-view="home" aria-label="Browser"></section>
+<section class="view" data-view="apps" aria-label="Apps"></section>
+<section class="view flush" data-view="chat" aria-label="Chat"></section>
+<section class="view flush" data-view="ai" aria-label="Ask"></section>
+<section class="view" data-view="settings" aria-label="Settings"></section>
+<section class="view" data-view="account" aria-label="Account"></section>
 </main>
-<nav class="dock" id="dock" aria-label="Sections"></nav>
+<nav class="dock" id="dock" aria-label="Sections" hidden></nav>
 <div class="mini gl" id="mini" hidden></div>
 <div class="scrim" id="scrim"></div><div class="sheet gl g3" id="sheet" role="dialog" aria-modal="true"></div>
 <div class="over" id="over"></div>
-<script defer src="/boba/celestial.js"></script>
+<script type="module" src="/boba/native.js"></script>
 </body></html>
