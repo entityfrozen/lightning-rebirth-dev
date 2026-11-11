@@ -113,7 +113,16 @@ try{
   await boba.locator('input[name="password"]').fill(password);
   await boba.locator('form button[type="submit"]').click();
   await boba.locator('nav#dock .dk').first().waitFor({timeout:25000});
-  assert.equal(await boba.locator('#dock .dk').count(),7);
+  assert.equal(await boba.locator('#dock .dk').count(),8);
+  await boba.locator('[data-section="admin"]').click();
+  await boba.locator('[data-view="admin"].on [data-nvidia]').filter({hasText:'Not set'}).waitFor({timeout:10000});
+  await boba.locator('[data-view="admin"] input[name="nvidia"]').fill('test-nvidia-not-a-real-key');
+  await boba.locator('[data-provider-form] button[type="submit"]').click();
+  await boba.locator('[data-nvidia]').filter({hasText:'Configured'}).waitFor({timeout:10000});
+  assert.equal(await boba.locator('[data-provider-form] input[name="nvidia"]').inputValue(),'');
+  assert.ok(!(await boba.evaluate(async()=>JSON.stringify(await (await fetch('/api/admin/config')).json()))).includes('test-nvidia-not-a-real-key'));
+  await boba.locator('[data-section="ai"]').click();
+  await boba.locator('[data-view="ai"].on .ai-hi .sugs button').first().waitFor({timeout:10000});
   assert.equal(await boba.locator('#celestialWorkspace,iframe.boba-app-host,script[src="/bundle/main.js"]').count(),0);
   assert.ok(await boba.locator('body').evaluate(()=>[...document.styleSheets].some(s=>s.href?.includes('/boba/original.css'))));
   await boba.locator('[data-section="apps"]').click();
