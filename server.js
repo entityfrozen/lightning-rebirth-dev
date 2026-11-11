@@ -502,7 +502,6 @@ async function staticFile(req,res,url) {
   if(req.method!=='GET' && req.method!=='HEAD')return fail(res,405,'Method not allowed');
   let filename;
   try {filename=decodeURIComponent(url.pathname);}catch{return fail(res,400,'Bad path');}
-  // Those URLs must load the legacy app, not the native-home redirect.
   if(filename==='/'&&url.searchParams.has('legacy'))filename='/legacy.html';
   else if(filename==='/')filename='/index.html';
   // A missed Scramjet service-worker interception must fail clearly rather
@@ -512,7 +511,7 @@ async function staticFile(req,res,url) {
   if(!path.extname(filename)&&!filename.startsWith('/assets/'))return fail(res,404,'Page not found');
   // Only expose compiled native assets; the source modules and HTML templates
   // remain in the repository for maintenance, not on the production network.
-  if(/^\/boba\/(?:native|browser|common|chat|native-views|admin|settings|icons|proxy|auth)\.js$/.test(filename) ||
+  if(/^\/boba\/(?:native|browser|common|chat|native-views|admin|settings|icons|proxy|about-blank|auth)\.js$/.test(filename) ||
      /^\/boba\/(?:original|native|auth)\.css$/.test(filename) ||
      /^\/boba\/(?:index|auth)\.template\.html$/.test(filename) ||
      filename==='/boba/dist/.vite/manifest.json')return fail(res,404,'File not found');
