@@ -134,6 +134,14 @@ try{
   assert.equal(await boba.locator('[data-standalone]').count(),1);
   await boba.locator('[data-section="settings"]').click();
   await boba.locator('[data-tab-blank]').waitFor({timeout:10000});
+  const [cloakedPopup]=await Promise.all([
+    boba.waitForEvent('popup',{timeout:10000}),
+    boba.locator('[data-tab-blank]').click()
+  ]);
+  assert.equal(cloakedPopup.url(),'about:blank');
+  const wrappedUrl=await cloakedPopup.locator('iframe').first().getAttribute('src');
+  assert.ok(wrappedUrl?.includes('/boba/index.html'),'Cloaking must open the native Celestial view in about:blank');
+  await cloakedPopup.close();
 
   await boba.locator('[data-view="settings"].on [data-v="matcha"]').click();
   assert.equal(await boba.locator('html').getAttribute('data-palette'),'matcha');
@@ -166,6 +174,13 @@ try{
   await boba.locator('[data-section="browser"]').click();
   await boba.locator('[data-omni]').fill('https://example.com/');
   await boba.locator('[data-omni]').press('Enter');
+  const [directPopup]=await Promise.all([
+    boba.waitForEvent('popup',{timeout:10000}),
+    boba.locator('[data-direct]').click()
+  ]);
+  assert.equal(directPopup.url(),'about:blank');
+  assert.equal(await directPopup.locator('iframe').first().getAttribute('src'),'https://example.com/');
+  await directPopup.close();
   await boba.waitForFunction(()=>Array.from(document.querySelectorAll('.page iframe')).some(f=>f.src.includes('/~/sj/')),{},{timeout:45000});
   await boba.waitForFunction(()=>{
     const frame=document.querySelector('.page iframe[src*="/~/sj/"]');
