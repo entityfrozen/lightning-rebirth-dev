@@ -104,14 +104,14 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
  };
  if(migrated)save();
  // Keep unlisted servers out of all directory broadcasts.
- const directory=()=>servers.filter(s=>!s.inviteOnly||s.permanent).map(publicServer);
+ const directory=()=>[publicServer(main)];
  const refreshProfile=u=>{
   if(!u?.id)return false;
   const name=clean(u.name,32)||"Member",username=clean(u.username,32),isAdmin=u.role==="admin";
   let changed=false;
   if(!main.members.includes(u.id)){main.members.push(u.id);changed=true;}
   // Update every joined server so the admin UI and backend privileges agree.
-  for(const server of servers.filter(server=>server.members.includes(u.id))){
+  for(const server of [main]){
    if(!server.profiles)server.profiles={};
    const previous=server.profiles[u.id];
    if(previous?.name!==name||previous?.username!==username||previous?.admin!==isAdmin){
@@ -126,7 +126,7 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
   const user=typeof u==="string"
    ?{id:u,name:previous?.name||"Member",username:previous?.username||"",role:previous?.admin?"admin":"user"}:u;
   refreshProfile(user);
-  return {servers:servers.filter(s=>s.members.includes(user.id)).map(s=>memberState(s,user,getRole)),
+  return {servers:[memberState(main,user,getRole)],
    directory:directory(),defaultServerId:MAIN_SERVER_ID};
  };
  const err=(u,message)=>sendToUser(u.id,{type:"error",message});
@@ -145,34 +145,9 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
   const type=String(data.type||"");
   if(type==="v2Snapshot"){sendToUser(u.id,{type:"v2State",...snapshot(u)});return;}
   refreshProfile(u);
-  if(type==="v2Create"){
-   const name=clean(data.name,40);
-   if(!nameOK(name))return err(u,"Use a server name of 2–40 letters, numbers, spaces, dots or dashes.");
-   if(servers.length>=LIMITS.servers)return err(u,"The community directory is full.");
-   if(servers.filter(s=>s.owner===u.id).length>=LIMITS.owned)return err(u,"You can create up to five servers.");
-   const s={id:id(),name,icon:clean(data.icon,4)||"users",description:clean(data.description,140)||"A place to meet and talk.",
-    owner:u.id,members:[u.id],roles:[{id:"member",name:"Member",color:"#C5BCA9"}],memberRoles:{},
-     inviteOnly:!!data.inviteOnly,inviteCode:data.inviteOnly?crypto.randomBytes(16).toString("hex"):null,
-    profiles:{[u.id]:{name:u.name,username:u.username,admin:u.role==="admin"}},channels:[
-     {id:"general",name:"general",category:"TEXT"},
-     {id:"introductions",name:"introductions",category:"TEXT"},
-     {id:"gaming",name:"gaming",category:"GAMES"}
-    ],messages:{general:[],introductions:[],gaming:[]},createdAt:Date.now()};
-   servers.push(s);save();
-   sendToUser(u.id,{type:"v2State",...snapshot(u),selected:s.id});
-   sendAll({type:"v2Directory",directory:directory()});return;
-  }
-  if(type==="v2JoinInvite"){
-   const token=clean(data.inviteCode,100).toLowerCase();
-   const invited=servers.find(s=>s.inviteOnly&&s.inviteCode===token&&!s.permanent);
-   if(!invited)return err(u,"Invite is invalid or has expired.");
-   if(!invited.members.includes(u.id)){
-    if(invited.members.length>=500)return err(u,"That server is full.");
-    invited.members.push(u.id);invited.profiles[u.id]={name:u.name,username:u.username,admin:u.role==="admin"};save();
-   }
-   sendToUser(u.id,{type:"v2State",...snapshot(u),selected:invited.id});
-   serverChanged(invited);return;
-  }
+  // Custom servers are retired, not deleted. The old records remain on disk.
+  if(type==="v2Create"||type==="v2JoinInvite")return err(u,"Custom servers are no longer available.");
+  if(clean(data.serverId,60)!==MAIN_SERVER_ID)return err(u,"Only the Celestial community is available.");
   const s=servers.find(s=>s.id===clean(data.serverId,60));
   if(!s)return err(u,"Server not found.");
   const member=s.members.includes(u.id);
