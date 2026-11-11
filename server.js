@@ -5,6 +5,7 @@ import { bootstrap } from '@mercuryworkshop/proxy-bootstrap';
 import { attachLightningLive } from './live.js';
 import {importBoltData,bootstrapAdministrator,backupBoltData} from './legacy-data.js';
 import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
+import { getGameCatalog } from './game-catalog.js';
 import { ROLE_OPTIONS, isValidRole } from './staff-roles.js';
 import { readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
 import { randomBytes, createHash, scryptSync, timingSafeEqual } from 'node:crypto';
@@ -204,6 +205,11 @@ function safeOrigin(req) {
 async function handleAPI(req,res,url) {
   const user=account(req);
   const pathname=url.pathname;
+  if(req.method==='GET'&&pathname==='/api/games/catalog'){
+    if(!user)return fail(res,401,'Sign in required');
+    const catalog=await getGameCatalog();
+    return respond(res,200,catalog,{'Cache-Control':'private, max-age=1800'});
+  }
   if(req.method==='GET' && pathname==='/api/me') return respond(res,200,{user:publicAccount(user),stats:{members:db.users.length,drops:db.drops.length,messages:db.messages.length}});
   if(req.method==='GET'&&pathname==='/api/admin/config'){
     if(!user)return fail(res,401,'Sign in required');
@@ -512,7 +518,7 @@ async function staticFile(req,res,url) {
   if(!path.extname(filename)&&!filename.startsWith('/assets/'))return fail(res,404,'Page not found');
   // Only expose compiled native assets; the source modules and HTML templates
   // remain in the repository for maintenance, not on the production network.
-  if(/^\/boba\/(?:native|browser|common|chat|native-views|admin|settings|icons|proxy|about-blank|auth)\.js$/.test(filename) ||
+  if(/^\/boba\/[^/]+\.js$/.test(filename) ||
      /^\/boba\/(?:original|native|auth)\.css$/.test(filename) ||
      /^\/boba\/(?:index|auth)\.template\.html$/.test(filename) ||
      filename==='/boba/dist/.vite/manifest.json')return fail(res,404,'File not found');
@@ -522,7 +528,7 @@ async function staticFile(req,res,url) {
   try {
     const info=await stat(filepath);if(!info.isFile())throw Error('Not a file');
     const content=await readFile(filepath);
-    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'credentialless','Cross-Origin-Resource-Policy':type.startsWith('text/html')?'cross-origin':'same-origin','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com; connect-src 'self' data: https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'",'Cache-Control':/^\/boba\/dist\/assets\//.test(filename)?'public, max-age=31536000, immutable':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
+    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'credentialless','Cross-Origin-Resource-Policy':type.startsWith('text/html')?'cross-origin':'same-origin','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com https://selenite.cc https://wasm.rip https://raw.githubusercontent.com https://raw.githack.com; connect-src 'self' data: https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'",'Cache-Control':/^\/boba\/dist\/assets\//.test(filename)?'public, max-age=31536000, immutable':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
     return res.end(req.method==='HEAD'?undefined:content);
   }catch{return fail(res,404,'File not found');}
 }
