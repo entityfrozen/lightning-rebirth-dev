@@ -113,7 +113,7 @@ try{
   await boba.locator('input[name="password"]').fill(password);
   await boba.locator('form button[type="submit"]').click();
   await boba.locator('nav#dock .dk').first().waitFor({timeout:25000});
-  assert.equal(await boba.locator('#dock .dk').count(),8);
+  assert.equal(await boba.locator('#dock .dk').count(),9);
   await boba.locator('[data-section="admin"]').click();
   await boba.locator('[data-view="admin"].on [data-nvidia]').filter({hasText:'Not set'}).waitFor({timeout:10000});
   await boba.locator('[data-view="admin"] input[name="nvidia"]').fill('test-nvidia-not-a-real-key');
@@ -130,6 +130,19 @@ try{
   await boba.locator('[data-section="apps"]').click();
   await boba.locator('[data-view="apps"].on .native-tile').first().waitFor({timeout:10000});
   await boba.screenshot({path:path.join(screenshots,'boba-native-apps.png'),fullPage:true});
+  // 2048 must run locally; it must not redirect back into Celestial.
+  await boba.locator('[data-section="games"]').click();
+  await boba.locator('[data-open-game="2048"]').click();
+  await boba.locator('.native-2048-cell').first().waitFor({timeout:10000});
+  assert.equal(await boba.locator('.native-2048-cell').count(),16);
+  assert.equal(await boba.locator('.native-game-player').isVisible(),true);
+  await boba.locator('[data-close-game]').click();
+  const embeddedGame=await boba.evaluate(async()=>{
+    const result=await fetch('/?embedded=1&game=2048');
+    return {status:result.status,body:(await result.text()).slice(0,2500)};
+  });
+  assert.equal(embeddedGame.status,200);
+  assert.ok(embeddedGame.body.includes('/bundle/main.js'),'Legacy game route must serve legacy app, not Boba redirect');
   await boba.locator('[data-section="settings"]').click();
   await boba.locator('[data-view="settings"].on [data-v="matcha"]').click();
   assert.equal(await boba.locator('html').getAttribute('data-palette'),'matcha');
