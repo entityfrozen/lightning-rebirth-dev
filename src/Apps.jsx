@@ -10,7 +10,7 @@ import {
 
 const launchers=[
   {id:'browser',label:'Browser',category:'ESSENTIAL',description:'Your tabs, history and bookmarked places.',icon:Globe24Filled,gradient:'teal'},
-  {id:'chat',label:'Chat',category:'ESSENTIAL',description:'The communities and conversations you kept.',icon:Chat24Filled,gradient:'blue'},
+  {id:'chat',label:'Chat',category:'ESSENTIAL',description:'The Celestial community and your conversations.',icon:Chat24Filled,gradient:'blue'},
   {id:'ai',label:'Celestial AI',category:'ESSENTIAL',description:'A space for ideas, drafts and questions.',icon:Cloud24Filled,gradient:'purple'},
   {id:'notes',label:'Notes',category:'TOOLS',description:'Quick notes that stay on this device.',icon:Note24Filled,gradient:'amber'},
   {id:'calculator',label:'Calculator',category:'TOOLS',description:'A little math without leaving Celestial.',icon:Calculator24Filled,gradient:'mint'},
@@ -92,6 +92,11 @@ export function Apps({onNavigate,onMusic,user,live,onAuth}){
   const [query,setQuery]=useState('');
   const [category,setCategory]=useState('ALL');
   const [opened,setOpened]=useState(null);
+  const [favorites,setFavorites]=useState(()=>readLocal('celestial-app-favorites',[]));
+  const [recent,setRecent]=useState(()=>readLocal('celestial-app-recent',[]));
+  useEffect(()=>saveLocal('celestial-app-favorites',favorites),[favorites]);
+  useEffect(()=>saveLocal('celestial-app-recent',recent),[recent]);
+  const toggleFavorite=id=>setFavorites(items=>items.includes(id)?items.filter(item=>item!==id):[...items,id]);
   const shell=useRef(null);
   const [fullscreen,setFullscreen]=useState(false);
   useEffect(()=>{
@@ -106,12 +111,13 @@ export function Apps({onNavigate,onMusic,user,live,onAuth}){
     }catch{}
   };
   const selected=launchers.find(app=>app.id===opened);
-  const filtered=launchers.filter(app=>(category==='ALL'||app.category===category)&&
+  const filtered=launchers.filter(app=>(category==='ALL'||app.category===category||(category==='FAVORITES'&&favorites.includes(app.id))||(category==='RECENT'&&recent.includes(app.id))||(category==='ORIGINALS'&&app.game&&app.id!=='uma')||(category==='MULTIPLAYER'&&['chess','rps','world'].includes(app.id)))&&
     (app.label+' '+app.description).toLowerCase().includes(query.trim().toLowerCase()));
-  const categories=[{id:'ALL',label:'All apps'},{id:'ESSENTIAL',label:'Essentials'},{id:'PLAY',label:'Games'},{id:'TOOLS',label:'Tools'}];
+  const categories=[{id:'ALL',label:'All apps'},{id:'ESSENTIAL',label:'Essentials'},{id:'PLAY',label:'Games'},{id:'TOOLS',label:'Tools'},{id:'FAVORITES',label:'Favorites'},{id:'RECENT',label:'Recently played'},{id:'ORIGINALS',label:'Celestial Originals'},{id:'MULTIPLAYER',label:'Multiplayer'}];
   const open=id=>{
     if(['browser','chat','ai'].includes(id))return onNavigate(id);
     if(id==='music')return onMusic();
+    if(launchers.some(app=>app.id===id&&app.game))setRecent(items=>[id,...items.filter(item=>item!==id)].slice(0,30));
     setOpened(id);
   };
   return <section className="celestial-apps-page">
@@ -136,7 +142,7 @@ export function Apps({onNavigate,onMusic,user,live,onAuth}){
           <nav className="celestial-apps-filters" aria-label="App categories">
             {categories.map(item=><button key={item.id} type="button" className={category===item.id?'active':''}
               aria-pressed={category===item.id} onClick={()=>setCategory(item.id)}>{item.label}
-              <span>{item.id==='ALL'?launchers.length:launchers.filter(app=>app.category===item.id).length}</span></button>)}
+              <span>{item.id==='ALL'?launchers.length:item.id==='FAVORITES'?favorites.length:item.id==='RECENT'?recent.length:item.id==='ORIGINALS'?launchers.filter(app=>app.game&&app.id!=='uma').length:item.id==='MULTIPLAYER'?3:launchers.filter(app=>app.category===item.id).length}</span></button>)}
           </nav>
         </div>
         <div className="celestial-apps-results" aria-live="polite">{filtered.length} {filtered.length===1?'app':'apps'} {query?'found':'available'}</div>
@@ -147,12 +153,12 @@ export function Apps({onNavigate,onMusic,user,live,onAuth}){
               <span>{items.length} {items.length===1?'app':'apps'}</span></div>
             <div className="celestial-apps-grid">{items.map(app=>{
               const Glyph=app.icon;
-              return <button key={app.id} className="celestial-app-tile" onClick={()=>open(app.id)}>
+              return <div key={app.id} style={{position:"relative"}}><button className="celestial-app-tile" style={{width:"100%",paddingRight:"42px"}} onClick={()=>open(app.id)}>
                 <span className={'celestial-app-tile-symbol '+app.gradient}><Glyph/></span>
                 <span className="celestial-app-tile-content"><strong>{app.label}</strong><small>{app.description}</small>
                   <span className="celestial-app-tile-kind">{app.game?'PLAY':app.category==='TOOLS'?'UTILITY':'WORKSPACE'}</span></span>
                 <ArrowUpRight20Filled className="celestial-app-tile-arrow"/>
-              </button>;
+              </button>{app.game&&<button type="button" aria-label={favorites.includes(app.id)?'Remove '+app.label+' from favorites':'Favorite '+app.label} aria-pressed={favorites.includes(app.id)} onClick={()=>toggleFavorite(app.id)} style={{position:'absolute',right:8,top:8,border:0,background:'transparent',color:'inherit',fontSize:20,cursor:'pointer'}}>{favorites.includes(app.id)?'★':'☆'}</button>}</div>;
             })}</div>
           </div>:null;
         })}
