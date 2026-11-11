@@ -503,7 +503,8 @@ async function staticFile(req,res,url) {
   let filename;
   try {filename=decodeURIComponent(url.pathname);}catch{return fail(res,400,'Bad path');}
   if(filename==='/'&&url.searchParams.has('legacy'))filename='/legacy.html';
-  else if(filename==='/')filename='/index.html';
+  else if(filename==='/')filename='/boba/index.html';
+  else if(filename==='/login')filename='/boba/auth.html';
   // A missed Scramjet service-worker interception must fail clearly rather
   // than silently serving index.html inside the browser iframe.
   if(filename.startsWith('/~/sj/'))return fail(res,502,'Proxy worker did not intercept this navigation; reload the browser.');
