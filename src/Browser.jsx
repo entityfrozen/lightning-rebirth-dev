@@ -1,3 +1,4 @@
+import {openAboutBlank} from '../public/boba/about-blank.js';
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {Icon} from './icons.jsx';
 import {
@@ -129,7 +130,8 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
       <div><button onClick={()=>register(tab.id,{retry:true})}>Try again</button>
       {window.self!==window.top&&!window.crossOriginIsolated&&
         <a href={location.origin+'/#browser'} target="_blank" rel="noopener noreferrer">Open full Celestial browser ↗</a>}
-      <a href={tab.url} target="_blank" rel="noopener noreferrer">Open site directly ↗</a></div>
+      <a href={tab.url} target="_blank" rel="noopener noreferrer"
+        onClick={event=>{event.preventDefault();const result=openAboutBlank(tab.url,{title:'Website'});if(!result.ok)alert(result.message);}}>Open site directly ↗</a></div>
     </div>}
   </div>;
 }
@@ -355,7 +357,8 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null,onOpe
           aria-expanded={showBookmarks} title="Bookmarks">▤</button>
         <button onClick={()=>setMenuOpen(open=>!open)} aria-label="Browser menu"
           aria-expanded={menuOpen} title="Browser tools">⋯</button>
-        {visibleUrl&&<a href={visibleUrl} target="_blank" rel="noopener noreferrer" title="Open directly" aria-label="Open directly"><Icon name="external" size={16}/></a>}
+        {visibleUrl&&<a href={visibleUrl} target="_blank" rel="noopener noreferrer" title="Open Direct in about:blank" aria-label="Open directly"
+        onClick={event=>{event.preventDefault();const result=openAboutBlank(visibleUrl,{title:'Website'});if(!result.ok)alert(result.message);}}><Icon name="external" size={16}/></a>}
       </div>
       {showBookmarks&&<div className="celestial-browser-bookmark-tray">
         <strong>Saved sites</strong>
