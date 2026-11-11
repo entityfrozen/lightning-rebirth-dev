@@ -98,7 +98,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.doesNotMatch(JSON.stringify(config.data),/test-nvidia-secret|test-tavily-secret/);
     config=await call('/api/admin/config');
     assert.doesNotMatch(JSON.stringify(config.data),/test-nvidia-secret|test-tavily-secret|passwordHash|"salt"|"hash"/);
-    const self=config.data.accounts.find(a=>a.username==='ReviewAdmin');
+    const self=config.data.accounts.find(a=>a.username.toLowerCase()==='reviewadmin');
     assert.equal((await call('/api/admin/config/accounts/'+self.id,'POST',{role:'user'})).response.status,400);
     const extra=await call('/api/admin/config/accounts','POST',{username:'ManagedTest',password:'a managed test password',role:'user'});
     assert.equal(extra.response.status,201);
