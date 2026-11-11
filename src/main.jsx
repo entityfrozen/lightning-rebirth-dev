@@ -2,7 +2,7 @@
 import React, {Suspense, useEffect, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {
-  Home24Filled, Grid24Filled, Globe24Filled,
+  Home24Filled, Globe24Filled,
   Cloud24Filled, MusicNote224Filled, Chat24Filled, Settings24Filled,
   ChevronLeft24Filled, Person20Filled, Sparkle20Filled
 } from '@fluentui/react-icons';
@@ -29,7 +29,6 @@ import {AccountReview} from './AccountReview.jsx';
 import {applyCloak} from './Cloak.js';
 
 const Browser=React.lazy(()=>import('./Browser.jsx').then(mod=>({default:mod.Browser})));
-const Apps=React.lazy(()=>import('./Apps.jsx').then(mod=>({default:mod.Apps})));
 const Settings=React.lazy(()=>import('./Settings.jsx').then(mod=>({default:mod.Settings})));
 const Chat=React.lazy(()=>import('./Chat.jsx').then(mod=>({default:mod.Chat})));
 const AI=React.lazy(()=>import('./AI.jsx').then(mod=>({default:mod.AI})));
@@ -39,17 +38,16 @@ const WorkspaceChat=React.lazy(()=>import('./WorkspaceChat.jsx').then(mod=>({def
 const embeddedWorkspace=new URLSearchParams(location.search).has('embedded');
 const legacyWorkspace=new URLSearchParams(location.search).has('legacy');
 if(embeddedWorkspace)document.documentElement.classList.add('celestial-embedded');
-const sections=new Set(['home','browser','apps','chat','ai','settings']);
+const sections=new Set(['home','browser','chat','ai','settings']);
 const dockItems=[
   {id:'home',label:'Home',icon:Home24Filled,detail:'Your starting point'},
   {id:'browser',label:'Browser',icon:Globe24Filled,detail:'Tabs and web search'},
-  {id:'apps',label:'Apps',icon:Grid24Filled,detail:'Games and tools'},
   {id:'chat',label:'Chat',icon:Chat24Filled,detail:'Messages and members'},
   {id:'cloud',label:'AI',icon:Cloud24Filled,detail:'Ask a question'}
 ];
 const routeFromHash=()=>{
   const route=location.hash.replace(/^#/,'').split('/')[0];
-  return sections.has(route)?route:route==='community'?'chat':route==='arcade'?'apps':'home';
+  return sections.has(route)?route:route==='community'?'chat':'home';
 };
 
 function AuthSheet({mode,close,onLoggedIn,locked=false}){
@@ -190,7 +188,7 @@ function App() {
   const [view,setView]=useState(routeFromHash);
   const [activeDock,setActiveDock]=useState(()=>{
     const initial=routeFromHash();
-    return initial==='home'?'home':initial==='ai'?'cloud':initial==='chat'?'chat':initial==='apps'?'apps':initial==='settings'?'settings':'browser';
+    return initial==='home'?'home':initial==='ai'?'cloud':initial==='chat'?'chat':initial==='settings'?'settings':'browser';
   });
   const [dockOpen,setDockOpen]=useState(()=>readLocal('navigation-expanded',true)!==false);
   const [jumpOpen,setJumpOpen]=useState(false);
@@ -209,7 +207,7 @@ function App() {
   const live=useBoltLive(user);
   const actor=user?.username||'Guest';
   const effectiveReduced=reduced||window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const showCompanion=chatOpen&&['home','browser','apps'].includes(view);
+  const showCompanion=chatOpen&&['home','browser'].includes(view);
 
   useEffect(()=>{
     document.documentElement.dataset.palette=palette;
@@ -266,7 +264,7 @@ function App() {
         internalHashChange.current=false;
         return;
       }
-      setActiveDock(next==='home'?'home':next==='ai'?'cloud':next==='chat'?'chat':next==='apps'?'apps':next==='settings'?'settings':'browser');
+      setActiveDock(next==='home'?'home':next==='ai'?'cloud':next==='chat'?'chat':next==='settings'?'settings':'browser');
     };
     window.addEventListener('hashchange',sync);
     return()=>{mounted=false;window.removeEventListener('hashchange',sync);};
@@ -301,11 +299,11 @@ function App() {
     setJumpOpen(false);
     setModal(null);
     setView(section);
-    setActiveDock(section==='home'?'home':section==='ai'?'cloud':section==='chat'?'chat':section==='apps'?'apps':section==='settings'?'settings':'browser');
+    setActiveDock(section==='home'?'home':section==='ai'?'cloud':section==='chat'?'chat':section==='settings'?'settings':'browser');
     if(location.hash!=='#'+section){internalHashChange.current=true;location.hash=section;}
   }
   function openDock(id) {
-    if(id==='settings'||id==='apps'){selectSection(id);return;}
+    if(id==='settings'){selectSection(id);return;}
     if(id==='home'){
       selectSection('home');
       return;
@@ -354,7 +352,7 @@ function App() {
 
   return <>
     <div className="celestial-backdrop" aria-hidden="true"><div className="celestial-ambient"/></div>
-    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced||['home','browser','chat','apps','settings'].includes(view)}/></Suspense></SceneBoundary>
+    <SceneBoundary><Suspense fallback={null}><ForestParticles reduced={effectiveReduced||['home','browser','chat','settings'].includes(view)}/></Suspense></SceneBoundary>
     <div className={'celestial-workspace '+(dockOpen?'nav-wide':'nav-compact')}>
       <main className="celestial-stage" id="main-content">
         <div className={'celestial-activity-layout '+(showCompanion?'with-chat':'')}>
@@ -378,8 +376,6 @@ function App() {
                       onHide={()=>setShowHomeAI(false)}/>
                   </aside>}
               </div>:
-              view==='apps'?<Apps user={user} live={live} onAuth={setModal}
-                onNavigate={selectSection} onMusic={()=>openDock('music')}/>:
               view==='settings'?<Settings user={user} palette={palette} setPalette={setPalette}
                 backdrop={backdrop} setBackdrop={setBackdrop} reduced={reduced} setReduced={setReduced}
                 showHomeAI={showHomeAI} setShowHomeAI={setShowHomeAI}
@@ -394,7 +390,7 @@ function App() {
               aria-expanded={showCompanion}
               onClick={()=>setChatOpen(value=>!value)}>
               <Chat24Filled/>
-              <span>{showCompanion?'Hide Chat':'Chat while you '+(view==='apps'?'play':'browse')}</span>
+              <span>{showCompanion?'Hide Chat':'Chat while you '+'browse'}</span>
               <i aria-hidden="true">{live.online.length}</i>
             </button>}
           </div>
@@ -493,7 +489,7 @@ function App() {
             })}
           {![...dockItems,{id:'settings',label:'Settings',detail:'Preferences and account'}]
             .some(item=>(item.label+' '+item.detail).toLowerCase().includes(jumpQuery.trim().toLowerCase()))&&
-            <p className="nav-switcher-empty">No matching page. Try Home, Apps, Browser, Chat, AI, or Settings.</p>}
+            <p className="nav-switcher-empty">No matching page. Try Home, Browser, Chat, AI, or Settings.</p>}
         </div>
         <div className="nav-switcher-hint">Select a page to jump there. Press Esc to close.</div>
       </div>
