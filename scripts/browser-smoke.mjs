@@ -145,7 +145,7 @@ try{
   // about:blank iframe. Navigating to Browser must upgrade the wrapper
   // to a top-level isolated Celestial document automatically.
   await cloakedPopup.frameLocator('iframe').locator('[data-section="browser"]').click();
-  await cloakedPopup.waitForURL(/\\/boba\\/index\\.html#browser/,{timeout:15000});
+  await cloakedPopup.waitForURL(url=>url.pathname==='/boba/index.html'&&url.hash==='#browser',{timeout:15000});
   assert.equal(await cloakedPopup.evaluate(()=>window.top===window&&window.crossOriginIsolated),true,
     'Browser must run top-level with cross-origin isolation');
   await cloakedPopup.close();
