@@ -37,6 +37,7 @@ const ForestParticles=React.lazy(()=>import('./ForestParticles.jsx').then(mod=>(
 const WorkspaceChat=React.lazy(()=>import('./WorkspaceChat.jsx').then(mod=>({default:mod.WorkspaceChat})));
 
 const embeddedWorkspace=new URLSearchParams(location.search).has('embedded');
+const legacyWorkspace=new URLSearchParams(location.search).has('legacy');
 if(embeddedWorkspace)document.documentElement.classList.add('celestial-embedded');
 const sections=new Set(['home','browser','apps','chat','ai','settings']);
 const dockItems=[
@@ -326,7 +327,7 @@ function App() {
     <AuthSheet mode="login" locked close={()=>{}} onLoggedIn={person=>setUser(person)}/>
   </div>;
 
-  if(!embeddedWorkspace)return <iframe
+  if(!embeddedWorkspace&&!legacyWorkspace)return <iframe
     className="boba-app-host"
     title="Celestial"
     src="/boba/index.html"
