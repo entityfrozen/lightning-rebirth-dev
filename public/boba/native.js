@@ -33,8 +33,8 @@ async function start(){
   current=id;
   if(id!=='browser'){$('[data-wv]')?.classList.remove('max');dock.classList.remove('hide')}
   const active=id;
-  $$('.view',views).forEach(el=>{const on=el.dataset.view===active;el.classList.toggle('on',on);el.setAttribute('aria-hidden',String(!on));el.inert=!on});
-  $$('.dk',dock).forEach(el=>{const on=el.dataset.section===id;el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')});
+  for(const el of views.querySelectorAll('.view')){const on=el.dataset.view===active;el.classList.toggle('on',on);el.setAttribute('aria-hidden',String(!on));el.inert=!on}
+  for(const el of dock.querySelectorAll('.dk')){const on=el.dataset.section===id;el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')}
   if(id==='browser'&&!browser.tabs.length) $('[data-wnew]').click();
   if(id==='settings')paintSettings();
   if(id==='admin')loadAdmin();
@@ -48,7 +48,7 @@ async function start(){
   if(current==='ai'&&ai?.hidden)navigate('home');
  };
  window.addEventListener('celestial:dock-settings',updateDock);
- items.forEach(([id,label,key])=>{const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='home'?'<img src="/assets/celestial-star.svg" alt="" class="cel-dock-star">':id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)});
+ for(const [id,label,key] of items){const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='home'?'<img src="/assets/celestial-star.svg" alt="" class="cel-dock-star">':id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)}
  mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
  if(user.role==='admin')loadAdmin=mountAdmin(view('admin'),user);
  view('settings').innerHTML=settings.html();paintSettings=settings.mount(view('settings'));
