@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {generateImage} from '../image-provider.js';
 
-const png=Buffer.from([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,2,0,0,0,0,0,0,0,0]);
+const png=Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,2,0,0,0,0,0,0,0,0]),Buffer.alloc(80)]);
 const result={artifacts:[{base64:png.toString('base64')}]};
 
 test('FLUX.1-dev is preferred for highest-quality image generation',async()=>{
