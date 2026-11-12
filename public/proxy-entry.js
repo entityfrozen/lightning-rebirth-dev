@@ -72,6 +72,12 @@
     // A newly installed worker may be active without controlling this tab.
     // Scramjet navigations require a controlling worker, not merely an active one.
     if (!navigator.serviceWorker.controller) {
+      const reloadKey = "celestial:proxy-worker-reload";
+      if (!sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, "1");
+        location.reload();
+        throw new Error("Activating the browser worker. The page will reload once.");
+      }
       await withTimeout(new Promise((resolve, reject) => {
         const onChange = () => {
           if (!navigator.serviceWorker.controller) return;
@@ -83,6 +89,7 @@
         if (navigator.serviceWorker.controller) onChange();
       }), "Waiting for the Scramjet worker to control this page", 12000);
     }
+    sessionStorage.removeItem("celestial:proxy-worker-reload");
     return navigator.serviceWorker.controller;
   }
 
