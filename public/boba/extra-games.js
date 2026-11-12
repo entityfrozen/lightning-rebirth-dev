@@ -14,7 +14,7 @@ export const extraGames=[
 export function playChess(stage){
  const game=new Chess(),glyph={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟',K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘',P:'♙'};
  let selected=null,thinking=false,last=null,level=1,active=true;
- stage.innerHTML='<div class="cel-extra-game cel-chess"><header><strong data-state>White to move</strong><label>Computer <select data-level aria-label="Computer difficulty"><option value="0">Casual</option><option value="1" selected>Standard</option><option value="2">Challenging</option></select></label></header><div data-chess-board class="cel-chess-board" role="grid" aria-label="Chess board"></div><div class="cel-chess-actions">'+button('New game','reset')+button('Take back','undo')+'</div><p class="cel-game-help">You play White. Select a piece and then its destination.</p></div>';
+ stage.innerHTML='<div class="arcade-panel cel-chess"><header><strong data-state>White to move</strong><label>Computer <select data-level aria-label="Computer difficulty"><option value="0">Casual</option><option value="1" selected>Standard</option><option value="2">Challenging</option></select></label></header><div data-chess-board class="cel-chess-board" role="grid" aria-label="Chess board"></div><div class="cel-chess-actions">'+button('New game','reset')+button('Take back','undo')+'</div><p class="arcade-help">You play White. Select a piece and then its destination.</p></div>';
  const board=stage.querySelector('[data-chess-board]'),state=stage.querySelector('[data-state]');
  function scoreMove(m){let score={p:1,n:3,b:3,r:5,q:9,k:0}[m.captured]||0;if(m.promotion)score+=8;if(m.san.includes('#'))score+=100;if(m.san.includes('+'))score+=2;return score+Math.random()*(level===2?.3:level===1?4:12)}
  function draw(){
@@ -55,7 +55,7 @@ export function playChess(stage){
 
 export function playConnectFour(stage){
  let cells=Array(42).fill(0),turn=1,finished=false,animating=false,round=0,active=true;
- stage.innerHTML='<div class="cel-extra-game"><h3>Connect Four</h3><p data-state class="cel-game-help">You are red. Drop a disc into a column.</p><div class="cel-connect-board" data-board role="group" aria-label="Connect Four game board"></div>'+button('New round','reset')+'</div>';
+ stage.innerHTML='<div class="arcade-panel"><h3>Connect Four</h3><p data-state class="arcade-help">You are red. Drop a disc into a column.</p><div class="cel-connect-board" data-board role="group" aria-label="Connect Four game board"></div>'+button('New round','reset')+'</div>';
  const board=stage.querySelector('[data-board]'),state=stage.querySelector('[data-state]');
  const winner=b=>{for(let r=0;r<6;r++)for(let c=0;c<7;c++){const v=b[r*7+c];if(!v)continue;for(const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]){let ok=true;for(let k=1;k<4;k++){const y=r+dr*k,x=c+dc*k;if(y<0||y>5||x<0||x>6||b[y*7+x]!==v){ok=false;break}}if(ok)return v}}return 0};
  const drop=(col,player)=>{
@@ -137,7 +137,7 @@ export function playConnectFour(stage){
 }
 export function playMines(stage){
  let cells=[],flags=0,done=false,started=false;
- stage.innerHTML='<div class="cel-extra-game"><h3>Minesweeper</h3><p class="cel-game-help" data-state>First move is safe. Right-click or long-press to flag.</p><div class="cel-mines-grid" data-board></div>'+button('Restart','reset')+'</div>';
+ stage.innerHTML='<div class="arcade-panel"><h3>Minesweeper</h3><p class="arcade-help" data-state>First move is safe. Right-click or long-press to flag.</p><div class="cel-mines-grid" data-board></div>'+button('Restart','reset')+'</div>';
  const board=stage.querySelector('[data-board]'),state=stage.querySelector('[data-state]');
  const around=i=>{const x=i%9,y=Math.floor(i/9),out=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy;if(xx>=0&&xx<9&&yy>=0&&yy<9)out.push(yy*9+xx)}return out};
  const reset=()=>{cells=Array.from({length:81},()=>({mine:false,n:0,open:false,flag:false}));flags=0;done=false;started=false;draw()};
@@ -153,7 +153,7 @@ export function playMines(stage){
 }
 export function playSnake(stage){
  const N=16;let snake,food,dir,next,points,timer=null,ended=false;
- stage.innerHTML='<div class="cel-extra-game"><h3>Snake</h3><p class="cel-game-help" data-state>Use arrow keys or WASD to move.</p><div class="cel-snake-grid" data-board></div><div class="cel-snake-controls">'+[['↑','up'],['←','left'],['↓','down'],['→','right']].map(([t,d])=>'<button class="btn s" data-dir="'+d+'">'+t+'</button>').join('')+'</div>'+button('New game','reset')+'</div>';
+ stage.innerHTML='<div class="arcade-panel"><h3>Snake</h3><p class="arcade-help" data-state>Use arrow keys or WASD to move.</p><div class="cel-snake-grid" data-board></div><div class="cel-snake-controls">'+[['↑','up'],['←','left'],['↓','down'],['→','right']].map(([t,d])=>'<button class="btn s" data-dir="'+d+'">'+t+'</button>').join('')+'</div>'+button('New game','reset')+'</div>';
  const board=stage.querySelector('[data-board]'),state=stage.querySelector('[data-state]');
  const spawn=()=>{const free=Array.from({length:N*N},(_,i)=>i).filter(i=>!snake.includes(i));return free.length?pick(free):-1};
  const draw=()=>{const body=new Set(snake);board.innerHTML=Array.from({length:N*N},(_,i)=>'<i class="'+(snake[0]===i?'head':body.has(i)?'body':food===i?'food':'')+'"></i>').join('');state.textContent=ended?'Game over · Score '+points:'Score '+points+' · Use arrow keys or WASD'};
