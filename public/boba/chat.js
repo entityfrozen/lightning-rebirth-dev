@@ -119,9 +119,30 @@ export function mountChat(root,user){
   if(!send({type:'v2DeleteMessage',serverId,channel:currentChannel,messageId}))say('Chat is reconnecting. Try again.');
  });
  $r('[data-cancel-reply]').onclick=()=>{reply=null;$r('[data-reply]').hidden=true};
- $r('[data-server]').onchange=e=>{serverId=e.target.value;channelId='';dm=null;render()};$r('[data-channels]').onclick=e=>{const b=e.target.closest('[data-channel]');if(b){dm=null;channelId=b.dataset.channel;render()}};$r('[data-search]').oninput=render;$r('[data-people]').onclick=e=>{const b=e.target.closest('[data-person]');if(b&&b.dataset.person!==user.id){dm=people.find(p=>p.id===b.dataset.person);if(dm){dmRows=[];render();readDM()}}};
- $r('[data-dm-list]').onclick=e=>{const b=e.target.closest('[data-person]');if(b&&b.dataset.person!==user.id){dm=people.find(p=>p.id===b.dataset.person);if(dm){dmRows=[];render();readDM()}}};
- $r('[data-join]').onclick=()=>send({type:'v2Join',serverId:serverId});$r('[data-new-server]').onclick=()=>{const name=prompt('Server name');if(name?.trim())send({type:'v2Create',name:name.trim(),description:'A Celestial community',icon:'✦'})};
+ const switchTo=(newServer,newChannel,newDM)=>{
+  storeDraft();serverId=newServer;channelId=newChannel;dm=newDM;clearReply();render();restoreDraft();say('');statusText('');
+  if(dm){dmRows=[];readDM()}
+ };
+ $r('[data-server]').onchange=e=>switchTo(e.target.value,'',null);
+ $r('[data-channels]').onclick=e=>{
+  const b=e.target.closest('[data-channel]');if(b)switchTo(serverId,b.dataset.channel,null);
+ };
+ $r('[data-search]').oninput=render;
+ const choosePerson=e=>{
+  const b=e.target.closest('[data-person]');
+  if(!b||b.dataset.person===user.id)return;
+  const person=people.find(p=>p.id===b.dataset.person);
+  if(person)switchTo(serverId,channelId,person);
+ };
+ $r('[data-people]').onclick=choosePerson;
+ $r('[data-dm-list]').onclick=choosePerson;
+ $r('[data-open-announcements]').onclick=()=>switchTo('lightning-main','announcements',null);
+ $r('[data-dismiss-announcement]').onclick=()=>{
+  const latest=latestAnnouncement();
+  if(latest)sessionStorage.setItem('celestial.announcement.dismissed',latest.id);
+  paintAnnouncement();
+ };
+ $r('[data-join]').onclick=()=>send({type:'v2Join',serverId});
  $r('[data-clear-chat]').onclick=async()=>{
   if(dm){
     const target=dm.id,name=dm.username;
@@ -148,8 +169,47 @@ export function mountChat(root,user){
    picker.hidden=true;mentionMatches=[];input.focus();
  };
  picker.onclick=e=>{const b=e.target.closest('[data-mention]');if(b)insertMention(Number(b.dataset.mention))};
- input.oninput=()=>{suggestions();input.style.height='auto';input.style.height=Math.min(input.scrollHeight,150)+'px'};
- input.onkeydown=e=>{if(e.key==='Escape'){picker.hidden=true;return}if(!picker.hidden&&(e.key==='Enter'||e.key==='Tab')){e.preventDefault();insertMention(0);return}if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$r('form').requestSubmit()}};
- $r('form').onsubmit=async e=>{e.preventDefault();const text=input.value.trim();if(!text)return;try{if(dm){await api('/api/dms/'+encodeURIComponent(dm.id),{text});await readDM()}else if(!send({type:'v2Message',serverId,channel:channelId,message:text,replyTo:reply?.id||''}))throw Error('Chat is reconnecting.');input.value='';input.style.height='auto';reply=null;$r('[data-reply]').hidden=true;picker.hidden=true;say('')}catch(err){say(err.message)}};
- connect();refresh();setInterval(refresh,30000);setInterval(()=>{if(dm)readDM()},4000);window.addEventListener('pagehide',()=>{closed=true;socket?.close()});
+ input.oninput=()=>{
+  suggestions();storeDraft();input.style.height='auto';input.style.height=Math.min(input.scrollHeight,150)+'px';
+  if(!dm&&socket?.readyState===WebSocket.OPEN&&Date.now()-lastTypingAt>2000&&input.value.trim()){
+   lastTypingAt=Date.now();send({type:'v2Typing',serverId,channel:channelId});
+  }
+ };
+ input.onkeydown=e=>{
+  if(e.key==='Escape'){picker.hidden=true;return}
+  if(!picker.hidden&&(e.key==='Enter'||e.key==='Tab')){e.preventDefault();insertMention(0);storeDraft();return}
+  if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$r('form').requestSubmit()}
+ };
+ $r('form').onsubmit=async event=>{
+  event.preventDefault();
+  const message=input.value.trim();
+  if(!message||sending||input.disabled)return;
+  const target=scope();
+  say('');statusText('Sending…');setSending(true);
+  if(dm){
+   try{
+    const recipient=dm.id;await api('/api/dms/'+encodeURIComponent(recipient),{text:message});
+    if(scope()===target){input.value='';input.style.height='auto';clearReply();}
+    drafts.delete(target);await readDM();statusText('Sent');
+   }catch(error){say(error.message);statusText('Not sent — try again')}
+   finally{setSending(false)}
+   return;
+  }
+  const clientId=globalThis.crypto?.randomUUID?.()||String(Date.now())+'-'+Math.random().toString(36).slice(2);
+  if(!send({type:'v2Message',serverId,channel:channelId,message,replyTo:reply?.id||'',clientId})){
+   setSending(false);statusText('Not sent');say('Connection lost. Your message is still in the composer.');return;
+  }
+  const timer=setTimeout(()=>{
+   if(sending?.clientId===clientId){
+    sending=null;setSending(false);statusText('Delivery unconfirmed');
+    say('No server confirmation. Check the channel before retrying to avoid a duplicate.');
+   }
+  },10000);
+  sending={clientId,scope:target,timer};
+ };
+ connect();refresh();
+ const refreshTimer=setInterval(refresh,30000);
+ const dmTimer=setInterval(()=>{if(dm)readDM()},6500);
+ const typingTimer=setInterval(paintTyping,1500);
+ window.addEventListener('pagehide',()=>{closed=true;clearInterval(refreshTimer);clearInterval(dmTimer);clearInterval(typingTimer);socket?.close()});
 }
