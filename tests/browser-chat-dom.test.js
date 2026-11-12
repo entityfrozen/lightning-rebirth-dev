@@ -26,3 +26,9 @@ test('Browser offers direct embedding if the Scramjet navigation fails',()=>{
  assert.match(browser,/t\.frame\.src=t\.url/);
  assert.match(browser,/t\.direct=true/);
 });
+
+test('Bare hostnames navigate directly instead of being treated as search terms',()=>{
+ const browser=source('../public/boba/browser.js');
+ assert.match(browser,/\^\[a-z0-9-\]/);
+ assert.doesNotMatch(browser,/\^\[\\\\w-\]/);
+});
