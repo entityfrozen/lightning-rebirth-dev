@@ -133,16 +133,27 @@ try{
   await boba.locator('.cel-home-star').waitFor({timeout:10000});
   assert.equal(await boba.locator('[data-view="browser"].on').count(),0,'Home must not be Browser');
   await boba.locator('[data-section="games"]').click();
-  await boba.locator('[data-game="2048"]').click();
+  await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'2048'})}).click();
   assert.equal(await boba.locator('.cel-2048-tile').count(),16);
   await boba.keyboard.press('ArrowLeft');
   await boba.locator('[data-back]').click();
-  await boba.locator('[data-game="ttt"]').click();
+  await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'Tic Tac Toe'})}).click();
   assert.equal(await boba.locator('.cel-ttt-cell').count(),9);
   await boba.locator('[data-back]').click();
-  await boba.locator('[data-game="rps"]').click();
+  await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'Rock Paper Scissors'})}).click();
   assert.equal(await boba.locator('.cel-rps-choices [data-pick]').count(),3);
   await boba.locator('[data-back]').click();
+  // Verify Arcade's Scramjet mode uses the actual service worker, not a direct iframe.
+  await boba.locator('[data-view="games"] .cel-dist-card').first().waitFor({timeout:20000});
+  await boba.locator('[data-view="games"] .cel-dist-card').first().click();
+  const arcadeMode=boba.locator('[data-view="games"] select[aria-label="Embedding mode"]');
+  await arcadeMode.waitFor({timeout:10000});
+  assert.equal(await arcadeMode.inputValue(),'proxy','Arcade should default to Scramjet');
+  await boba.waitForFunction(()=>{
+    const frame=document.querySelector('[data-view="games"] .cel-dist-frame');
+    return !!frame?.src?.includes('/~/sj/');
+  },null,{timeout:45000});
+  await boba.locator('[data-view="games"] [data-back]').click();
   await boba.locator('[data-section="ai"]').click();
   assert.equal(await boba.locator('[data-effort]').inputValue(),'instant');
   assert.equal(new URL(boba.url()).pathname,'/','Signed-in Celestial should use the root URL');
