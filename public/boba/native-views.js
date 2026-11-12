@@ -17,7 +17,7 @@ const originalAsk = {
 export function mountAsk(root,user){
  root.innerHTML=originalAsk.html();
  let chats=[];try{chats=JSON.parse(localStorage.getItem('boba.ask.'+user.id)||'[]')}catch{}
- let active=null,busy=null,attachment=null,menu=null,web=false;
+ let active=null,busy=null,attachment=null,menu=null,web=localStorage.getItem('celestial.ai.web')==='true';
  const effortSelect=$('[data-effort]',root);
  const savedEffort=localStorage.getItem('celestial.ai.effort');
  if(['instant','smart','ultra'].includes(savedEffort))effortSelect.value=savedEffort;
@@ -25,7 +25,8 @@ export function mountAsk(root,user){
  const inner=$('[data-in]',root),thread=$('[data-thread]',root),list=$('[data-list]',root),q=$('[data-aq]',root),note=$('[data-note]',root),form=$('[data-form]',root),find=$('[data-find]',root),send=$('[data-asend]',root),atts=$('[data-atts]',root),pick=$('[data-pick]',root);
  const save=()=>{localStorage.setItem('boba.ask.'+user.id,JSON.stringify(chats));window.dispatchEvent(new Event('celestial:save-workspace'))};
  const webButton=$('[data-web]',root);async function checkWeb(){try{webButton.disabled=!(await api('/api/ai/search/status')).configured;if(webButton.disabled){web=false;webButton.classList.remove('on');webButton.setAttribute('aria-pressed','false')}}catch{webButton.disabled=true}}
- webButton.onclick=()=>{web=!web;webButton.classList.toggle('on',web);webButton.setAttribute('aria-pressed',String(web))};checkWeb();root.addEventListener('pointerenter',checkWeb);
+ webButton.classList.toggle('on',web);webButton.setAttribute('aria-pressed',String(web));
+ webButton.onclick=()=>{web=!web;webButton.classList.toggle('on',web);webButton.setAttribute('aria-pressed',String(web));localStorage.setItem('celestial.ai.web',String(web));window.dispatchEvent(new Event('celestial:save-workspace'))};checkWeb();root.addEventListener('pointerenter',checkWeb);
  const say=t=>{note.textContent=t||'';note.hidden=!t};
  const grow=()=>{q.style.height='auto';q.style.height=Math.min(q.scrollHeight,200)+'px'};
  const escText=t=>esc(t).replace(/\x60([^\x60\n]+)\x60/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
