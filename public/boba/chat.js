@@ -44,21 +44,70 @@ export function mountChat(root,user){
   const s=server(),c=channel(),sel=$r('[data-server]');if(s)serverId=s.id;if(c)channelId=c.id;sel.innerHTML=servers.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');sel.value=serverId;
   $r('[data-channels]').innerHTML=(s?.channels||[]).map(x=>'<button class="native-chat-link '+(!dm&&x.id===channelId?'on':'')+'" data-channel="'+esc(x.id)+'"># '+esc(x.name||x.id)+'</button>').join('');
   $r('[data-join]').hidden=!s||s.members?.some(p=>p.id===user.id);
-  $r('[data-clear-chat]').hidden=!dm&&user.role!=='admin';
+  $r('[data-clear-chat]').hidden=dm?false:user.role!=='admin';
   $r('[data-clear-chat]').textContent=dm?'Clear DM':'Clear channel';
   $r('[data-title]').textContent=dm?dm.username:'# '+(c?.name||'general');$r('[data-status]').textContent=socket?.readyState===WebSocket.OPEN?'Live':'Reconnecting…';
-  const feed=$r('.native-feed'),near=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100;
+  const feed=$r('.native-feed'),near=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100,previousScroll=feed.scrollTop;
   const roster=new Map((s?.members||[]).map(p=>[p.id,p]));for(const p of people)roster.set(p.id,{...roster.get(p.id),...p});const all=[...roster.values()];const rows=dm?dmRows:(s?.messages?.[c?.id]||[]);
-  feed.innerHTML=rows.map(m=>{const p=roster.get(dm?m.from:m.userId)||all.find(x=>(x.username||x.name)===(dm?m.author:m.by||m.username));const name=dm?m.author:m.by||m.username||p?.username||'Member';return '<article class="native-message'+(String(dm?m.text:m.message||'').split(/\s+/).some(part=>part.toLowerCase().replace(/[^a-z0-9_@-]/g,'')==='@'+user.username.toLowerCase())?' mentioned':'')+'"><span class="native-person-icon">'+esc(name.slice(0,2).toUpperCase())+'</span><div><div class="native-message-meta"><b>'+esc(name)+'</b>'+badge(p)+timestamp(m)+'</div><p>'+mentionHTML(dm?m.text:m.message)+'</p></div><button class="cel-reply-action" type="button" data-reply-id="'+esc(m.id)+'" aria-label="Reply">↩</button>'+(!dm&&(user.role==='admin'||m.userId===user.id)?'<button type="button" class="native-delete-message" aria-label="Delete message" title="Delete message" data-delete-message="'+esc(m.id)+'" data-delete-channel="'+esc(c?.id||'')+'">'+ico('trash')+'</button>':'')+'</article>'}).join('');
-  if(near)feed.scrollTop=feed.scrollHeight;
+  feed.innerHTML=rows.map(m=>{const p=roster.get(dm?m.from:m.userId)||all.find(x=>(x.username||x.name)===(dm?m.author:m.by||m.username));const name=dm?m.author:m.by||m.username||p?.username||'Member';const parent=!dm&&m.replyTo?rows.find(item=>item.id===m.replyTo):null;return '<article class="native-message'+(String(dm?m.text:m.message||'').split(/\s+/).some(part=>part.toLowerCase().replace(/[^a-z0-9_@-]/g,'')==='@'+user.username.toLowerCase())?' mentioned':'')+'"><span class="native-person-icon">'+esc(name.slice(0,2).toUpperCase())+'</span><div><div class="native-message-meta"><b>'+esc(name)+'</b>'+badge(p)+timestamp(m)+'</div>'+(parent?'<small class="cel-message-parent">↳ '+esc(parent.by||parent.username||'Member')+': '+esc((parent.message||'').slice(0,85))+'</small>':'')+(m.announcement?'<small class="cel-message-parent">📣 Official announcement</small>':'')+'<p>'+mentionHTML(dm?m.text:m.message)+'</p>'+(m.editedAt?'<small class="cel-message-edited">edited</small>':'')+'</div><button class="cel-reply-action" type="button" data-reply-id="'+esc(m.id)+'" aria-label="Reply">↩</button>'+(!dm&&(user.role==='admin'||m.userId===user.id)?'<button type="button" class="native-delete-message" aria-label="Delete message" title="Delete message" data-delete-message="'+esc(m.id)+'" data-delete-channel="'+esc(c?.id||'')+'">'+ico('trash')+'</button>':'')+'</article>'}).join('');
+  if(near)feed.scrollTop=feed.scrollHeight;else feed.scrollTop=previousScroll;
+  input.disabled=!dm&&!!c?.readOnly&&user.role!=='admin';
+  if(input.disabled)input.placeholder='Only staff can post in this channel';
+  paintAnnouncement();paintTyping();
   $r('[data-member-count]').textContent=all.length;
-  input.placeholder=dm?'Message @'+dm.username:'Message #'+(c?.name||'general');
+  if(!input.disabled)input.placeholder=dm?'Message @'+dm.username:'Message #'+(c?.name||'general');
   $r('[data-dm-list]').innerHTML=people.filter(p=>p.id!==user.id).slice(0,10).map(p=>'<button class="cel-dm-link" data-person="'+esc(p.id)+'"><span class="native-person-icon">'+esc((p.username||p.name||'?').slice(0,2).toUpperCase())+'</span>'+esc(p.username||p.name)+'</button>').join('');
   const q=$r('[data-search]').value.toLowerCase(),ids=new Set(online.map(p=>p.id));$r('[data-people]').innerHTML=all.filter(p=>(p.username||p.name||'').toLowerCase().includes(q)).sort((a,b)=>Number(ids.has(b.id))-Number(ids.has(a.id))||String(a.username||a.name).localeCompare(String(b.username||b.name))).map(p=>'<button class="native-member" data-person="'+esc(p.id)+'"><i class="'+(ids.has(p.id)?'online':'')+'"></i><span>'+esc(p.username||p.name)+badge(p)+'</span></button>').join('');
  }
  async function refresh(){try{people=(await api('/api/community/members')).members||[];render()}catch{}}
  async function readDM(){if(!dm)return;const id=dm.id;const n=++revision;try{const d=await api('/api/dms/'+encodeURIComponent(id));if(dm?.id===id&&n===revision){dmRows=d.messages||[];render()}}catch(e){say(e.message)}}
- function connect(){if(closed)return;socket=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/live');socket.onopen=render;socket.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}if(m.type==='hello'||m.type==='presence')online=m.online||[];if(m.type==='v2State')servers=m.servers||[];if(m.type==='v2Server'){servers=servers.filter(s=>s.id!==m.server.id).concat(m.server)}if(['v2Message','v2MessageUpdate','v2MessageDeleted'].includes(m.type)){const s=servers.find(s=>s.id===m.serverId);const ch=m.channel||m.entry?.channel;if(s&&ch){s.messages||={};let rows=s.messages[ch]||[];if(m.type==='v2Message')rows=rows.concat(m.entry);if(m.type==='v2MessageUpdate')rows=rows.map(r=>r.id===m.entry.id?m.entry:r);if(m.type==='v2MessageDeleted')rows=rows.filter(r=>r.id!==m.id);s.messages[ch]=rows.slice(-150)}}if(m.type==='error')say(m.message);render()};socket.onclose=()=>{render();if(!closed)setTimeout(connect,2500)}}
+ function connect(){
+  if(closed)return;
+  socket=new WebSocket((location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/live');
+  socket.onopen=()=>{reconnectDelay=1000;statusText('Connected');render()};
+  socket.onmessage=e=>{
+   let m;try{m=JSON.parse(e.data)}catch{return}
+   if(m.type==='hello'||m.type==='presence')online=m.online||[];
+   if(m.type==='v2State')servers=m.servers||[];
+   if(m.type==='v2Server')servers=servers.filter(s=>s.id!==m.server.id).concat(m.server);
+   if(m.type==='v2Announcement'){
+    announcement=m.entry;
+    sessionStorage.removeItem('celestial.announcement.dismissed');
+    paintAnnouncement();
+    if(document.visibilityState==='hidden'&&'Notification' in window&&Notification.permission==='granted')
+      new Notification('Celestial announcement',{body:m.entry.message.slice(0,150)});
+   }
+   if(m.type==='v2Typing'){
+    typingUsers.set(m.userId,{name:m.name||'Someone',at:Date.now(),serverId:m.serverId,channel:m.channel});paintTyping();return;
+   }
+   if(['v2Message','v2MessageUpdate','v2MessageDeleted'].includes(m.type)){
+    const s=servers.find(s=>s.id===m.serverId),ch=m.channel||m.entry?.channel;
+    if(s&&ch){
+     s.messages||={};let rows=s.messages[ch]||[];
+     if(m.type==='v2Message'&&!rows.some(r=>r.id===m.entry.id))rows=rows.concat(m.entry);
+     if(m.type==='v2MessageUpdate')rows=rows.map(row=>row.id===m.entry.id?m.entry:row);
+     if(m.type==='v2MessageDeleted')rows=rows.filter(row=>row.id!==m.id);
+     s.messages[ch]=rows.slice(-150);
+    }
+    if(m.type==='v2Message'&&sending?.clientId&&m.entry?.clientId===sending.clientId&&m.entry.userId===user.id){
+     clearTimeout(sending.timer);
+     if(sending.scope===scope()){
+      input.value='';drafts.delete(scope());input.style.height='auto';clearReply();picker.hidden=true;
+     }else drafts.delete(sending.scope);
+     sending=null;setSending(false);statusText('Sent');say('');
+    }
+   }
+   if(m.type==='error'){
+    say(m.message);if(sending){clearTimeout(sending.timer);sending=null;setSending(false);statusText('Not sent')};
+   }
+   render();
+  };
+  socket.onclose=()=>{
+   if(sending){clearTimeout(sending.timer);sending=null;setSending(false);statusText('Disconnected — message not confirmed');}
+   render();
+   if(!closed){const delay=reconnectDelay;reconnectDelay=Math.min(12000,reconnectDelay*1.7);setTimeout(connect,delay)}
+  };
+ }
  $r('.native-feed').addEventListener('click',e=>{
   const replyButton=e.target.closest('[data-reply-id]');
   if(replyButton){const row=(dm?dmRows:(server()?.messages?.[channelId]||[])).find(m=>m.id===replyButton.dataset.replyId);if(row){reply={id:row.id,author:row.by||row.author||'Member',text:row.message||row.text||''};$r('[data-reply]').hidden=false;$r('[data-reply-text]').textContent='Replying to '+reply.author+': '+reply.text.slice(0,70);input.focus()}return}
