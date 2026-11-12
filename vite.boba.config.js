@@ -4,7 +4,9 @@ import JavaScriptObfuscator from 'javascript-obfuscator';
 
 // Independent of the legacy React rollback build; Celestial's primary UI
 // ships as hashed, minified ES modules and extracted stylesheets.
-// Obfuscate only the compiled first-party UI. Proxy internals stay untouched.
+// Keep minification and stable identifier mangling without string-table decoder code.
+// The string-array transform caused runtime failures in the production browser.
+// Proxy internals stay untouched.
 function protectClientBundle(){
  return {
   name:'celestial-ui-obfuscation',
@@ -14,8 +16,8 @@ function protectClientBundle(){
     if(chunk.type!=='chunk'||chunk.name!=='app')continue;
     chunk.code=JavaScriptObfuscator.obfuscate(chunk.code,{
      target:'browser',compact:true,renameGlobals:false,renameProperties:false,
-     ignoreImports:true,stringArray:true,stringArrayEncoding:['base64'],
-     stringArrayThreshold:0.6,stringArrayCallsTransform:false,
+     ignoreImports:true,stringArray:false,
+     identifierNamesGenerator:'hexadecimal',
      controlFlowFlattening:false,deadCodeInjection:false,selfDefending:false,
      debugProtection:false,disableConsoleOutput:false,sourceMap:false,seed:7011
     }).getObfuscatedCode();
