@@ -22,9 +22,9 @@ async function start(){
  const view=id=>$('[data-view="'+id+'"]');
  let current='home',paintSettings=()=>{},loadAdmin=()=>{};
  const browser=mountBrowser(view('browser'));
- mountHome(view('home'),user,navigate);
- mountGames(view('games'));
  const open=url=>{navigate('browser');browser.navigate(url,true)};
+ mountHome(view('home'),user,navigate,open);
+ mountGames(view('games'));
  function navigate(id){
   if(!items.some(x=>x[0]===id))id='home';
   current=id;
