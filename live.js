@@ -147,5 +147,5 @@ export function attachLightningLive({
   socket.on('close',()=>{clients.delete(socket);presence()});
  });
  console.log('Celestial Live: community messaging ready');
- return {wss,sendToUser:sendUser,listAnnouncements:communities.listAnnouncements,postAnnouncement:communities.postAnnouncement};
+ return {wss,sendToUser:sendUser,listAnnouncements:communities.listAnnouncements,postAnnouncement:communities.postAnnouncement,removeAnnouncement:communities.removeAnnouncement};
 }
