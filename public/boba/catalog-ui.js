@@ -2,7 +2,7 @@ import {esc} from './common.js';
 import {createProxyFrame,disposeProxyFrame} from './proxy.js';
 
 const DISTRIBUTORS=[
-  ['All','All games'],
+  ['All','All titles'],
   ['Selenite','Selenite'],
   ['WASM.rip','WASM.rip'],
   ['GN-Math','GN-Math']
@@ -14,14 +14,14 @@ export function mountDistributorLibrary(root,{launch}){
   section.className='cel-dist-section';
   section.innerHTML=`
     <header class="cel-dist-header">
-      <div><span class="cel-home-kicker">GAME LIBRARY</span><h2>Discover more.</h2>
-      <p>Games from Selenite, WASM.rip and GN-Math, in one library.</p></div>
+      <div><span class="cel-home-kicker">ARCADE LIBRARY</span><h2>Discover more.</h2>
+      <p>Titles from Selenite, WASM.rip and GN-Math, in one library.</p></div>
       <span class="cel-dist-count" data-count>Loading library…</span>
     </header>
-    <div class="cel-dist-filters" data-filters role="group" aria-label="Game distributors"></div>
-    <p class="cel-dist-status" data-status role="status">Loading distributor games…</p>
+    <div class="cel-dist-filters" data-filters role="group" aria-label="Arcade sources"></div>
+    <p class="cel-dist-status" data-status role="status">Loading distributor entries…</p>
     <div class="cel-dist-grid" data-grid></div>
-    <button class="btn s cel-dist-more" type="button" data-more hidden>Show more games</button>
+    <button class="btn s cel-dist-more" type="button" data-more hidden>Show more entries</button>
     <footer class="cel-dist-credits">
       <strong>Library credits</strong>
       <p>With thanks to <a href="https://selenite.cc/" target="_blank" rel="noopener noreferrer">Selenite</a>,
@@ -38,14 +38,14 @@ export function mountDistributorLibrary(root,{launch}){
   const count=section.querySelector('[data-count]');
   const more=section.querySelector('[data-more]');
   const filters=section.querySelector('[data-filters]');
-  let games=[],filter='All',query='',limit=PAGE_SIZE,unavailable=[];
+  let entries=[],filter='All',query='',limit=PAGE_SIZE,unavailable=[];
   filters.innerHTML=DISTRIBUTORS.map(([id,label])=>'<button type="button" data-filter="'+esc(id)+'">'+esc(label)+'</button>').join('');
   function paint(){
     const needle=query.toLocaleLowerCase();
-    const results=games.filter(game=>(filter==='All'||game.sources.some(s=>s.name===filter))&&
+    const results=entries.filter(game=>(filter==='All'||game.sources.some(s=>s.name===filter))&&
       (!needle||game.name.toLocaleLowerCase().includes(needle)||
       game.sources.some(source=>source.name.toLowerCase().includes(needle))));
-    count.textContent=results.length.toLocaleString()+' games';
+    count.textContent=results.length.toLocaleString()+' entries';
     status.textContent=unavailable.length?'Some catalogs are unavailable: '+unavailable.join(', ')+'.':'';
     grid.innerHTML=results.slice(0,limit).map(game=>{
       const art=game.sources.find(s=>s.name===filter&&s.cover)||game.sources.find(s=>s.cover)||game.sources[0];
@@ -54,7 +54,7 @@ export function mountDistributorLibrary(root,{launch}){
         (art.cover?'<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(art.cover)+'" alt="">':'')+
         '</span><span class="cel-dist-name">'+esc(game.name)+'</span>'+
         '<small>'+esc(game.sources.map(s=>s.name).join(' · '))+'</small></button>';
-    }).join('')||(games.length?'<p class="cel-dist-empty">No games match this search.</p>':'');
+    }).join('')||(entries.length?'<p class="cel-dist-empty">No entries match this search.</p>':'');
     for(const img of grid.querySelectorAll('img'))img.addEventListener('error',()=>img.remove(),{once:true});
     more.hidden=results.length<=limit;
     for(const btn of filters.querySelectorAll('[data-filter]')){
@@ -68,7 +68,7 @@ export function mountDistributorLibrary(root,{launch}){
   more.onclick=()=>{limit+=PAGE_SIZE;paint()};
   grid.onclick=event=>{
     const button=event.target.closest('[data-game]');if(!button)return;
-    const game=games.find(item=>item.id===button.dataset.game);
+    const game=entries.find(item=>item.id===button.dataset.game);
     if(game)launch(game);
   };
   async function reload(){
@@ -78,10 +78,10 @@ export function mountDistributorLibrary(root,{launch}){
       if(!response.ok)throw Error('HTTP '+response.status);
       const data=await response.json();
       if(!Array.isArray(data.games))throw Error('Invalid library data');
-      games=data.games;unavailable=Array.isArray(data.unavailable)?data.unavailable:[];
+      entries=data.entries;unavailable=Array.isArray(data.unavailable)?data.unavailable:[];
       paint();
     }catch{
-      status.innerHTML='Game library unavailable. <button type="button" class="btn s" data-retry>Retry</button>';
+      status.innerHTML='arcade library unavailable. <button type="button" class="btn s" data-retry>Retry</button>';
       status.querySelector('[data-retry]').onclick=reload;
       count.textContent='Unavailable';
     }
