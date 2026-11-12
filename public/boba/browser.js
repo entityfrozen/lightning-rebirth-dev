@@ -10,7 +10,7 @@ const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch{retur
 const favicon=d=>'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#8a5631"/><text x="16" y="22" text-anchor="middle" font-size="18" fill="white">'+(d[0]||'•').toUpperCase().replace(/[^A-Z0-9]/g,'•')+'</text></svg>');
 const FAVS=[];
 const watchers=new Set();
-const store={get(k,f){try{return JSON.parse(localStorage.getItem('boba.native.'+k))??f}catch{return f}},set(k,v){localStorage.setItem('boba.native.'+k,JSON.stringify(v));watchers.forEach(fn=>fn(k))},watch(fn){watchers.add(fn)}};
+const store={get(k,f){try{return JSON.parse(localStorage.getItem('boba.native.'+k))??f}catch{return f}},set(k,v){localStorage.setItem('boba.native.'+k,JSON.stringify(v));watchers.forEach(fn=>fn(k));window.dispatchEvent(new Event('celestial:save-workspace'))},watch(fn){watchers.add(fn)}};
 const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
 const get=async()=>[];
 function failPage(frame,url,retry,message='The page could not load.'){const doc=frame.contentDocument;if(!doc)return;doc.body?.replaceChildren();const p=doc.createElement('p');p.textContent=message;const b=doc.createElement('button');b.textContent='Retry';b.onclick=retry;doc.body?.append(p,b);}
