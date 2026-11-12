@@ -152,6 +152,16 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
   sendAll({type:'v2Announcement',entry:{id:entry.id,message:entry.message,by:entry.by,at:entry.at}});
   return {id:entry.id,message:entry.message,by:entry.by,at:entry.at};
  };
+ const removeAnnouncement=(actor,messageId)=>{
+  if(actor?.role!=='admin')throw Error('Administrator required');
+  const rows=main.messages.announcements||[];
+  const entry=rows.find(item=>item.id===clean(messageId,40));
+  if(!entry||!entry.announcement)throw Error('Announcement not found');
+  main.messages.announcements=rows.filter(item=>item.id!==entry.id);save();
+  for(const memberId of main.members)sendToUser(memberId,{type:'v2MessageDeleted',serverId:MAIN_SERVER_ID,channel:'announcements',id:entry.id});
+  sendAll({type:'v2AnnouncementRemoved',id:entry.id});
+  return {id:entry.id};
+ };
  const authorized=(u,s)=>canManage(u,s);
  const roleFor=(userId,s)=>getRole(userId)||(s.profiles?.[userId]?.admin?"admin":"user");
  const canSeeStaff=(userId,s)=>canManage({id:userId,role:roleFor(userId,s)},s);
@@ -356,5 +366,5 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
    return;
   }
  }
- return {snapshot,handle,directory,mainId:MAIN_SERVER_ID,listAnnouncements,postAnnouncement};
+ return {snapshot,handle,directory,mainId:MAIN_SERVER_ID,listAnnouncements,postAnnouncement,removeAnnouncement};
 }
