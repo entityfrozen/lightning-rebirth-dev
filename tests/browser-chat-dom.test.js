@@ -19,3 +19,10 @@ test('chat shows Arcade label without exposing the legacy games channel ID in bu
  assert.match(chat,/dataset\.channelIndex/);
  assert.doesNotMatch(chat,/data-channel="/);
 });
+
+test('Browser offers direct embedding if the Scramjet navigation fails',()=>{
+ const browser=source('../public/boba/browser.js');
+ assert.match(browser,/Try direct embed/);
+ assert.match(browser,/t\.frame\.src=t\.url/);
+ assert.match(browser,/t\.direct=true/);
+});
