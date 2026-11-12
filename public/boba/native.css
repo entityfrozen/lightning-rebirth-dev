@@ -318,7 +318,7 @@
 @media(prefers-reduced-motion:reduce){.cel-simple-search,.cel-simple-link-icon,.cel-simple-links button{transition:none}}
 
 /* ChatGPT identity, shared by the AI dock, homepage shortcut and composer. */
-.cel-ai-logo{display:block;object-fit:contain;flex-shrink:0;width:24px;height:24px;border-radius:6px}
+.cel-ai-logo{display:inline-block;flex-shrink:0;width:24px;height:24px;background:currentColor;-webkit-mask:url("/assets/chatgpt-logo.svg") center/contain no-repeat;mask:url("/assets/chatgpt-logo.svg") center/contain no-repeat}
 .dk[data-section="ai"] .cel-ai-logo{width:25px;height:25px;border-radius:7px}
 .cel-simple-link-icon .cel-ai-logo{width:23px;height:23px;border-radius:6px}
 .ai-t .cel-ai-logo,.celestial-effort .cel-ai-logo{width:17px;height:17px;border-radius:5px}
