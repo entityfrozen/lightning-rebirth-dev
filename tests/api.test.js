@@ -138,6 +138,17 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.equal(browserStatus.response.status,200);
     assert.equal(browserStatus.data.authenticated,true);
     assert.equal(typeof browserStatus.data.proxy,'boolean');
+    assert.equal(browserStatus.data.ultraviolet,browserStatus.data.proxy);
+    assert.equal((await fetch(url+'/uv/uv.bundle.js')).status,401,'Proxy vendor scripts require login');
+    for(const asset of [
+      '/uv/sw.js','/uv/uv.config.js','/uv/uv.bundle.js','/uv/uv.sw.js',
+      '/baremux/index.js','/baremux/worker.js','/epoxy/index.mjs'
+    ]){
+      const response=await fetch(url+asset,{headers:{Cookie:cookie}});
+      assert.equal(response.status,200,asset+' should be served after sign-in');
+      assert.match(response.headers.get('content-type')||'',/javascript/,asset+' must have a JS MIME type');
+    }
+
 
     const live=new WebSocket(url.replace(/^http/,'ws')+'/live',{
       headers:{Cookie:cookie},handshakeTimeout:5500
