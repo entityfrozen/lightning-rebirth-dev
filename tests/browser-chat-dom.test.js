@@ -41,22 +41,20 @@ test('Arcade defaults to Scramjet and recreates the iframe when changing sources
 });
 
 
-test('Both proxy engines have independent service workers and current-generation transports',()=>{
+test('Both proxy engines use separate service workers and transports',()=>{
  const server=source('../server.js');
  const uv=source('../public/boba/uv-proxy.js');
  const worker=source('../public/uv/sw.js');
  const sj=source('../public/boba/proxy.js');
  const browser=source('../public/boba/browser.js');
- assert.match(server,/uvPath/);
- assert.match(server,/baremuxPath/);
- assert.match(server,/epoxyPath/);
- assert.match(server,/application\\/wasm/);
- assert.match(server,/script-src 'self' data: blob:/);
- assert.match(worker,/new UVServiceWorker/);
- assert.match(uv,/scope:ROOT/);
- assert.match(uv,/new BareMux\\.BareMuxConnection/);
- assert.match(uv,/setTransport\\('\/epoxy\/index\\.mjs'/);
- assert.match(sj,/bootstrap-init\\.js/);
- assert.match(browser,/data-proxy-mode/);
- assert.match(browser,/createUltravioletFrame/);
+ assert.ok(server.includes('uvPath')&&server.includes('baremuxPath')&&server.includes('epoxyPath'));
+ assert.ok(server.includes('application/wasm'));
+ assert.ok(server.includes("script-src 'self' data: blob:"));
+ assert.ok(worker.includes('new UVServiceWorker'));
+ assert.ok(uv.includes('scope:ROOT'));
+ assert.ok(uv.includes('new BareMux.BareMuxConnection'));
+ assert.ok(uv.includes("setTransport('/epoxy/index.mjs'"));
+ assert.ok(sj.includes('/bootstrap-init.js'));
+ assert.ok(browser.includes('data-proxy-mode'));
+ assert.ok(browser.includes('createUltravioletFrame'));
 });
