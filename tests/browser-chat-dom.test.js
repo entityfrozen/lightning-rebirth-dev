@@ -35,7 +35,28 @@ test('Bare hostnames navigate directly instead of being treated as search terms'
 
 test('Arcade defaults to Scramjet and recreates the iframe when changing sources',()=>{
  const arcade=source('../public/boba/catalog-ui.js');
- assert.match(arcade,/\[\['proxy','Scramjet proxy'\],\['direct','Direct embed'\]\]/);
+ assert.match(arcade,/\['ultraviolet','Ultraviolet proxy'\]/);
  assert.match(arcade,/frame\.replaceWith\(replacement\);frame=replacement/);
  assert.match(arcade,/fetch\('\/api\/browser\/status'/);
+});
+
+
+test('Both proxy engines have independent service workers and current-generation transports',()=>{
+ const server=source('../server.js');
+ const uv=source('../public/boba/uv-proxy.js');
+ const worker=source('../public/uv/sw.js');
+ const sj=source('../public/boba/proxy.js');
+ const browser=source('../public/boba/browser.js');
+ assert.match(server,/uvPath/);
+ assert.match(server,/baremuxPath/);
+ assert.match(server,/epoxyPath/);
+ assert.match(server,/application\\/wasm/);
+ assert.match(server,/script-src 'self' data: blob:/);
+ assert.match(worker,/new UVServiceWorker/);
+ assert.match(uv,/scope:ROOT/);
+ assert.match(uv,/new BareMux\\.BareMuxConnection/);
+ assert.match(uv,/setTransport\\('\/epoxy\/index\\.mjs'/);
+ assert.match(sj,/bootstrap-init\\.js/);
+ assert.match(browser,/data-proxy-mode/);
+ assert.match(browser,/createUltravioletFrame/);
 });
