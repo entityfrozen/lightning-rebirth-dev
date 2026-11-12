@@ -9,6 +9,7 @@ const originalAsk = {
     '<form class="ai-box gl g2" data-form><p class="ai-note" data-note hidden></p><div class="ai-atts" data-atts hidden></div>' +
     '<textarea data-aq rows="1" maxlength="8000" placeholder="Ask anything" aria-label="Ask anything"></textarea>' +
     '<div class="ai-tools"><button class="ai-t" type="button" data-add aria-label="Attach an image or text file">' + ico("plus") + "</button>" +
+    '<button class="ai-t cel-ai-generate-toggle" type="button" data-generate aria-pressed="false" title="Generate an image with NVIDIA FLUX">✧ Image</button>' +
     '<button class="ai-t" type="button" data-web aria-pressed="false" disabled>' + ico("web") + "Search</button>" +
     '<label class="ai-t celestial-effort"><span class="tv">' + ico("ask") + '</span><select data-effort aria-label="AI reasoning mode"><option value="instant" selected>Instant</option><option value="smart">Smart</option><option value="ultra">Ultra Smart</option></select></label>' +
     '<span class="sp"></span><button class="cb" type="submit" data-asend aria-label="Send">' + ico("send") + "</button></div>" +
@@ -17,7 +18,7 @@ const originalAsk = {
 export function mountAsk(root,user){
  root.innerHTML=originalAsk.html();
  let chats=[];try{chats=JSON.parse(localStorage.getItem('boba.ask.'+user.id)||'[]')}catch{}
- let active=null,busy=null,attachment=null,menu=null,web=localStorage.getItem('celestial.ai.web')==='true';
+ let active=null,busy=null,attachment=null,menu=null,mode='chat',web=localStorage.getItem('celestial.ai.web')==='true';
  const effortSelect=$('[data-effort]',root);
  const savedEffort=localStorage.getItem('celestial.ai.effort');
  if(['instant','smart','ultra'].includes(savedEffort))effortSelect.value=savedEffort;
@@ -29,6 +30,16 @@ export function mountAsk(root,user){
    window.dispatchEvent(new Event('celestial:save-workspace'));
   }catch(error){say('Chat history storage is full. Consider deleting older image chats.');}
  };
+ const imageButton=$('[data-generate]',root);
+ const setMode=next=>{
+  mode=next;
+  imageButton.classList.toggle('on',mode==='image');
+  imageButton.setAttribute('aria-pressed',String(mode==='image'));
+  q.placeholder=mode==='image'?'Describe the image you want to create…':'Ask anything';
+  if(mode==='image'&&attachment)say('Image generation uses a text prompt. Switch to chat to analyze attached images.');
+  else say('');
+ };
+ imageButton.onclick=()=>{if(!busy){setMode(mode==='image'?'chat':'image');q.focus()}};
  const webButton=$('[data-web]',root);async function checkWeb(){try{webButton.disabled=!(await api('/api/ai/search/status')).configured;if(webButton.disabled){web=false;webButton.classList.remove('on');webButton.setAttribute('aria-pressed','false')}}catch{webButton.disabled=true}}
  webButton.classList.toggle('on',web);webButton.setAttribute('aria-pressed',String(web));
  webButton.onclick=()=>{web=!web;webButton.classList.toggle('on',web);webButton.setAttribute('aria-pressed',String(web));localStorage.setItem('celestial.ai.web',String(web));window.dispatchEvent(new Event('celestial:save-workspace'))};checkWeb();root.addEventListener('pointerenter',checkWeb);
@@ -38,7 +49,7 @@ export function mountAsk(root,user){
  function body(text){return String(text||'').split(/\x60\x60\x60(?:[^\n]*\n)?/).map((part,i)=>i%2?'<pre><code>'+esc(part)+'</code></pre>':part.split(/\n\n+/).filter(Boolean).map(p=>'<p>'+escText(p).replace(/\n/g,'<br>')+'</p>').join('')).join('')}
  function closeMenu(){menu?.remove();menu=null}
  function paintList(){closeMenu();const filter=find.value.trim().toLowerCase();const sorted=chats.filter(c=>c.title.toLowerCase().includes(filter)).sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||(b.updated||0)-(a.updated||0));const item=c=>'<div class="ai-it'+(c===active?' on':'')+'" data-id="'+esc(c.id)+'" role="button" tabindex="0">'+(c.pinned?ico('pin','i pn'):'')+'<span>'+esc(c.title)+'</span><button class="mo" type="button" data-more aria-label="More">'+ico('dots')+'</button></div>';const pinned=sorted.filter(c=>c.pinned),rest=sorted.filter(c=>!c.pinned);list.innerHTML=filter?(sorted.length?sorted.map(item).join(''):'<p class="ai-none">No chats found</p>'):(pinned.length?'<div class="ai-sec">Pinned</div>'+pinned.map(item).join('')+(rest.length?'<div class="ai-sec">Recent</div>':''):'')+rest.map(item).join('')}
- function paint(){paintList();const messages=active?.messages||[];thread.classList.toggle('empty',!messages.length);const h=new Date().getHours(),greet=(h<12?'Good morning':h<18?'Good afternoon':'Good evening')+', '+user.username+'.';inner.innerHTML=messages.length?messages.map((m,i)=>m.role==='user'?'<div class="ai-q" data-index="'+i+'"><div class="ai-qr"><button class="ai-ed" data-edit type="button" aria-label="Edit">'+ico('pencil')+'</button><div class="ai-u">'+esc(m.display||m.content)+'</div></div></div>':'<div class="ai-a" data-index="'+i+'"><div class="ai-body">'+body(m.content)+'</div><div class="ai-f"><button data-copy type="button" aria-label="Copy">'+ico('copy')+'</button><button data-regen type="button" aria-label="Regenerate">'+ico('reload')+'</button></div></div>').join(''):'<div class="ai-hi"><h1>'+esc(greet)+'</h1><div class="sugs">'+['Explain photosynthesis simply','Outline an essay on climate','Quiz me on world capitals','Fix this sentence’s grammar'].map(s=>'<button type="button" data-s>'+esc(s)+'</button>').join('')+'</div></div>';if(busy)inner.insertAdjacentHTML('beforeend','<div class="ai-a"><span class="ai-dots"><i></i><i></i><i></i></span></div>');send.innerHTML=ico(busy?'x':'send');send.setAttribute('aria-label',busy?'Stop':'Send');send.classList.toggle('stop',!!busy);thread.scrollTop=thread.scrollHeight}
+ function paint(){paintList();const messages=active?.messages||[];thread.classList.toggle('empty',!messages.length);const h=new Date().getHours(),greet=(h<12?'Good morning':h<18?'Good afternoon':'Good evening')+', '+user.username+'.';inner.innerHTML=messages.length?messages.map((m,i)=>m.role==='user'?'<div class="ai-q" data-index="'+i+'"><div class="ai-qr"><button class="ai-ed" data-edit type="button" aria-label="Edit">'+ico('pencil')+'</button><div class="ai-u">'+esc(m.display||m.content)+'</div></div></div>':'<div class="ai-a" data-index="'+i+'">'+(m.generatedImage?'<div class="cel-ai-generated"><img src="'+esc(m.generatedImage)+'" alt="'+esc(m.imagePrompt||'AI generated image')+'" loading="lazy"><a href="'+esc(m.generatedImage)+'" download="celestial-generated-image" class="cel-ai-download">Download image ↧</a></div>':'')+'<div class="ai-body">'+body(m.content)+'</div><div class="ai-f"><button data-copy type="button" aria-label="Copy">'+ico('copy')+'</button><button data-regen type="button" aria-label="Regenerate">'+ico('reload')+'</button></div></div>').join(''):'<div class="ai-hi"><h1>'+esc(greet)+'</h1><div class="sugs">'+['Explain photosynthesis simply','Outline an essay on climate','Quiz me on world capitals','Fix this sentence’s grammar'].map(s=>'<button type="button" data-s>'+esc(s)+'</button>').join('')+'</div></div>';if(busy)inner.insertAdjacentHTML('beforeend','<div class="ai-a"><span class="ai-dots"><i></i><i></i><i></i></span></div>');send.innerHTML=ico(busy?'x':'send');send.setAttribute('aria-label',busy?'Stop':'Send');send.classList.toggle('stop',!!busy);thread.scrollTop=thread.scrollHeight}
  async function run(){if(busy||!active)return;const chat=active,ctl=new AbortController();busy=ctl;paint();say('');try{const r=await fetch('/api/ai',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},signal:ctl.signal,body:JSON.stringify({web,effort:effortSelect.value,messages:(()=>{
  const recent=chat.messages.slice(-14);
  const latestImage=[...recent].reverse().find(m=>m.role==='user'&&m.image);
@@ -85,7 +96,30 @@ export function mountAsk(root,user){
    return data;
   }finally{URL.revokeObjectURL(url)}
  }
+ async function makeImage(text){
+  const prompt=String(text||'').trim();
+  if(busy||!prompt)return;
+  if(attachment){say('Switch to Chat to analyze an uploaded image. Image creation currently uses text prompts.');return}
+  if(prompt.length<3||prompt.length>1600){say('Describe your image in 3 to 1,600 characters.');return}
+  if(!active){active={id:crypto.randomUUID(),title:prompt.slice(0,60),messages:[],updated:Date.now()};chats.unshift(active)}
+  const chat=active;
+  chat.messages.push({role:'user',content:prompt,display:prompt});
+  chat.updated=Date.now();
+  q.value='';grow();save();
+  const ctl=new AbortController();busy=ctl;paint();say('Generating with NVIDIA FLUX…');
+  try{
+    const response=await fetch('/api/ai/images',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt}),signal:ctl.signal});
+    const data=await response.json();
+    if(!response.ok)throw Error(data.error||'Could not create an image.');
+    if(!ctl.signal.aborted){
+      chat.messages.push({role:'assistant',content:'Image generated with '+(data.model||'NVIDIA FLUX')+'.',generatedImage:data.image,imagePrompt:prompt});
+      chat.updated=Date.now();save();say('');
+    }
+  }catch(error){if(!ctl.signal.aborted)say(error.message||'Image generation failed')}
+  finally{busy=null;paint()}
+ }
  async function submit(text){
+  if(mode==='image')return makeImage(text);
   text=String(text||'').trim();
   if(busy||(!text&&!attachment))return;
   const file=attachment;
