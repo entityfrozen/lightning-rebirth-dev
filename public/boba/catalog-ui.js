@@ -49,7 +49,7 @@ export function mountDistributorLibrary(root,{launch}){
     status.textContent=unavailable.length?'Some catalogs are unavailable: '+unavailable.join(', ')+'.':'';
     grid.innerHTML=results.slice(0,limit).map(game=>{
       const art=game.sources.find(s=>s.name===filter&&s.cover)||game.sources.find(s=>s.cover)||game.sources[0];
-      return '<button class="cel-dist-card" type="button" data-game="'+esc(game.id)+'" aria-label="Play '+esc(game.name)+'">'+
+      return '<button class="cel-dist-card" type="button" data-entry-index="'+entries.indexOf(game)+'" aria-label="Play '+esc(game.name)+'">'+
         '<span class="cel-dist-art"><span class="cel-dist-fallback">'+esc(game.name)+'</span>'+
         (art.cover?'<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(art.cover)+'" alt="">':'')+
         '</span><span class="cel-dist-name">'+esc(game.name)+'</span>'+
@@ -67,8 +67,9 @@ export function mountDistributorLibrary(root,{launch}){
   });
   more.onclick=()=>{limit+=PAGE_SIZE;paint()};
   grid.onclick=event=>{
-    const button=event.target.closest('[data-game]');if(!button)return;
-    const game=entries.find(item=>item.id===button.dataset.game);
+    const button=event.target.closest('[data-entry-index]');if(!button)return;
+    const index=Number(button.dataset.entryIndex);
+    const game=Number.isInteger(index)&&index>=0?entries[index]:null;
     if(game)launch(game);
   };
   async function reload(){
