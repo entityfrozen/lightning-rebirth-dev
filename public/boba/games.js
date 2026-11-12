@@ -1,6 +1,6 @@
 import {esc,ico} from './common.js';
 import {mountDistributorLibrary,openDistributorGame} from './catalog-ui.js';
-import {extraGames,playChess,playConnectFour,playMines,playSnake} from './extra-arcadeItems.js';
+import {extraGames,playChess,playConnectFour,playMines,playSnake} from './extra-games.js';
 
 // Source stays readable in Git. Production is bundled/minified; selected
 // interface strings are encoded in the shipped bundle as an extra deterrent.
