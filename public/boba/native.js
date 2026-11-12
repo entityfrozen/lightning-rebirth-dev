@@ -1,3 +1,4 @@
+import {mountReimuEffects} from './reimu-effects.js';
 import {startAccountSync} from './account-sync.js';
 import {mountShell} from './shell.js';
 import {$,$$,ico,api,applyPrefs} from './common.js';
@@ -11,6 +12,7 @@ import {mountAdmin} from './admin.js';
 import {N} from './icons.js';
 mountShell();
 applyPrefs();
+mountReimuEffects();
 async function start(){
  const data=await api('/api/me');
  if(!data.user){location.replace('/login');return}
