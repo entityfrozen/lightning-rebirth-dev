@@ -141,7 +141,7 @@ function liveIdentity(headers){
   if(!activeAccount(user))return null;
   return {identity:{id:user.id,username:user.username,role:user.role||'user'},session};
 }
-const WORKSPACE_KEYS=new Set(['celestial.boba.theme','boba.accent','boba.fx','boba.dock.ai','boba.tab.preset','boba.tab.title','boba.tab.icon','celestial.ai.effort','boba.notes','boba.native.links','celestial.2048.best']);
+const WORKSPACE_KEYS=new Set(['celestial.boba.theme','boba.accent','boba.fx','boba.dock.ai','boba.tab.preset','boba.tab.title','boba.tab.icon','celestial.ai.effort','boba.notes','boba.native.links','celestial.game.2048.best']);
 function validateWorkspace(input){
  if(!input||typeof input!=='object'||Array.isArray(input))return null;
  const values=input.values;
