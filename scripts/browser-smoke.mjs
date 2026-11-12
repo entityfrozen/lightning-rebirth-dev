@@ -130,7 +130,7 @@ try{
   assert.equal(await boba.locator('[data-section="apps"]').count(),0);
   assert.equal(await boba.locator('[data-section="games"]').count(),1);
   await boba.locator('[data-section="home"]').click();
-  await boba.locator('.cel-home-star').waitFor({timeout:10000});
+  await boba.locator('[data-view="home"].on .cel-simple-wordmark').waitFor({timeout:10000});
   assert.equal(await boba.locator('[data-view="browser"].on').count(),0,'Home must not be Browser');
   await boba.locator('[data-section="games"]').click();
   await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'2048'})}).click();
