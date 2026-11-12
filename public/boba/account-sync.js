@@ -4,7 +4,7 @@
 const keys=[
  'celestial.boba.theme','boba.accent','boba.fx','boba.dock.ai',
  'boba.tab.preset','boba.tab.title','boba.tab.icon',
- 'celestial.ai.effort','boba.notes','boba.native.links',
+ 'celestial.ai.effort','celestial.ai.web','boba.notes','boba.native.links',
  'celestial.game.2048.best'
 ];
 let userId='',timer=0,active=false,pending=Promise.resolve(),dirty=false;
