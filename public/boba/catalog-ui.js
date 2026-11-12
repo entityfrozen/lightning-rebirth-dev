@@ -78,7 +78,7 @@ export function mountDistributorLibrary(root,{launch}){
       if(!response.ok)throw Error('HTTP '+response.status);
       const data=await response.json();
       if(!Array.isArray(data.games))throw Error('Invalid library data');
-      entries=data.entries;unavailable=Array.isArray(data.unavailable)?data.unavailable:[];
+      entries=data.games;unavailable=Array.isArray(data.unavailable)?data.unavailable:[];
       paint();
     }catch{
       status.innerHTML='arcade library unavailable. <button type="button" class="btn s" data-retry>Retry</button>';
