@@ -31,6 +31,7 @@ mkdirSync(DATA_DIR,{recursive:true});
 // The Bolt-era backend provides real browser proxying and multiplayer.
 // Missing proxy downloads must never block the rest of the platform.
 let proxyBackend=null;
+let liveCommunity=null;
 if(process.env.DISABLE_WEB_PROXY!=='1')try{
   proxyBackend=await bootstrap();
 }catch(error){console.warn('Browser proxy unavailable:',error.message);}
@@ -219,6 +220,11 @@ function safeOrigin(req) {
 async function handleAPI(req,res,url) {
   const user=account(req);
   const pathname=url.pathname;
+  if(req.method==='GET'&&pathname==='/api/admin/announcements'){
+    if(!user)return fail(res,401,'Sign in required');
+    if(user.role!=='admin')return fail(res,403,'Administrator required');
+    return respond(res,200,{announcements:liveCommunity?.listAnnouncements()||[]});
+  }
   if(req.method==='GET'&&pathname==='/api/games/catalog'){
     if(!user)return fail(res,401,'Sign in required');
     const catalog=await getGameCatalog();
@@ -373,6 +379,15 @@ async function handleAPI(req,res,url) {
     await persist();return respond(res,200,{ok:true});
   }
   if(!user)return fail(res,401,'Sign in to use this feature');
+  if(pathname==='/api/admin/announcements'&&req.method==='POST'){
+    if(user.role!=='admin')return fail(res,403,'Administrator required');
+    if(limited(req,'announcement:'+user.id,6,60000))return fail(res,429,'Please wait before posting another announcement');
+    if(typeof body.message!=='string'||!body.message.trim()||body.message.length>1500||typeof body.pin!=='boolean')
+      return fail(res,400,'Write an announcement under 1,500 characters');
+    if(!liveCommunity)return fail(res,503,'Community service unavailable');
+    const announcement=liveCommunity.postAnnouncement(user,{message:body.message,pin:body.pin});
+    return respond(res,200,{ok:true,announcement});
+  }
   if(pathname.startsWith('/api/admin/config')&&req.method==='POST'){
     if(user.role!=='admin')return fail(res,403,'Administrator required');
     if(limited(req,'admin-config:'+user.id,40,60000))return fail(res,429,'Too many requests');
@@ -584,7 +599,7 @@ export function createServer(){
   });
   // Bridge Celestial's existing accounts to Bolt's proven multiplayer
   // server; old user IDs remain stable, preserving community identity.
-  attachLightningLive({
+  liveCommunity=attachLightningLive({
     server,sessionFromHeaders:liveIdentity,dataDir:DATA_DIR,
     getDisplayName:(_id,username)=>username,
     getRole:userId=>db.users.find(person=>person.id===userId&&activeAccount(person))?.role||'user'
