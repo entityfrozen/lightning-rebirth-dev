@@ -210,7 +210,7 @@ const home = {
         '<span class="x" data-close>' + ico("x") + "</span></button>").join("");
       const t = tab();
       nt.style.visibility = t && t.url ? "hidden" : "";
-      st.tabs.forEach((x) => x.frame && (x.frame.style.display = x.id === st.active && x.url ? "block" : "none"));
+      for(const x of st.tabs){if(x.frame)x.frame.style.display=x.id===st.active&&x.url?"block":"none"}
       if (document.activeElement !== omni) omni.value = t && t.url ? t.url : "";
       show();
       sync();
