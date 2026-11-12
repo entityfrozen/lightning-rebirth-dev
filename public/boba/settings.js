@@ -29,6 +29,7 @@ export function applyTabAppearance(){
  document.dispatchEvent(new CustomEvent('celestial:tab-appearance',{detail:identity}));
  return identity;
 }
+const accountSave=()=>window.dispatchEvent(new Event('celestial:save-workspace'));
 export const settings = {
   html: () => {
     return '<div class="set"><h1 class="r">Settings</h1>' +
@@ -54,18 +55,18 @@ export const settings = {
 
   mount(root){
     const paint=()=>{applyPrefs();const p=localStorage.getItem('celestial.boba.theme')||'boba';$$('.thm',root).forEach(b=>b.classList.toggle('on',b.dataset.v===p));$$('.sw',root).forEach(b=>b.classList.toggle('on',Number(b.dataset.i)===Number(localStorage.getItem('boba.accent')||0)));const seg=$('[data-fx]',root);$$('button',seg).forEach(b=>b.classList.toggle('on',b.dataset.v===document.documentElement.dataset.fx));segThumb(seg)};
-    root.addEventListener('click',e=>{const t=e.target.closest('.thm'),a=e.target.closest('.sw'),f=e.target.closest('[data-fx] button');if(t)localStorage.setItem('celestial.boba.theme',t.dataset.v);if(a)localStorage.setItem('boba.accent',a.dataset.i);if(f)localStorage.setItem('boba.fx',f.dataset.v);if(e.target.closest('[data-reset]')){for(const k of ['celestial.boba.theme','boba.accent','boba.fx'])localStorage.removeItem(k)}paint()});
+    root.addEventListener('click',e=>{const t=e.target.closest('.thm'),a=e.target.closest('.sw'),f=e.target.closest('[data-fx] button');if(t)localStorage.setItem('celestial.boba.theme',t.dataset.v);if(a)localStorage.setItem('boba.accent',a.dataset.i);if(f)localStorage.setItem('boba.fx',f.dataset.v);if(e.target.closest('[data-reset]')){for(const k of ['celestial.boba.theme','boba.accent','boba.fx'])localStorage.removeItem(k)}paint();accountSave()});
     api('/api/browser/status').then(d=>{$('[data-cnm]',root).textContent=d.proxy?'Available':'Unavailable'}).catch(()=>{$('[data-cnm]',root).textContent='Offline'});
     const showAi=$('[data-show-ai]',root);
     showAi.checked=localStorage.getItem('boba.dock.ai')!=='false';
-    showAi.onchange=()=>{localStorage.setItem('boba.dock.ai',String(showAi.checked));window.dispatchEvent(new Event('celestial:dock-settings'))};
+    showAi.onchange=()=>{localStorage.setItem('boba.dock.ai',String(showAi.checked));window.dispatchEvent(new Event('celestial:dock-settings'));accountSave()};
     const tab=$('[data-tab]',root),title=$('[data-tab-title]',root),iconInput=$('[data-tab-icon]',root);
     tab.value=localStorage.getItem('boba.tab.preset')||'celestial';title.value=localStorage.getItem('boba.tab.title')||'';iconInput.value=localStorage.getItem('boba.tab.icon')||'';
     const tabPaint=()=>{const custom=tab.value==='custom';$('[data-custom-tab]',root).hidden=!custom;$('[data-custom-icon]',root).hidden=!custom;
       const identity=applyTabAppearance();$('[data-preview-title]',root).textContent=identity.title;
       const preview=$('[data-preview-icon]',root);preview.src=identity.icon;preview.onerror=()=>{preview.onerror=null;preview.src=fallbackIcon};
     };
-    tab.onchange=()=>{localStorage.setItem('boba.tab.preset',tab.value);tabPaint()};
+    tab.onchange=()=>{localStorage.setItem('boba.tab.preset',tab.value);tabPaint();accountSave()};
     title.oninput=()=>{localStorage.setItem('boba.tab.title',title.value);tabPaint()};
     iconInput.onchange=()=>{localStorage.setItem('boba.tab.icon',iconInput.value.trim());tabPaint()};
     $('[data-tab-blank]',root).onclick=()=>{
