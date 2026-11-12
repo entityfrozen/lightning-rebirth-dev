@@ -17,8 +17,8 @@ export function applyPrefs(){
  root.dataset.fx=localStorage.getItem('boba.fx')||'full';
  const storedAccent=localStorage.getItem('boba.accent');
  const accent=storedAccent!==null?ACCENTS[Number(storedAccent)]:null;
- root.style.setProperty('--acc',accent?.[0]||(v==='touhou'?'#bd2444':'#8A5631'));
- root.style.setProperty('--acc-ink',accent?.[1]||'#fff');
+ root.style.setProperty('--acc',v==='touhou'?'#bd2444':accent?.[0]||'#8A5631');
+ root.style.setProperty('--acc-ink',v==='touhou'?'#fff':accent?.[1]||'#fff');
 }
 
 export function segThumb(seg){const b=seg.querySelector('button.on');if(b){seg.querySelector('.th').style.width=b.offsetWidth+'px';seg.querySelector('.th').style.transform='translateX('+(b.offsetLeft-3)+'px)'}}
