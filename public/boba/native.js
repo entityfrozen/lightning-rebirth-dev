@@ -39,7 +39,7 @@ async function start(){
  const browser=mountSafely('Browser',view('browser'),()=>mountBrowser(view('browser')))||{tabs:[],navigate(){},available:false};
  const open=url=>{navigate('browser');browser.navigate(url,true)};
  mountSafely('Home',view('home'),()=>mountHome(view('home'),user,navigate,open));
- mountSafely('Arcade',view('games'),()=>mountGames(view('games')));
+ mountSafely('Arcade',view('games'),()=>mountArcade(view('games')));
  function navigate(id){
   if(!items.some(x=>x[0]===id))id='home';
   current=id;

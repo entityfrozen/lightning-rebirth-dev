@@ -29,3 +29,12 @@ test('Arcade card buttons use stable numeric indices rather than exposing intern
  assert.doesNotMatch(markup,/data-game="'+g\.id/);
  assert.doesNotMatch(markup,/b\.dataset\.game/);
 });
+
+test('Arcade startup calls the mount function exported by the game module',()=>{
+ const entry=read('../public/boba/native.js');
+ const games=read('../public/boba/games.js');
+ assert.match(entry,/import\s*\{\s*mountArcade\s*\}\s*from\s*['"]\.\/games\.js['"]/);
+ assert.match(games,/export function mountArcade\s*\(/);
+ assert.match(entry,/mountSafely\('Arcade',view\('games'\),\(\)=>mountArcade\(view\('games'\)\)\)/);
+ assert.doesNotMatch(entry,/\bmountGames\s*\(/);
+});
