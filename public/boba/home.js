@@ -2,7 +2,7 @@ import {esc,ico} from './common.js';
 
 const links=[
   ['browser','Browser','web'],
-  ['games','Games','play'],
+  ['games','Arcade','play'],
   ['chat','Community','discord'],
   ['ai','AI','ask']
 ];
