@@ -50,7 +50,8 @@ export const settings = {
       '<p class="native-tab-note">Cloaking only changes how this tab looks. It does not change the address, browser history, network activity, or school monitoring.</p>' +
       '<div class="lr"><h3>Open in about:blank</h3><button type="button" class="btn s" data-tab-blank>Open cloaked tab</button></div>' +
       '<p class="native-tab-note">Some browsers block popups and embedded sites. Scramjet requires a standalone tab; the wrapper does not bypass browser or network restrictions.</p>' +
-      '<div class="lr">' + lic("trash", "#ff6b6b", "#d62e4a") + '<h3>Reset local preferences</h3><button class="btn s" data-reset>Reset</button></div></section></div>';
+      '<div class="lr"><h3>Account sync</h3><span class="netst" data-account-sync>Saving preferences across your devices</span></div>' +
+      '<div class="lr">' + lic("trash", "#ff6b6b", "#d62e4a") + '<h3>Reset appearance preferences</h3><button class="btn s" data-reset>Reset</button></div></section></div>';
   },
 
   mount(root){
@@ -67,15 +68,16 @@ export const settings = {
       const preview=$('[data-preview-icon]',root);preview.src=identity.icon;preview.onerror=()=>{preview.onerror=null;preview.src=fallbackIcon};
     };
     tab.onchange=()=>{localStorage.setItem('boba.tab.preset',tab.value);tabPaint();accountSave()};
-    title.oninput=()=>{localStorage.setItem('boba.tab.title',title.value);tabPaint()};
-    iconInput.onchange=()=>{localStorage.setItem('boba.tab.icon',iconInput.value.trim());tabPaint()};
+    title.oninput=()=>{localStorage.setItem('boba.tab.title',title.value);tabPaint();accountSave()};
+    iconInput.onchange=()=>{localStorage.setItem('boba.tab.icon',iconInput.value.trim());tabPaint();accountSave()};
     $('[data-tab-blank]',root).onclick=()=>{
      const identity=applyTabAppearance();
      const result=openAboutBlank(location.origin+'/',{title:identity.title,icon:identity.icon});
      if(!result.ok)alert(result.message);
     };
-    $('[data-tab-reset]',root).onclick=()=>{for(const key of ['boba.tab.preset','boba.tab.title','boba.tab.icon'])localStorage.removeItem(key);tab.value='celestial';title.value='';iconInput.value='';tabPaint()};
+    $('[data-tab-reset]',root).onclick=()=>{for(const key of ['boba.tab.preset','boba.tab.title','boba.tab.icon'])localStorage.removeItem(key);tab.value='celestial';title.value='';iconInput.value='';tabPaint();accountSave()};
     tabPaint();
+    window.addEventListener('celestial:workspace-sync',e=>{const indicator=$('[data-account-sync]',root);if(indicator)indicator.textContent=e.detail?.ok?'Saved to your account':'Not synced — will retry when online'});
     paint();return paint;
   }
 };
