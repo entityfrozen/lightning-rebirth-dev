@@ -272,8 +272,8 @@
 .cel-connect-board{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;background:#3c65bc;border-radius:18px;padding:12px;box-shadow:0 12px 25px #0002;width:min(100%,500px)}
 .cel-connect-cell{aspect-ratio:1;border-radius:50%;background:#ffffff26;padding:4px}
 .cel-connect-cell span{display:block;width:100%;height:100%;border-radius:50%;background:#eae8df;box-shadow:inset 0 3px 5px #0004}
-.cel-connect-cell span[data-disc="1"]{background:#f05a65;animation:celTilePop .22s ease-out}
-.cel-connect-cell span[data-disc="2"]{background:#ffd468;animation:celTilePop .22s ease-out}
+.cel-connect-cell span[data-disc="1"]{background:#f05a65}
+.cel-connect-cell span[data-disc="2"]{background:#ffd468}
 .cel-mines-grid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:3px;width:min(100%,475px);padding:8px;background:var(--g3);border-radius:14px}
 .cel-mine-cell{aspect-ratio:1;min-width:0;border-radius:6px;background:var(--g1);box-shadow:inset 0 -3px 0 #0002;font-size:clamp(10px,1.7vw,18px);font-weight:850;color:var(--acc)}
 .cel-mine-cell.revealed{background:var(--g2);box-shadow:none}
@@ -518,3 +518,4 @@
  .reimu-shrine-overlay.entering{animation:none}
  :root[data-palette="touhou"] .cel-simple-link-icon:hover{transform:none}
 }
+\n/* Connect Four uses a single falling disc animation per turn, not all discs on every redraw. */\n.cel-connect-board{overflow:visible}\n.cel-connect-cell{position:relative;overflow:visible;touch-action:manipulation}\n.cel-connect-cell span{will-change:transform}\n@media(prefers-reduced-motion:reduce){.cel-connect-cell span{will-change:auto}}\n
