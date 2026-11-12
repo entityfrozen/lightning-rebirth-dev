@@ -5,7 +5,7 @@ import {extraGames,playChess,playConnectFour,playMines,playSnake} from './extra-
 // Source stays readable in Git. Production is bundled/minified; selected
 // interface strings are encoded in the shipped bundle as an extra deterrent.
 const label=(...points)=>String.fromCharCode(...points);
-const gameWord=label(71,97,109,101,115);
+const gameWord='Arcade';
 const games=[...extraGames,
  {id:'2048',title:'2048',subtitle:'Slide. Merge. Repeat.',kind:'puzzle',symbol:'2048'},
  {id:'ttt',title:'Tic Tac Toe',subtitle:'You versus the computer.',kind:'strategy',symbol:'✕ ○'},
@@ -60,7 +60,7 @@ function playRps(stage){
 }
 export function mountGames(root){
  let search='',active=null,dispose=null;
- root.innerHTML='<div class="cel-games"><header class="cel-games-head"><div><span class="cel-home-kicker">CELESTIAL ORIGINALS</span><h1 data-heading></h1><p>Small games, built right into your space.</p></div><label class="cel-games-search">'+ico('search')+'<input type="search" placeholder="Search games" aria-label="Search games"></label></header><section class="cel-games-grid" data-grid></section><section class="cel-game-stage" data-stage hidden><header><button class="btn s" type="button" data-back>← All games</button><h2 data-game-title></h2></header><div data-play-area></div></section></div>';
+ root.innerHTML='<div class="cel-games"><header class="cel-games-head"><div><span class="cel-home-kicker">CELESTIAL ORIGINALS</span><h1 data-heading></h1><p>A quick break, right where you are.</p></div><label class="cel-games-search">'+ico('search')+'<input type="search" placeholder="Search the arcade" aria-label="Search the arcade"></label></header><section class="cel-games-grid" data-grid></section><section class="cel-game-stage" data-stage hidden><header><button class="btn s" type="button" data-back>← Arcade</button><h2 data-game-title></h2></header><div data-play-area></div></section></div>';
  root.querySelector('[data-heading]').textContent=gameWord;
  const grid=root.querySelector('[data-grid]'),stage=root.querySelector('[data-stage]'),area=root.querySelector('[data-play-area]');
  const distributor=mountDistributorLibrary(root,{launch:game=>{
