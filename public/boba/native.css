@@ -286,3 +286,75 @@
 .cel-snake-controls{display:flex;gap:10px;justify-content:center}.cel-snake-controls button{min-width:50px;font-size:17px}
 @media(max-width:550px){.cel-chess-board{border-width:5px}.cel-chess-cell{font-size:clamp(19px,5.6vw,34px)}.cel-extra-game{padding:12px}.cel-connect-board{padding:7px;gap:2px}.cel-2048-board{gap:6px;padding:8px}}
 @media(prefers-reduced-motion:reduce){.cel-2048-tile.is-new,.cel-memory-cell.showing,.cel-2048-tile[data-value="2048"],.cel-snake-grid i.food{animation:none}}
+
+/* Celestial Hub v2 — a compact, asymmetric dashboard rather than a greeting splash. */
+.cel-hub{height:100%;overflow:auto;padding:clamp(20px,3.5vw,42px) clamp(18px,4.2vw,72px) 40px;color:var(--ink);scrollbar-gutter:stable}
+.cel-hub-top{display:flex;justify-content:space-between;align-items:center;gap:20px;padding-bottom:20px;border-bottom:1px solid var(--hair)}
+.cel-hub-brand{display:flex;align-items:center;gap:11px;font-size:10px;font-weight:850;letter-spacing:.21em}
+.cel-hub-brand i{font-style:normal;opacity:.35;padding:0 6px}
+.cel-hub-brandmark{font-size:23px;line-height:1;color:var(--acc)}
+.cel-hub-today{font-size:12px;color:var(--ink-3)}
+.cel-hub-content{max-width:1270px;margin:auto}
+.cel-hub-welcome{padding:clamp(32px,5.2vh,65px) 0 30px}
+.cel-hub-intro{display:inline-flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.19em;font-weight:850;color:var(--acc)}
+.cel-hub-intro i{width:7px;height:7px;border-radius:50%;background:#36b587;box-shadow:0 0 0 4px color-mix(in srgb,#36b587,transparent 86%)}
+.cel-hub-welcome h1{font-size:clamp(33px,4.8vw,69px);line-height:1.08;letter-spacing:-.066em;font-weight:800;margin:14px 0 10px}
+.cel-hub-welcome h1 span{color:var(--acc)}
+.cel-hub-welcome h1 em{font-style:normal;color:var(--ink-3)}
+.cel-hub-welcome p{font-size:clamp(13px,1.25vw,16px);color:var(--ink-2);line-height:1.55}
+.cel-hub-feature-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,1fr);gap:16px;min-height:390px}
+.cel-hub-browser{position:relative;display:flex;flex-direction:column;isolation:isolate;overflow:hidden;min-height:390px;border-radius:27px;background:#172324;color:#fff;padding:26px clamp(23px,3.5vw,42px) 23px;box-shadow:0 25px 65px -42px #05160f8c}
+.cel-hub-browser:before{content:"";position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse 70% 72% at 90% 8%,#6eab8c5c,transparent),radial-gradient(ellipse 70% 70% at 5% 110%,#3a807a55,transparent),linear-gradient(125deg,#14282a,#1c2c29 65%,#293f38)}
+.cel-hub-browser:after{content:"";position:absolute;z-index:-1;width:460px;height:460px;border-radius:50%;border:1px solid #d7f5e519;right:-140px;top:-250px;box-shadow:0 0 0 52px #b6e6c909,0 0 0 112px #b6e6c906}
+.cel-hub-browser-top{display:flex;align-items:center;justify-content:space-between}
+.cel-hub-overline{letter-spacing:.18em;font-size:10px;font-weight:850;color:var(--ink-3)}
+.cel-hub-browser .cel-hub-overline{color:#ffffff97}
+.cel-hub-arrow{display:grid;place-items:center;border:1px solid #ffffff50;border-radius:50%;width:34px;height:34px;color:#fff;font-size:18px}
+.cel-hub-browser-main{margin:auto 0 0;max-width:560px}
+.cel-hub-browser-mark{display:grid;place-items:center;width:58px;height:58px;border:1px solid #d3f1dd55;background:#d6ffe416;border-radius:17px;margin-bottom:22px;color:#e2ffea}
+.cel-hub-browser-mark svg{width:28px;height:28px;fill:currentColor}
+.cel-hub-browser h2{font-size:clamp(35px,4.8vw,60px);font-weight:790;letter-spacing:-.064em;line-height:1}
+.cel-hub-browser-main>p{font-size:13px;color:#c1dbd0;margin:12px 0 25px}
+.cel-hub-search{display:flex;align-items:center;gap:10px;background:#f6f8f4;color:#1d2c28;border-radius:15px;padding:7px 8px 7px 16px;min-height:55px;box-shadow:0 10px 35px #0003}
+.cel-hub-search>svg{width:19px;height:19px;fill:#687e70;flex-shrink:0}
+.cel-hub-search input{flex:1;min-width:0;background:transparent;color:#1d2c28;font-size:13px;outline:0}
+.cel-hub-search input::placeholder{color:#79877c}
+.cel-hub-search button{display:grid;place-items:center;width:39px;height:39px;background:#264f42;color:#eaffec;border-radius:11px;font-size:19px;flex-shrink:0;transition:background .2s,transform .2s}
+.cel-hub-search button:hover{background:#35735b;transform:translateY(-1px)}
+.cel-hub-browser-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px;font-size:10px;color:#bed4cb}
+.cel-hub-browser-foot button{font-size:11px;font-weight:750;color:#ebfff1;white-space:nowrap}
+.cel-hub-browser-foot button span{padding-left:6px}
+.cel-hub-side{display:grid;grid-template-rows:1fr 1fr;gap:16px}
+.cel-hub-sidecard{position:relative;display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:185px;isolation:isolate;overflow:hidden;border-radius:25px;padding:23px 25px;background:var(--g2);border:1px solid var(--hair);transition:transform .25s ease,background .25s ease,box-shadow .25s ease}
+.cel-hub-sidecard:hover{transform:translateY(-3px);background:var(--g3);box-shadow:var(--sh)}
+.cel-hub-sidecard:focus-visible,.cel-hub-shortcut:focus-visible,.cel-hub-search :focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.cel-hub-sidecard .cel-hub-overline{color:var(--ink-3)}
+.cel-hub-side-bottom{display:flex;flex-direction:column;gap:4px;margin-top:auto;z-index:1}
+.cel-hub-side-bottom strong{font-size:24px;letter-spacing:-.045em;font-weight:780}
+.cel-hub-side-bottom small{font-size:12px;color:var(--ink-2)}
+.cel-hub-corner{position:absolute;right:24px;top:19px;font-size:21px;color:var(--ink-3)}
+.cel-hub-side-graphic{position:absolute;right:17%;top:8%;font-family:serif;font-size:123px;line-height:1;opacity:.17;transform:rotate(-15deg);color:var(--acc);pointer-events:none}
+.cel-hub-games{background:linear-gradient(125deg,color-mix(in srgb,var(--acc),transparent 92%),var(--g2))}
+.cel-hub-bubbles{display:flex;align-items:center;justify-content:center;gap:7px;position:absolute;right:12%;top:18%;transform:rotate(-12deg);opacity:.44}
+.cel-hub-bubbles i{display:grid;place-items:center;width:53px;height:53px;border-radius:18px;background:color-mix(in srgb,var(--acc),transparent 77%);color:var(--ink);font-size:24px;font-weight:800;font-style:normal}
+.cel-hub-bubbles i:nth-child(2){transform:translateY(-18px)}
+.cel-hub-bubbles i:nth-child(3){transform:translateY(12px)}
+.cel-hub-sectionhead{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:39px 0 16px}
+.cel-hub-sectionhead h2{font-size:clamp(22px,2.2vw,31px);font-weight:780;letter-spacing:-.047em;margin-top:5px}
+.cel-hub-sectionhead>span{font-size:12px;color:var(--ink-3)}
+.cel-hub-shortcuts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.cel-hub-shortcut{min-width:0;display:flex;align-items:flex-start;text-align:left;gap:13px;position:relative;padding:18px 14px;min-height:112px;background:var(--g2);border:1px solid var(--hair);border-radius:19px;transition:transform .2s,background .2s}
+.cel-hub-shortcut:hover{background:var(--g3);transform:translateY(-3px)}
+.cel-hub-shortcut-icon{width:36px;height:36px;flex-shrink:0;display:grid;place-items:center;background:color-mix(in srgb,var(--acc),transparent 87%);border-radius:12px;color:var(--acc)}
+.cel-hub-shortcut-icon svg{width:17px;height:17px;fill:currentColor}
+.cel-hub-shortcut>span:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0}
+.cel-hub-shortcut small{font-size:9px;color:var(--ink-3);font-weight:750;letter-spacing:.13em}
+.cel-hub-shortcut strong{font-size:14px;font-weight:750;white-space:nowrap}
+.cel-hub-shortcut em{font-size:11px;color:var(--ink-3);font-style:normal;line-height:1.4}
+.cel-hub-shortcut>b{position:absolute;top:12px;right:12px;font-size:14px;color:var(--ink-3);font-weight:400}
+.cel-hub-footer{text-align:center;color:var(--ink-3);font-size:11px;padding-top:32px}
+.cel-hub-footer span{color:var(--acc);font-size:16px;vertical-align:-1px;padding-right:5px}
+@media(max-width:1000px){.cel-hub-feature-layout{grid-template-columns:1.25fr 1fr}.cel-hub-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.cel-hub-shortcut{min-height:95px}}
+@media(max-width:760px){.cel-hub-feature-layout{grid-template-columns:1fr}.cel-hub-browser{min-height:375px}.cel-hub-side{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:1fr}.cel-hub-sidecard{min-height:185px}.cel-hub-side-graphic{right:0;font-size:100px}.cel-hub-welcome{padding:33px 0 24px}}
+@media(max-width:550px){.cel-hub{padding:17px 14px 26px}.cel-hub-today{font-size:10px}.cel-hub-brand{font-size:9px}.cel-hub-welcome h1{font-size:36px}.cel-hub-feature-layout{gap:10px}.cel-hub-browser{min-height:345px;padding:20px;border-radius:20px}.cel-hub-browser-mark{width:47px;height:47px;margin-bottom:16px}.cel-hub-browser-main>p{font-size:12px}.cel-hub-browser h2{font-size:43px}.cel-hub-side{gap:10px}.cel-hub-sidecard{min-height:161px;padding:15px;border-radius:17px}.cel-hub-side-bottom strong{font-size:19px}.cel-hub-side-bottom small{font-size:10px}.cel-hub-side-graphic{font-size:81px}.cel-hub-bubbles{right:6%;transform:scale(.65) rotate(-12deg)}.cel-hub-corner{right:14px;top:12px}.cel-hub-sectionhead{margin-top:29px}.cel-hub-sectionhead>span{display:none}.cel-hub-shortcuts{gap:9px}.cel-hub-shortcut{padding:13px 10px;gap:9px;min-height:98px;border-radius:15px}.cel-hub-shortcut-icon{width:29px;height:29px;border-radius:9px}.cel-hub-shortcut strong{font-size:12px}.cel-hub-shortcut em{font-size:10px}.cel-hub-shortcut>b{display:none}}
+@media(prefers-reduced-motion:reduce){.cel-hub-sidecard,.cel-hub-shortcut,.cel-hub-search button{transition:none}}
