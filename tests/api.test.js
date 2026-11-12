@@ -60,7 +60,7 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.doesNotMatch(loaderCode,/import\(["']data:/);
     const policy=loader.headers.get('content-security-policy')||'';
     assert.match(policy,/script-src 'self' data: blob:/);
-    assert.doesNotMatch(policy,/script-src[^;]*data:/);
+    assert.match(policy,/script-src[^;]*data:/); // Lightning's official loader imports a data: module.
     assert.match(policy,/connect-src 'self' data:/);
 
 
