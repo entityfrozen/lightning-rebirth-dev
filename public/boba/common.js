@@ -2,7 +2,7 @@ import {I,N} from './icons.js';
 export const $=(s,r=document)=>r.querySelector(s);
 export const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export const aiIcon='<img class="cel-ai-logo" src="/assets/chatgpt-logo.svg" alt="" aria-hidden="true" width="24" height="24">';
+export const aiIcon='<span class="cel-ai-logo" aria-hidden="true"></span>';
 export const ico=(k,cl='')=>k==='ask'?aiIcon:'<svg class="'+cl+'" viewBox="0 0 256 256" aria-hidden="true">'+(I[k]||I.link||'')+'</svg>';
 export const lic=(k,a,b)=>'<span class="lic" style="background:linear-gradient(145deg,'+a+','+b+')">'+ico(k)+'</span>';
 export async function api(path,body){const r=await fetch(path,{credentials:'same-origin',...(body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}
