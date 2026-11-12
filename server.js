@@ -149,10 +149,10 @@ function validateWorkspace(input){
  const clean={};
  for(const [key,value] of Object.entries(values)){
    if(!WORKSPACE_KEYS.has(key)&&!/^boba\.ask\.[a-zA-Z0-9_-]{8,50}$/.test(key))return null;
-   if(typeof value!=='string'||value.length>(key.startsWith('boba.ask.')?70000:key==='boba.notes'?25000:1600))return null;
+   if(typeof value!=='string'||value.length>(key.startsWith('boba.ask.')?215000:key==='boba.notes'?25000:1600))return null;
    clean[key]=value;
  }
- if(JSON.stringify(clean).length>110000)return null;
+ if(JSON.stringify(clean).length>260000)return null;
  return {values:clean};
 }
 function publicAccount(user) {return user ? {id:user.id,username:user.username,joinedAt:user.joinedAt,role:user.role||'user'} : null;}
@@ -313,7 +313,7 @@ async function handleAPI(req,res,url) {
   }
   if(!['POST','DELETE'].includes(req.method)) return fail(res,404,'API route not found');
   if(!safeOrigin(req))return fail(res,403,'Origin not allowed');
-  const body=req.method==='POST'?await bodyJSON(req,pathname==='/api/account/workspace'?135000:18000):{};
+  const body=req.method==='POST'?await bodyJSON(req,pathname==='/api/account/workspace'?275000:18000):{};
   if(pathname==='/api/account/workspace'&&req.method==='POST'){
     if(!user)return fail(res,401,'Sign in required');
     if(limited(req,'workspace:'+user.id,120,600000))return fail(res,429,'Too many workspace updates');
