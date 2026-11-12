@@ -39,14 +39,15 @@ export function mountChat(root,user){
  const mentionHTML=text=>esc(String(text||'')).replace(/(^|[^\w])@([A-Za-z0-9_.-]+)/g,(_m,prefix,name)=>prefix+'<span class="cel-mention'+(name.toLowerCase()===user.username.toLowerCase()?' mine':'')+'">@'+name+'</span>');
  const server=()=>servers.find(s=>s.id===serverId)||servers[0];
  const channel=()=>server()?.channels?.find(c=>c.id===channelId)||server()?.channels?.[0];
+ const channelLabel=c=>c?.id==='games'?'arcade':c?.name||c?.id||'general';
  const say=t=>{$r('[data-error]').hidden=!t;$r('[data-error]').textContent=t||''};
  function render(){
   const s=server(),c=channel(),sel=$r('[data-server]');if(s)serverId=s.id;if(c)channelId=c.id;sel.innerHTML=servers.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');sel.value=serverId;
-  $r('[data-channels]').innerHTML=(s?.channels||[]).map(x=>'<button class="native-chat-link '+(!dm&&x.id===channelId?'on':'')+'" data-channel="'+esc(x.id)+'"># '+esc(x.name||x.id)+'</button>').join('');
+  $r('[data-channels]').innerHTML=(s?.channels||[]).map((x,index)=>'<button type="button" class="native-chat-link '+(!dm&&x.id===channelId?'on':'')+'" data-channel-index="'+index+'"># '+esc(channelLabel(x))+'</button>').join('');
   $r('[data-join]').hidden=!s||s.members?.some(p=>p.id===user.id);
   $r('[data-clear-chat]').hidden=dm?false:user.role!=='admin';
   $r('[data-clear-chat]').textContent=dm?'Clear DM':'Clear channel';
-  $r('[data-title]').textContent=dm?dm.username:'# '+(c?.name||'general');$r('[data-status]').textContent=socket?.readyState===WebSocket.OPEN?'Live':'Reconnecting…';
+  $r('[data-title]').textContent=dm?dm.username:'# '+channelLabel(c);$r('[data-status]').textContent=socket?.readyState===WebSocket.OPEN?'Live':'Reconnecting…';
   const feed=$r('.native-feed'),near=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100,previousScroll=feed.scrollTop;
   const roster=new Map((s?.members||[]).map(p=>[p.id,p]));for(const p of people)roster.set(p.id,{...roster.get(p.id),...p});const all=[...roster.values()];const rows=dm?dmRows:(s?.messages?.[c?.id]||[]);
   feed.innerHTML=rows.map(m=>{const p=roster.get(dm?m.from:m.userId)||all.find(x=>(x.username||x.name)===(dm?m.author:m.by||m.username));const name=dm?m.author:m.by||m.username||p?.username||'Member';const parent=!dm&&m.replyTo?rows.find(item=>item.id===m.replyTo):null;return '<article class="native-message'+(String(dm?m.text:m.message||'').split(/\s+/).some(part=>part.toLowerCase().replace(/[^a-z0-9_@-]/g,'')==='@'+user.username.toLowerCase())?' mentioned':'')+'"><span class="native-person-icon">'+esc(name.slice(0,2).toUpperCase())+'</span><div><div class="native-message-meta"><b>'+esc(name)+'</b>'+badge(p)+timestamp(m)+'</div>'+(parent?'<small class="cel-message-parent">↳ '+esc(parent.by||parent.username||'Member')+': '+esc((parent.message||'').slice(0,85))+'</small>':'')+(m.announcement?'<small class="cel-message-parent">📣 Official announcement</small>':'')+'<p>'+mentionHTML(dm?m.text:m.message)+'</p>'+(m.editedAt?'<small class="cel-message-edited">edited</small>':'')+
@@ -60,7 +61,7 @@ export function mountChat(root,user){
   if(input.disabled)input.placeholder='Only staff can post in this channel';
   paintAnnouncement();paintTyping();
   $r('[data-member-count]').textContent=all.length;
-  if(!input.disabled)input.placeholder=dm?'Message @'+dm.username:'Message #'+(c?.name||'general');
+  if(!input.disabled)input.placeholder=dm?'Message @'+dm.username:'Message #'+channelLabel(c);
   $r('[data-dm-list]').innerHTML=people.filter(p=>p.id!==user.id).slice(0,10).map(p=>'<button class="cel-dm-link" data-person="'+esc(p.id)+'"><span class="native-person-icon">'+esc((p.username||p.name||'?').slice(0,2).toUpperCase())+'</span>'+esc(p.username||p.name)+'</button>').join('');
   const q=$r('[data-search]').value.toLowerCase(),ids=new Set(online.map(p=>p.id));$r('[data-people]').innerHTML=all.filter(p=>(p.username||p.name||'').toLowerCase().includes(q)).sort((a,b)=>Number(ids.has(b.id))-Number(ids.has(a.id))||String(a.username||a.name).localeCompare(String(b.username||b.name))).map(p=>'<button class="native-member" data-person="'+esc(p.id)+'"><i class="'+(ids.has(p.id)?'online':'')+'"></i><span>'+esc(p.username||p.name)+badge(p)+'</span></button>').join('');
  }
@@ -168,7 +169,11 @@ export function mountChat(root,user){
  };
  $r('[data-server]').onchange=e=>switchTo(e.target.value,'',null);
  $r('[data-channels]').onclick=e=>{
-  const b=e.target.closest('[data-channel]');if(b)switchTo(serverId,b.dataset.channel,null);
+  const b=e.target.closest('[data-channel-index]');
+  if(!b)return;
+  const index=Number(b.dataset.channelIndex);
+  const id=server()?.channels?.[index]?.id;
+  if(id)switchTo(serverId,id,null);
  };
  $r('[data-search]').oninput=render;
  const choosePerson=e=>{
@@ -194,7 +199,7 @@ export function mountChat(root,user){
     return;
   }
   if(user.role!=='admin'||!server()||!channel())return;
-  const channelName=channel().name||channel().id;
+  const channelName=channelLabel(channel());
   if(!confirm('Clear every message in #'+channelName+' for everyone? This cannot be undone.'))return;
   if(!send({type:'v2ClearChannel',serverId,channel:channelId}))say('Chat is reconnecting. Try again.');
  };
