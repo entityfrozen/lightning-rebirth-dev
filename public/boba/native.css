@@ -316,3 +316,10 @@
 .cel-simple-footer{font-size:11px;color:var(--ink-3);text-align:center}
 @media(max-width:560px){.cel-simple-home{padding:23px 17px 20px}.cel-simple-center{padding:70px 0}.cel-simple-greeting{margin-bottom:27px}.cel-simple-greeting h1{font-size:clamp(29px,8vw,38px)}.cel-simple-search{min-height:57px;padding-left:14px}.cel-simple-links{gap:7px}.cel-simple-link-icon{width:49px;height:49px}}
 @media(prefers-reduced-motion:reduce){.cel-simple-search,.cel-simple-link-icon,.cel-simple-links button{transition:none}}
+
+/* ChatGPT identity, shared by the AI dock, homepage shortcut and composer. */
+.cel-ai-logo{display:block;object-fit:contain;flex-shrink:0;width:24px;height:24px;border-radius:6px}
+.dk[data-section="ai"] .cel-ai-logo{width:25px;height:25px;border-radius:7px}
+.cel-simple-link-icon .cel-ai-logo{width:23px;height:23px;border-radius:6px}
+.ai-t .cel-ai-logo,.celestial-effort .cel-ai-logo{width:17px;height:17px;border-radius:5px}
+.native-app-icon .cel-ai-logo{width:100%;height:100%;border-radius:12px}
