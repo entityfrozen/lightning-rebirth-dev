@@ -30,7 +30,9 @@ export function mountDistributorLibrary(root,{launch}){
       Each game and its cover artwork belong to their respective developers and porters.
       Individual credits and alternate sources appear when you select a game.</p>
     </footer>`;
-  root.querySelector('.cel-games').append(section);
+  const arcade=root.querySelector('.arcade-shell');
+  if(!arcade)throw Error('Arcade container is missing');
+  arcade.append(section);
   const grid=section.querySelector('[data-grid]');
   const status=section.querySelector('[data-status]');
   const count=section.querySelector('[data-count]');
@@ -104,7 +106,7 @@ export function openDistributorGame(stage,game){
   const sourceLink=document.createElement('a');sourceLink.className='btn s';sourceLink.target='_blank';
   sourceLink.rel='noopener noreferrer';sourceLink.textContent='Open original';
   const fullscreen=document.createElement('button');fullscreen.className='btn s';fullscreen.textContent='Fullscreen';
-  const notice=document.createElement('p');notice.className='cel-game-help';
+  const notice=document.createElement('p');notice.className='arcade-help';
   const frame=document.createElement('iframe');frame.className='cel-dist-frame';frame.title=game.name;
   frame.referrerPolicy='no-referrer';frame.sandbox='allow-scripts allow-same-origin allow-forms allow-pointer-lock';
   frame.allow='fullscreen; gamepad';frame.setAttribute('allowfullscreen','');
