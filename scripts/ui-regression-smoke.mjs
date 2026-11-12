@@ -76,7 +76,7 @@ try{
  assert.match(await arcade.locator('.arcade-card').first().textContent(),/Snake/i);
  await search.fill('no-such-title-987654');
  assert.equal(await arcade.locator('.arcade-card').count(),0);
- assert.match(await arcade.locator('[data-grid]').textContent(),/No matching titles/);
+ assert.match(await arcade.locator('.arcade-grid[data-grid]').textContent(),/No matching titles/);
  await search.fill('');
  assert.ok((await arcade.locator('.arcade-card').count())>=5,'Clearing search should restore games');
  await arcade.locator('.arcade-card').filter({has:page.getByText('2048',{exact:true})}).click();
