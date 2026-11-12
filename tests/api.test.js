@@ -13,7 +13,7 @@ const palette={accent:'#b67cff',background:'#0f0b1b',surface:'#20152f',text:'#f9
 test('end-to-end account, chat, and community drop API', {timeout:18000}, async ()=>{
   const tmp=await mkdtemp(path.join(tmpdir(),'celestial-test-'));
   const port=31000+Math.floor(Math.random()*10000);
-  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,OPENAI_API_KEY:'',NVIDIA_API_KEY:'',BOLT_ADMIN_USER:'ReviewAdmin',BOLT_ADMIN_PASSWORD:'a very long test password 123!',BOLT_DATA_DIR:tmp,PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
+  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,RAILWAY_VOLUME_MOUNT_PATH:'',OPENAI_API_KEY:'',NVIDIA_API_KEY:'',BOLT_ADMIN_USER:'ReviewAdmin',BOLT_ADMIN_PASSWORD:'a very long test password 123!',BOLT_DATA_DIR:tmp,PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
   let cookie='';
   const url=`http://127.0.0.1:${port}`;
   const call=async(route,method='GET',body)=>{
@@ -34,13 +34,13 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(homepage.headers.get('cross-origin-resource-policy'),'cross-origin');
 
     const html=await homepage.text();
-    assert.ok(html.includes('<title>Celestial</title>'));
+    assert.ok(html.includes('<title>Brightpath | Learning Workspace</title>'));
     assert.match(html,/\/boba\/dist\/assets\/app-/);
     const loginPage=await fetch(url+'/login');
     assert.equal(loginPage.status,200);
     assert.match(await loginPage.text(),/\/boba\/dist\/assets\/auth-/);
     assert.doesNotMatch(html,/\/bundle\/main\.js/);
-    assert.match(html,/celestial-star\.svg/);
+    assert.match(html,/brightpath\.svg/);
     assert.doesNotMatch(html,/lightning-chan|mascotSprite|lightning-mark/);
     const appAsset=await fetch(url+'/bundle/main.js');
     assert.equal(appAsset.status,200);
