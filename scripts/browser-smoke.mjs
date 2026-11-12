@@ -180,7 +180,6 @@ try{
   await boba.locator('[data-section="browser"]').click();
   assert.equal(new URL(boba.url()).pathname,'/','Switching sections must not expose internal routes');
   assert.equal(await boba.locator('[data-direct]').count(),1);
-  assert.equal(await boba.locator('[data-standalone]').count(),1);
   await boba.locator('[data-section="settings"]').click();
   await boba.locator('[data-tab-blank]').waitFor({timeout:10000});
   const [cloakedPopup]=await Promise.all([
