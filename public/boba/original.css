@@ -40,6 +40,18 @@
 :root[data-palette="strawberry"],.thm[data-pal="strawberry"] .pv{--base:#ffd3e0;
   --amb:radial-gradient(48% 42% at 18% 22%,#ff86ad,transparent 64%),radial-gradient(44% 40% at 84% 16%,#ffae94,transparent 62%),radial-gradient(56% 50% at 62% 88%,#ff6f9f,transparent 64%),radial-gradient(38% 32% at 96% 62%,#ffc0e2,transparent 60%),linear-gradient(150deg,#ffe0ea,#ffc4d5);
   --veil:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.3));--ink:#3a0c1f;--ink-2:rgba(58,12,31,.68);--ink-3:rgba(58,12,31,.46);--ink-4:rgba(58,12,31,.1);--hair:rgba(58,12,31,.08);--hair-2:rgba(58,12,31,.15)}
+/* Touhou / Reimu Hakurei: shrine scarlet, paper white, and gilded details. */
+:root[data-palette="touhou"],.thm[data-pal="touhou"] .pv{
+ --base:#f8e9e3;
+ --amb:radial-gradient(48% 42% at 13% 14%,#e59a9b,transparent 68%),radial-gradient(43% 38% at 86% 15%,#fff9ed,transparent 64%),radial-gradient(55% 45% at 69% 85%,#e5aa98,transparent 68%),radial-gradient(42% 38% at 6% 80%,#c64960,transparent 67%),linear-gradient(160deg,#fff9f4,#f4d4d0);
+ --veil:linear-gradient(180deg,rgba(255,255,255,.27),rgba(255,251,246,.51));
+ --ink:#491d24;--ink-2:rgba(73,29,36,.7);--ink-3:rgba(73,29,36,.48);--ink-4:rgba(73,29,36,.12);
+ --hair:rgba(125,35,49,.11);--hair-2:rgba(125,35,49,.2);
+ --g1:rgba(255,250,246,.48);--g2:rgba(255,255,252,.68);--g3:rgba(255,253,249,.88);
+ --tile:linear-gradient(180deg,rgba(255,255,253,.97),rgba(255,244,239,.77));
+ --acc:#bd2444;--acc-ink:#fff;
+}
+:root[data-palette="touhou"] .dk.on,:root[data-palette="touhou"] .cel-simple-link-icon:hover{box-shadow:0 0 0 1px rgba(195,150,62,.28)}
 :root[data-palette="matcha"],.thm[data-pal="matcha"] .pv{--base:#d4e8cb;
   --amb:radial-gradient(48% 42% at 18% 22%,#93cb7c,transparent 64%),radial-gradient(44% 40% at 84% 16%,#c9e28f,transparent 62%),radial-gradient(56% 50% at 62% 88%,#6fbb91,transparent 64%),radial-gradient(38% 32% at 96% 62%,#b2d9a5,transparent 60%),linear-gradient(150deg,#e1f0d8,#c9dfbd);
   --veil:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.3));--ink:#10261a;--ink-2:rgba(16,38,26,.68);--ink-3:rgba(16,38,26,.46);--ink-4:rgba(16,38,26,.1);--hair:rgba(16,38,26,.08);--hair-2:rgba(16,38,26,.15)}
