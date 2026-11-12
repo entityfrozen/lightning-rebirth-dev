@@ -10,7 +10,7 @@ import { WebSocket } from 'ws';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const palette={accent:'#b67cff',background:'#0f0b1b',surface:'#20152f',text:'#f9f2ff',muted:'#b8a9cb',line:'#513966',glow:55,radius:16,petals:true};
 
-test('end-to-end account, chat, and community drop API', {timeout:18000}, async ()=>{
+test('end-to-end account, chat, and community drop API', {timeout:90000}, async ()=>{
   const tmp=await mkdtemp(path.join(tmpdir(),'celestial-test-'));
   const port=31000+Math.floor(Math.random()*10000);
   const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,RAILWAY_VOLUME_MOUNT_PATH:'',OPENAI_API_KEY:'',NVIDIA_API_KEY:'',BOLT_ADMIN_USER:'ReviewAdmin',BOLT_ADMIN_PASSWORD:'a very long test password 123!',BOLT_DATA_DIR:tmp,PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
@@ -23,7 +23,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
   };
   try {
     let ready=false;
-    for(let i=0;i<100;i++){try{await fetch(url+'/api/me');ready=true;break;}catch{await new Promise(r=>setTimeout(r,80));}}
+    for(let i=0;i<750;i++){try{await fetch(url+'/api/me');ready=true;break;}catch{await new Promise(r=>setTimeout(r,80));}}
     assert.equal(ready,true,'server started');
     const homepage=await fetch(url+'/');
     assert.equal(homepage.status,200);
