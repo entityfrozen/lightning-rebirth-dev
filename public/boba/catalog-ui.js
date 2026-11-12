@@ -96,44 +96,58 @@ export function mountDistributorLibrary(root,{launch}){
 }
 
 export function openDistributorGame(stage,game){
-  stage.innerHTML='';
-  const bar=document.createElement('div');bar.className='cel-dist-player-toolbar';
-  const sourceSelect=document.createElement('select');sourceSelect.setAttribute('aria-label','Choose game source');
-  for(const [index,source] of game.sources.entries()){
-    const option=document.createElement('option');option.value=index;option.textContent=source.name;
-    sourceSelect.append(option);
+ stage.replaceChildren();
+ const bar=document.createElement('div');bar.className='cel-dist-player-toolbar';
+ const sourceSelect=document.createElement('select');sourceSelect.setAttribute('aria-label','Choose source');
+ for(const [index,source] of game.sources.entries()){
+  const option=document.createElement('option');option.value=String(index);option.textContent=source.name;sourceSelect.append(option);
+ }
+ const modeSelect=document.createElement('select');
+ modeSelect.setAttribute('aria-label','Embedding mode');
+ for(const [value,label] of [['direct','Direct embed'],['proxy','Scramjet proxy']]){
+  const option=document.createElement('option');option.value=value;option.textContent=label;modeSelect.append(option);
+ }
+ const sourceLink=document.createElement('a');sourceLink.className='btn s';sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';sourceLink.textContent='Open original';
+ const fullscreen=document.createElement('button');fullscreen.className='btn s';fullscreen.textContent='Fullscreen';
+ const notice=document.createElement('p');notice.className='arcade-help';notice.setAttribute('role','status');
+ const frame=document.createElement('iframe');frame.className='cel-dist-frame';frame.title=game.name;
+ frame.referrerPolicy='no-referrer';
+ frame.allow='fullscreen; gamepad; autoplay; clipboard-write; encrypted-media';
+ frame.setAttribute('allowfullscreen','');
+ const attribution=document.createElement('p');attribution.className='cel-dist-attribution';
+ let proxyFrame=null,epoch=0,disposed=false;
+ async function switchSource(){
+  const item=game.sources[Number(sourceSelect.value)];
+  if(!item)return;
+  const run=++epoch;
+  if(proxyFrame){disposeProxyFrame(proxyFrame);proxyFrame=null}
+  frame.removeAttribute('src');
+  sourceLink.href=item.url;
+  attribution.textContent='Source: '+item.name+(item.creator?' · Credit: '+item.creator:'')+' · Artwork and rights belong to their respective creators.';
+  if(modeSelect.value==='direct'){
+   notice.textContent='Direct embed enabled. Some websites block iframe embedding; use Scramjet or Open original if this stays blank.';
+   frame.src=item.url;
+   return;
   }
-  const sourceLink=document.createElement('a');sourceLink.className='btn s';sourceLink.target='_blank';
-  sourceLink.rel='noopener noreferrer';sourceLink.textContent='Open original';
-  const fullscreen=document.createElement('button');fullscreen.className='btn s';fullscreen.textContent='Fullscreen';
-  const notice=document.createElement('p');notice.className='arcade-help';
-  const frame=document.createElement('iframe');frame.className='cel-dist-frame';frame.title=game.name;
-  frame.referrerPolicy='no-referrer';frame.sandbox='allow-scripts allow-same-origin allow-forms allow-pointer-lock';
-  frame.allow='fullscreen; gamepad';frame.setAttribute('allowfullscreen','');
-  const attribution=document.createElement('p');attribution.className='cel-dist-attribution';
-  let proxyFrame=null,epoch=0;
-  async function switchSource(){
-    const item=game.sources[Number(sourceSelect.value)];
-    const run=++epoch;
-    frame.src='about:blank';
-    notice.textContent='Connecting game through Scramjet…';
-    try {
-      proxyFrame ||=await createProxyFrame(frame);
-      if(run!==epoch)return;
-      proxyFrame.go(item.url);
-      notice.textContent='This game uses the Scramjet browser engine. If it fails to load, try another source or open the original.';
-    }catch(error){
-      if(run!==epoch)return;
-      notice.textContent='Scramjet could not load this game: '+String(error.message||'Connection unavailable')+'. Try another source or open the original.';
-    }
-    sourceLink.href=item.url;
-    attribution.textContent='Source: '+item.name+(item.creator?' · Credit: '+item.creator:'')+' · Artwork and game rights belong to their respective creators.';
-
+  notice.textContent='Connecting through Scramjet…';
+  try{
+   const controllerFrame=await createProxyFrame(frame);
+   if(disposed||run!==epoch){disposeProxyFrame(controllerFrame);return}
+   proxyFrame=controllerFrame;
+   controllerFrame.go(item.url);
+   notice.textContent='Scramjet is connecting. If this page does not load, switch to Direct embed or Open original.';
+  }catch(error){
+   if(disposed||run!==epoch)return;
+   notice.textContent='Scramjet failed: '+String(error.message||'Unavailable')+'. Switching to direct embed.';
+   modeSelect.value='direct';
+   frame.src=item.url;
   }
-  sourceSelect.onchange=switchSource;
-  fullscreen.onclick=()=>frame.requestFullscreen?.();
-  bar.append(sourceSelect,sourceLink,fullscreen);
-  stage.append(bar,frame,notice,attribution);
-  switchSource();
-  return()=>{epoch++;disposeProxyFrame(proxyFrame);proxyFrame=null;frame.src='about:blank'};
+ }
+ sourceSelect.onchange=switchSource;
+ modeSelect.onchange=switchSource;
+ fullscreen.onclick=()=>frame.requestFullscreen?.();
+ bar.append(sourceSelect,modeSelect,sourceLink,fullscreen);
+ stage.append(bar,frame,notice,attribution);
+ switchSource();
+ return()=>{disposed=true;epoch++;disposeProxyFrame(proxyFrame);proxyFrame=null;frame.removeAttribute('src')};
 }
