@@ -21,7 +21,7 @@ async function start(){
  try{await startAccountSync(user)}catch(error){console.warn('Account preferences unavailable:',error)}
  applyPrefs();
  window.dispatchEvent(new Event('celestial:reimu-refresh'));
- const items=[['home','Home','star'],['browser','Browser','web'],['games','Games','play'],['chat','Chat','discord'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
+ const items=[['home','Home','star'],['browser','Browser','web'],['games','Arcade','play'],['chat','Chat','discord'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
  if(user.role==='admin')items.splice(items.length-1,0,['admin','Administration','shield']);
  const view=id=>$('[data-view="'+id+'"]');
  let current='home',paintSettings=()=>{},loadAdmin=()=>{};
