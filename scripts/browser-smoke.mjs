@@ -141,7 +141,7 @@ try{
   assert.equal(await boba.locator('[data-pos]').count(),9);
   await boba.locator('[data-back]').click();
   await boba.locator('[data-arcade-index]').filter({has:boba.locator('strong', {hasText:'Rock Paper Scissors'})}).click();
-  assert.equal(await boba.locator('[data-pick]').count(),3);
+  assert.equal(await boba.locator('[data-view="_v84ae39"] [data-stage] [data-pick]').count(),3);
   await boba.locator('[data-back]').click();
   // Verify Arcade's Scramjet mode uses the actual service worker, not a direct iframe.
   await boba.locator('[data-view="_v84ae39"] [data-entry-index]').first().waitFor({timeout:20000});
