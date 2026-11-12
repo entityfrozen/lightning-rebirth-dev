@@ -1,6 +1,7 @@
 import {openAboutBlank} from './about-blank.js';
 import { I } from './icons.js';
 import { createProxyFrame, disposeProxyFrame, getProxyController } from './proxy.js';
+import { createUltravioletFrame } from './uv-proxy.js';
 const $=(s,r=document)=>r.querySelector(s);
 const el=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild;};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -15,10 +16,15 @@ const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f
 const get=async()=>[];
 function failPage(frame,url,retry,message='The page could not load.'){const doc=frame.contentDocument;if(!doc)return;doc.body?.replaceChildren();const p=doc.createElement('p');p.textContent=message;const b=doc.createElement('button');b.textContent='Retry';b.onclick=retry;doc.body?.append(p,b);}
 const frames=new WeakMap();
+const defaultProxy=()=>store.get('proxyEngine','scramjet')==='ultraviolet'?'ultraviolet':'scramjet';
 const engine={
  normalise(input){const q=String(input||'').trim();if(!q)return '';try{const u=new URL(q);if(['http:','https:'].includes(u.protocol))return u.href}catch{}if(/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/:?#]|$)/i.test(q))return 'https://'+q;return 'https://www.google.com/search?q='+encodeURIComponent(q)},
  boot:getProxyController,recover:getProxyController,
- decode(url){try{const src=new URL(url,location.origin);if(!src.pathname.startsWith('/~/sj/'))return '';const decode=window.$scramjetController?.config?.prefix?window.$scramjetController?.decodeUrl:null;return typeof decode==='function'?decode(url):''}catch{return ''}},
+ decode(url){try{const src=new URL(url,location.origin);if(src.pathname.startsWith('/uv/service/')){
+     const decodeUv=window.__uv$config?.decodeUrl;
+     return typeof decodeUv==='function'?decodeUv(src.pathname.slice('/uv/service/'.length)):'';
+   }
+   if(!src.pathname.startsWith('/~/sj/'))return '';const decode=window.$scramjetController?.config?.prefix?window.$scramjetController?.decodeUrl:null;return typeof decode==='function'?decode(url):''}catch{return ''}},
  failed(d){
    if(!d)return false;
    const title=String(d.title||'').slice(0,120);
@@ -33,20 +39,45 @@ const engine={
      return /Proxy worker did not intercept|The proxy engine is unavailable|Proxy transport failed/i.test(text);
    }catch{return false}
  },
- async openFrame(el,url,onNavigate,onPopup){
-   if(!window.isSecureContext)throw Error('Scramjet requires HTTPS. Open Celestial in a secure tab.');
-   // Lightning's original browser did not preemptively reject embedded tabs.
-   // Let Scramjet's service worker and transport attempt initialization; a
-   // browser that actually blocks it will report the real failure below.
+ async openFrame(el,url,onNavigate,onPopup,mode='scramjet'){
+   if(!window.isSecureContext)throw Error('Browser proxies require HTTPS.');
+   if(mode==='ultraviolet'){
+     const frame=await createUltravioletFrame(el,url);
+     frames.set(el,{mode,frame});
+     return;
+   }
    const status=await fetch('/api/browser/status',{credentials:'same-origin'}).then(r=>r.json());
    if(!status.authenticated)throw Error('Sign in to browse with Scramjet.');
    if(!status.proxy)throw Error('Scramjet is unavailable on this server.');
-   let frame=frames.get(el);
-   if(!frame){frame=await createProxyFrame(el,onNavigate,onPopup);frames.set(el,frame)}
-   frame.go(url);
+   let record=frames.get(el);
+   if(!record||record.mode!=='scramjet'){
+     record={mode:'scramjet',frame:await createProxyFrame(el,onNavigate,onPopup)};
+     frames.set(el,record);
+   }
+   record.frame.go(url);
  },
- action(el,kind){const f=frames.get(el);if(!f)return false;const method={back:'back',fwd:'forward',reload:'reload'}[kind];if(!method||typeof f[method]!=='function')return false;f[method]();return true},
- dispose(el){disposeProxyFrame(frames.get(el));frames.delete(el)}
+ action(el,kind){
+   const record=frames.get(el);
+   if(!record)return false;
+   if(record.mode==='ultraviolet'){
+     try{
+       if(kind==='reload'){el.contentWindow.location.reload();return true}
+       if(kind==='back'){el.contentWindow.history.back();return true}
+       if(kind==='fwd'){el.contentWindow.history.forward();return true}
+     }catch{}
+     return false;
+   }
+   const method={back:'back',fwd:'forward',reload:'reload'}[kind];
+   const action=record.frame?.[method];
+   if(typeof action!=='function')return false;
+   action.call(record.frame);return true;
+ },
+ dispose(el){
+   const record=frames.get(el);
+   if(record?.mode==='scramjet')disposeProxyFrame(record.frame);
+   else record?.frame?.dispose?.();
+   frames.delete(el);
+ }
 };
 const QL_MAX = 12;
 const qlLinks = () => {
@@ -92,6 +123,7 @@ const home = {
     '<button class="cb sm gh" data-wb="reload" aria-label="Reload">' + ico("reload") + "</button>" +
     '<label class="addr">' + ico("lock") + '<input data-omni placeholder="Search or enter a link" aria-label="Address" autocomplete="off" spellcheck="false">' +
     '<span class="disp" data-disp></span><div class="sugg gl g3" data-sugg></div></label>' +
+    '<select class="wproxy" data-proxy-mode aria-label="Proxy engine"><option value="scramjet">Scramjet</option><option value="ultraviolet">Ultraviolet</option></select>' +
     '<span class="wsep"></span><div class="wtabs" data-tabs></div>' +
     '<button class="cb sm gh" data-wnew aria-label="New tab">' + ico("plus") + "</button>" +
     '<button class="cb sm gh" data-direct title="Open direct in about:blank" aria-label="Open Direct">' + ico("link") + '</button>' +
@@ -118,6 +150,7 @@ const home = {
     const addr = $(".addr", root);
     const disp = $("[data-disp]", root);
     const tabsEl = $("[data-tabs]", root);
+    const proxySelect = $("[data-proxy-mode]", root);
     const tip = $("[data-tip]", root);
     const tab = () => st.tabs.find((t) => t.id === st.active);
     const clean = (s) => String(s || "").split(/\s+[-–·|]\s+/)[0].trim();
@@ -179,7 +212,7 @@ const home = {
       clearInterval(t.lt);t.busy=false;sync();clearError(t);
       const panel=document.createElement('div');panel.className='native-browser-error';
       const heading=document.createElement('h2');heading.textContent="This page couldn't be opened";
-      const detail=document.createElement('p');detail.textContent=message||'Scramjet could not load this site.';
+      const detail=document.createElement('p');detail.textContent=message||'The selected proxy could not load this site.';
       const buttons=document.createElement('div');
       const again=document.createElement('button');again.className='btn k s';again.textContent='Try again';again.onclick=()=>navigate(t.url);
       const direct=document.createElement('a');direct.className='btn s';direct.textContent='Open site directly';direct.href=t.url;direct.target='_blank';direct.rel='noopener noreferrer';
@@ -192,12 +225,15 @@ const home = {
         if(t.frame){ctx.engine.dispose(t.frame);t.frame.src=t.url}
         sync();
       };
-      buttons.append(again,embed,direct);panel.append(heading,detail,buttons);page.append(panel);t.errorEl=panel;
+      const alternative=document.createElement('button');alternative.className='btn k s';
+      alternative.textContent=t.mode==='ultraviolet'?'Try Scramjet':'Try Ultraviolet';
+      alternative.onclick=()=>{const next=t.mode==='ultraviolet'?'scramjet':'ultraviolet';proxySelect.value=next;proxySelect.dispatchEvent(new Event('change'))};
+      buttons.append(again,alternative,embed,direct);panel.append(heading,detail,buttons);page.append(panel);t.errorEl=panel;
     };
     const loaded=t=>{
       let d=null;
       try{d=t.frame?.contentDocument}catch{}
-      if(t.direct||!t.frame?.src.includes('/~/sj/')||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
+      if(t.direct||!(['/~/sj/','/uv/service/'].some(prefix=>t.frame?.src.includes(prefix)))||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
       if(ctx.engine.failed(d)){showError(t,'The proxied site returned an error.');return true}
       clearInterval(t.lt);t.busy=false;sync();clearError(t);track(t);return true;
     };
@@ -218,6 +254,7 @@ const home = {
         (t.url ? '<img alt="" src="' + favicon(hostOf(t.url)) + '">' : '<span class="ph"></span>') +
         '<span class="x" data-close>' + ico("x") + "</span></button>").join("");
       const t = tab();
+      proxySelect.value=t?.mode||defaultProxy();
       nt.style.visibility = t && t.url ? "hidden" : "";
       for(const x of st.tabs){if(x.frame)x.frame.style.display=x.id===st.active&&x.url?"block":"none"}
       if (document.activeElement !== omni) omni.value = t && t.url ? t.url : "";
@@ -250,7 +287,7 @@ const home = {
     };
 
     const newTab = () => {
-      const t = { id: st.next++, title: "New tab", url: "", frame: null };
+      const t = { id: st.next++, title: "New tab", url: "", frame: null, mode: defaultProxy() };
       st.tabs.push(t);
       st.active = t.id;
       paint();
@@ -262,6 +299,7 @@ const home = {
       if (!url) return;
       const t = fresh || !tab() ? newTab() : tab();
       t.title = hostOf(url) || "Page";
+      t.mode ||= defaultProxy();
       t.direct=false;
       loading(t);
       paint();
@@ -276,7 +314,7 @@ const home = {
       try{
         await ctx.engine.openFrame(t.frame,url,real=>{
           t.url=real;t.title=hostOf(real)||"Page";paint();
-        },popup=>navigate(popup,true));
+        },popup=>navigate(popup,true),t.mode);
       }catch(error){
         showError(t,error.message);
         return;
@@ -413,6 +451,21 @@ const home = {
       });
     });
 
+    proxySelect.addEventListener('change',()=>{
+      const selected=proxySelect.value==='ultraviolet'?'ultraviolet':'scramjet';
+      store.set('proxyEngine',selected);
+      const current=tab();
+      if(!current)return;
+      if(current.mode===selected)return;
+      current.mode=selected;
+      if(current.frame){
+        ctx.engine.dispose(current.frame);
+        current.frame.remove();
+        current.frame=null;
+      }
+      if(current.url)navigate(current.url);
+      else paint();
+    });
     root.addEventListener("click", (e) => {
       const close = e.target.closest("[data-close]");
       if (close) return closeTab(+close.closest("[data-tab]").dataset.tab);
