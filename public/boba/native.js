@@ -4,7 +4,7 @@ import {mountShell} from './shell.js';
 import {$,$$,ico,api,applyPrefs} from './common.js';
 import {mountBrowser} from './browser.js';
 import {mountHome} from './home.js';
-import {mountGames} from './games.js';
+import {mountArcade} from './games.js';
 import {mountAsk,mountAccount} from './native-views.js';
 import {mountChat} from './chat.js';
 import {settings} from './settings.js';
@@ -39,7 +39,7 @@ async function start(){
  const browser=mountSafely('Browser',view('browser'),()=>mountBrowser(view('browser')))||{tabs:[],navigate(){},available:false};
  const open=url=>{navigate('browser');browser.navigate(url,true)};
  mountSafely('Home',view('home'),()=>mountHome(view('home'),user,navigate,open));
- mountSafely('Games',view('games'),()=>mountGames(view('games')));
+ mountSafely('Arcade',view('games'),()=>mountGames(view('games')));
  function navigate(id){
   if(!items.some(x=>x[0]===id))id='home';
   current=id;
