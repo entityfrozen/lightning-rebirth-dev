@@ -379,6 +379,13 @@ async function handleAPI(req,res,url) {
     await persist();return respond(res,200,{ok:true});
   }
   if(!user)return fail(res,401,'Sign in to use this feature');
+  if(pathname==='/api/admin/announcements/remove'&&req.method==='POST'){
+    if(user.role!=='admin')return fail(res,403,'Administrator required');
+    if(limited(req,'announcement-remove:'+user.id,15,60000))return fail(res,429,'Too many requests');
+    if(typeof body.id!=='string'||!body.id)return fail(res,400,'Announcement id required');
+    try{return respond(res,200,{ok:true,...liveCommunity.removeAnnouncement(user,body.id)})}
+    catch(error){return fail(res,404,error.message)}
+  }
   if(pathname==='/api/admin/announcements'&&req.method==='POST'){
     if(user.role!=='admin')return fail(res,403,'Administrator required');
     if(limited(req,'announcement:'+user.id,6,60000))return fail(res,429,'Please wait before posting another announcement');
