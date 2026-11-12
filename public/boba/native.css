@@ -43,7 +43,7 @@
 .hwm img{opacity:.24;filter:brightness(0);mix-blend-mode:normal}
 :root[data-theme="dark"] .hwm img{opacity:.19;filter:brightness(0) invert(1)}
 /* A neutral AI glyph, independent of the provider. */
-.dk[data-section="ai"] svg,.native-app-icon .cel-ai-icon{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.native-app-icon .cel-ai-icon{fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
 
 .native-admin{max-width:880px}.native-admin-note{font-size:13px;color:var(--ink-2);line-height:1.55;margin:10px 0 16px}
 .native-admin .lr{flex-wrap:wrap}.native-admin .lr .fld{flex:1;min-width:180px}.native-admin .lr h3 small{display:block;color:var(--ink-3);font-weight:400;font-size:11px;margin-top:4px}
@@ -318,8 +318,8 @@
 @media(prefers-reduced-motion:reduce){.cel-simple-search,.cel-simple-link-icon,.cel-simple-links button{transition:none}}
 
 /* ChatGPT identity, shared by the AI dock, homepage shortcut and composer. */
-.cel-ai-logo{display:inline-block;flex-shrink:0;width:24px;height:24px;background:currentColor;-webkit-mask:url("/assets/chatgpt-logo.svg") center/contain no-repeat;mask:url("/assets/chatgpt-logo.svg") center/contain no-repeat}
-.dk[data-section="ai"] .cel-ai-logo{width:25px;height:25px;border-radius:7px}
-.cel-simple-link-icon .cel-ai-logo{width:23px;height:23px;border-radius:6px}
-.ai-t .cel-ai-logo,.celestial-effort .cel-ai-logo{width:17px;height:17px;border-radius:5px}
-.native-app-icon .cel-ai-logo{width:100%;height:100%;border-radius:12px}
+.cel-ai-logo{display:block;flex-shrink:0;width:24px;height:24px;fill:currentColor;stroke:none;overflow:visible}
+.dk[data-section="ai"] .cel-ai-logo{width:25px;height:25px;fill:currentColor;stroke:none}
+.cel-simple-link-icon .cel-ai-logo{width:23px;height:23px;fill:currentColor;stroke:none}
+.ai-t .cel-ai-logo,.celestial-effort .cel-ai-logo{width:17px;height:17px;fill:currentColor;stroke:none}
+.native-app-icon .cel-ai-logo{width:100%;height:100%;fill:currentColor;stroke:none}
