@@ -54,16 +54,86 @@ export function playChess(stage){
 }
 
 export function playConnectFour(stage){
- let cells=Array(42).fill(0),turn=1,finished=false;
- stage.innerHTML='<div class="cel-extra-game"><h3>Connect Four</h3><p data-state class="cel-game-help">You are red. Drop a disc into a column.</p><div class="cel-connect-board" data-board></div>'+button('New round','reset')+'</div>';
+ let cells=Array(42).fill(0),turn=1,finished=false,animating=false,round=0,active=true;
+ stage.innerHTML='<div class="cel-extra-game"><h3>Connect Four</h3><p data-state class="cel-game-help">You are red. Drop a disc into a column.</p><div class="cel-connect-board" data-board role="group" aria-label="Connect Four game board"></div>'+button('New round','reset')+'</div>';
  const board=stage.querySelector('[data-board]'),state=stage.querySelector('[data-state]');
  const winner=b=>{for(let r=0;r<6;r++)for(let c=0;c<7;c++){const v=b[r*7+c];if(!v)continue;for(const [dr,dc] of [[0,1],[1,0],[1,1],[1,-1]]){let ok=true;for(let k=1;k<4;k++){const y=r+dr*k,x=c+dc*k;if(y<0||y>5||x<0||x>6||b[y*7+x]!==v){ok=false;break}}if(ok)return v}}return 0};
- const drop=col=>{for(let r=5;r>=0;r--)if(!cells[r*7+col]){cells[r*7+col]=turn;return true}return false};
- function draw(){board.innerHTML=cells.map((n,i)=>'<button data-col="'+i%7+'" aria-label="Column '+(i%7+1)+' row '+(Math.floor(i/7)+1)+'" class="cel-connect-cell"><span data-disc="'+n+'"></span></button>').join('');const w=winner(cells);if(w){finished=true;state.textContent=w===1?'You win!':'Computer wins.'}else if(cells.every(Boolean)){finished=true;state.textContent='Draw. Nobody connected four.'}else state.textContent=turn===1?'Your move — red.':'Computer thinking…'}
- function bot(){if(finished)return;turn=2;const available=[0,1,2,3,4,5,6].filter(c=>!cells[c]);if(!available)return;let chosen=pick(available),found=false;for(const player of [2,1]){for(const c of available){const copy=cells.slice();for(let r=5;r>=0;r--)if(!copy[r*7+c]){copy[r*7+c]=player;break}if(winner(copy)===player){chosen=c;found=true;break}}if(found)break}drop(chosen);turn=1;draw()}
- board.onclick=e=>{if(finished||turn!==1)return;const col=Number(e.target.closest('[data-col]')?.dataset.col);if(!Number.isInteger(col)||!drop(col))return;draw();if(!finished)bot()};
- stage.querySelector('[data-action=reset]').onclick=()=>{cells=Array(42).fill(0);turn=1;finished=false;draw()};
- draw();return()=>{};
+ const drop=(col,player)=>{
+  for(let row=5;row>=0;row--){
+   const index=row*7+col;
+   if(!cells[index]){cells[index]=player;return index}
+  }
+  return -1;
+ };
+ const canAnimate=()=>typeof document!=='undefined'&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches&&document.documentElement.dataset.fx!=='lite';
+ function draw(){
+  board.innerHTML=cells.map((n,i)=>'<button data-col="'+i%7+'" data-cell="'+i+'" aria-label="Column '+(i%7+1)+' row '+(Math.floor(i/7)+1)+'" class="cel-connect-cell"><span data-disc="'+n+'"></span></button>').join('');
+  const w=winner(cells);
+  finished=!!w||cells.every(Boolean);
+  if(w)state.textContent=w===1?'You win!':'Computer wins.';
+  else if(finished)state.textContent='Draw. Nobody connected four.';
+  else state.textContent=turn===1?'Your move — red.':'Computer thinking…';
+ }
+ async function animateDisc(index){
+  if(!canAnimate())return;
+  const piece=board.querySelector('[data-cell="'+index+'"] span');
+  if(!piece||typeof piece.animate!=='function')return;
+  const row=Math.floor(index/7);
+  const distance=Math.max(0,piece.getBoundingClientRect().top-board.getBoundingClientRect().top+piece.offsetHeight);
+  if(!distance)return;
+  const duration=235+row*43;
+  const animation=piece.animate([
+   {transform:'translateY(-'+distance+'px)',offset:0},
+   {transform:'translateY(0)',offset:.82},
+   {transform:'translateY(-7px)',offset:.92},
+   {transform:'translateY(0)',offset:1}
+  ],{duration,easing:'cubic-bezier(.2,.75,.3,1)'});
+  await animation.finished.catch(()=>{});
+ }
+ function chooseBotColumn(){
+  const available=[0,1,2,3,4,5,6].filter(col=>!cells[col]);
+  if(!available.length)return -1;
+  let chosen=pick(available);
+  for(const player of [2,1]){
+   let found=false;
+   for(const col of available){
+    const copy=cells.slice();
+    for(let row=5;row>=0;row--)if(!copy[row*7+col]){copy[row*7+col]=player;break}
+    if(winner(copy)===player){chosen=col;found=true;break}
+   }
+   if(found)break;
+  }
+  return chosen;
+ }
+ board.onclick=async event=>{
+  if(finished||animating||turn!==1)return;
+  const target=event.target.closest('[data-col]');
+  if(!target)return;
+  const col=Number(target.dataset.col);
+  if(!Number.isInteger(col)||col<0||col>6)return;
+  const index=drop(col,1);
+  if(index<0)return;
+  const currentRound=round;
+  animating=true;
+  turn=2;draw();
+  await animateDisc(index);
+  if(!active||round!==currentRound)return;
+  if(!finished){
+   const botCol=chooseBotColumn();
+   if(botCol!==-1){
+    const botIndex=drop(botCol,2);
+    draw();
+    await animateDisc(botIndex);
+    if(!active||round!==currentRound)return;
+   }
+  }
+  turn=1;animating=false;draw();
+ };
+ stage.querySelector('[data-action=reset]').onclick=()=>{
+  round++;cells=Array(42).fill(0);turn=1;finished=false;animating=false;draw();
+ };
+ draw();
+ return()=>{active=false;round++};
 }
 export function playMines(stage){
  let cells=[],flags=0,done=false,started=false;
