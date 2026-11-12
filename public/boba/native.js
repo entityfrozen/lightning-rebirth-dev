@@ -1,3 +1,4 @@
+import {startAccountSync} from './account-sync.js';
 import {mountShell} from './shell.js';
 import {$,$$,ico,api,applyPrefs} from './common.js';
 import {mountBrowser} from './browser.js';
@@ -14,6 +15,8 @@ async function start(){
  const data=await api('/api/me');
  if(!data.user){location.replace('/login');return}
  const user=data.user,views=$('#views'),dock=$('#dock');
+ await startAccountSync(user);
+ applyPrefs();
  const items=[['home','Home','star'],['browser','Browser','web'],['games','Games','play'],['chat','Chat','people'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
  if(user.role==='admin')items.splice(items.length-1,0,['admin','Administration','shield']);
  const view=id=>$('[data-view="'+id+'"]');
