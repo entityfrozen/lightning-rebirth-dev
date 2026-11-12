@@ -56,7 +56,7 @@ export function mountChat(root,user){
 (m.userId===user.id&&Date.now()-(Number(m.at)||0)<900000?'<button type="button" data-edit-message="'+esc(m.id)+'" title="Edit message">✎</button>':'')+
 ((user.role==='admin'||user.role==='community_manager'||user.role==='moderator')?'<button type="button" data-pin-message="'+esc(m.id)+'" title="'+(m.pinnedAt?'Unpin':'Pin')+'">📌</button>':'')+'</div>':'')+(!dm&&(user.role==='admin'||m.userId===user.id)?'<button type="button" class="native-delete-message" aria-label="Delete message" title="Delete message" data-delete-message="'+esc(m.id)+'" data-delete-channel="'+esc(c?.id||'')+'">'+ico('trash')+'</button>':'')+'</article>'}).join('');
   if(near)feed.scrollTop=feed.scrollHeight;else feed.scrollTop=previousScroll;
-  input.disabled=!dm&&!!c?.readOnly&&user.role!=='admin';
+  input.disabled=!dm&&!!c?.readOnly&&!['admin','community_manager'].includes(user.role);
   if(input.disabled)input.placeholder='Only staff can post in this channel';
   paintAnnouncement();paintTyping();
   $r('[data-member-count]').textContent=all.length;
@@ -208,8 +208,8 @@ export function mountChat(root,user){
  picker.onclick=e=>{const b=e.target.closest('[data-mention]');if(b)insertMention(Number(b.dataset.mention))};
  input.oninput=()=>{
   suggestions();storeDraft();input.style.height='auto';input.style.height=Math.min(input.scrollHeight,150)+'px';
-  if(!dm&&socket?.readyState===WebSocket.OPEN&&Date.now()-lastTypingAt>2000&&input.value.trim()){
-   lastTypingAt=Date.now();send({type:'v2Typing',serverId,channel:channelId});
+  if(!dm&&socket?.readyState===WebSocket.OPEN&&Date.now()-lastTypingAt>2600&&input.value.trim()){
+   lastTypingAt=Date.now();setTimeout(()=>{if(socket?.readyState===WebSocket.OPEN&&!sending&&input.value.trim())send({type:'v2Typing',serverId,channel:channelId})},550);
   }
  };
  input.onkeydown=e=>{
