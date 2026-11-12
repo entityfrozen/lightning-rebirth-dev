@@ -138,6 +138,20 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
   });
   sendAll({type:"v2Directory",directory:directory()});
  };
+ const listAnnouncements=()=> (main.messages.announcements||[]).slice(-25).reverse().map(({id,message,by,at,pinnedAt})=>({id,message,by,at,pinnedAt}));
+ const postAnnouncement=(actor,{message,pin=false}={})=>{
+  if(actor?.role!=='admin')throw Error('Administrator required');
+  const body=clean(message,1500);
+  if(!body)throw Error('Announcement cannot be empty');
+  const entry={id:id(),channel:'announcements',message:body,by:clean(actor.username,32)||'Administration',username:clean(actor.username,32)||'Administration',userId:actor.id,at:Date.now(),replyTo:null,reactions:{},announcement:true};
+  if(pin){for(const old of main.messages.announcements||[]){delete old.pinnedAt;delete old.pinnedBy}entry.pinnedAt=Date.now();entry.pinnedBy=actor.id}
+  (main.messages.announcements??=[]).push(entry);
+  main.messages.announcements=main.messages.announcements.slice(-LIMITS.messages);
+  save();
+  for(const memberId of main.members)sendToUser(memberId,{type:'v2Message',serverId:MAIN_SERVER_ID,entry});
+  sendAll({type:'v2Announcement',entry:{id:entry.id,message:entry.message,by:entry.by,at:entry.at}});
+  return {id:entry.id,message:entry.message,by:entry.by,at:entry.at};
+ };
  const authorized=(u,s)=>canManage(u,s);
  const roleFor=(userId,s)=>getRole(userId)||(s.profiles?.[userId]?.admin?"admin":"user");
  const canSeeStaff=(userId,s)=>canManage({id:userId,role:roleFor(userId,s)},s);
@@ -274,7 +288,7 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
    if(c.readOnly&&!authorized(u,s))return err(u,"This is a staff-only posting channel.");
    const parentId=clean(data.replyTo,40);
    const parent=parentId?(s.messages[channel]||[]).find(m=>m.id===parentId):null;
-   const entry={id:id(),channel,message,by:u.name,username:u.username,userId:u.id,at:Date.now(),
+   const entry={id:id(),channel,message,by:u.name,username:u.username,userId:u.id,at:Date.now(),clientId:clean(data.clientId,64),
     replyTo:parent?.id||null,reactions:{}};
    (s.messages[channel]??=[]).push(entry);s.messages[channel]=s.messages[channel].slice(-LIMITS.messages);
    save();
@@ -342,5 +356,5 @@ export function createCommunityStore({dataDir,sendToUser,sendAll,getRole=()=>nul
    return;
   }
  }
- return {snapshot,handle,directory,mainId:MAIN_SERVER_ID};
+ return {snapshot,handle,directory,mainId:MAIN_SERVER_ID,listAnnouncements,postAnnouncement};
 }
