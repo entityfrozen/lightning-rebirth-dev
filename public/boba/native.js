@@ -17,17 +17,29 @@ async function start(){
  const data=await api('/api/me');
  if(!data.user){location.replace('/login');return}
  const user=data.user,views=$('#views'),dock=$('#dock');
- await startAccountSync(user);
+ // An account sync outage must never prevent the local workspace from opening.
+ try{await startAccountSync(user)}catch(error){console.warn('Account preferences unavailable:',error)}
  applyPrefs();
  window.dispatchEvent(new Event('celestial:reimu-refresh'));
  const items=[['home','Home','star'],['browser','Browser','web'],['games','Games','play'],['chat','Chat','discord'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
  if(user.role==='admin')items.splice(items.length-1,0,['admin','Administration','shield']);
  const view=id=>$('[data-view="'+id+'"]');
  let current='home',paintSettings=()=>{},loadAdmin=()=>{};
- const browser=mountBrowser(view('browser'));
+ const mountSafely=(name,element,callback)=>{
+  try{return callback()}catch(error){
+   console.error('Celestial '+name+' startup failed:',error);
+   element.replaceChildren();
+   const message=document.createElement('p');
+   message.className='native-start-error';
+   message.textContent=name+' is temporarily unavailable: '+error.message;
+   element.append(message);
+   return null;
+  }
+ };
+ const browser=mountSafely('Browser',view('browser'),()=>mountBrowser(view('browser')))||{tabs:[],navigate(){},available:false};
  const open=url=>{navigate('browser');browser.navigate(url,true)};
- mountHome(view('home'),user,navigate,open);
- mountGames(view('games'));
+ mountSafely('Home',view('home'),()=>mountHome(view('home'),user,navigate,open));
+ mountSafely('Games',view('games'),()=>mountGames(view('games')));
  function navigate(id){
   if(!items.some(x=>x[0]===id))id='home';
   current=id;
@@ -35,7 +47,7 @@ async function start(){
   const active=id;
   for(const el of views.querySelectorAll('.view')){const on=el.dataset.view===active;el.classList.toggle('on',on);el.setAttribute('aria-hidden',String(!on));el.inert=!on}
   for(const el of dock.querySelectorAll('.dk')){const on=el.dataset.section===id;el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')}
-  if(id==='browser'&&!browser.tabs.length) $('[data-wnew]').click();
+  if(id==='browser'&&browser.available!==false&&!browser.tabs.length) $('[data-wnew]')?.click();
   if(id==='settings')paintSettings();
   if(id==='admin')loadAdmin();
   // Short public URL: page selection stays in memory rather than the address bar.
@@ -49,13 +61,23 @@ async function start(){
  };
  window.addEventListener('celestial:dock-settings',updateDock);
  for(const [id,label,key] of items){const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='home'?'<img src="/assets/celestial-star.svg" alt="" class="cel-dock-star">':id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)}
- mountAsk(view('ai'),user);mountChat(view('chat'),user);mountAccount(view('account'),user);
- if(user.role==='admin')loadAdmin=mountAdmin(view('admin'),user);
- view('settings').innerHTML=settings.html();paintSettings=settings.mount(view('settings'));
+ mountSafely('AI',view('ai'),()=>mountAsk(view('ai'),user));
+ mountSafely('Chat',view('chat'),()=>mountChat(view('chat'),user));
+ mountSafely('Account',view('account'),()=>mountAccount(view('account'),user));
+ if(user.role==='admin')loadAdmin=mountSafely('Administration',view('admin'),()=>mountAdmin(view('admin'),user))||(()=>{});
+ mountSafely('Settings',view('settings'),()=>{
+  view('settings').innerHTML=settings.html();
+  paintSettings=settings.mount(view('settings'));
+ });
  updateDock();
  views.hidden=false;dock.hidden=false;
  navigate(location.hash.slice(1)||sessionStorage.getItem('celestial.lastView')||'home');
  window.addEventListener('hashchange',()=>{if(location.hash)navigate(location.hash.slice(1))});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dock.classList.contains('hide')){$('[data-wv]').classList.remove('max');dock.classList.remove('hide')}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='l'){e.preventDefault();navigate('browser');$('[data-omni]').focus()}});
 }
-start().catch(err=>{const p=document.createElement('p');p.className='native-start-error';p.textContent='Unable to load Celestial: '+err.message;document.body.append(p)});
+start().catch(err=>{
+ console.error('Celestial critical startup failure:',err);
+ const p=document.createElement('p');p.className='native-start-error';
+ p.textContent='Unable to load Celestial: '+err.message;
+ document.body.append(p);
+});
