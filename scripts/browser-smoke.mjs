@@ -188,6 +188,8 @@ try{
     boba.locator('[data-tab-blank]').click()
   ]);
   assert.equal(cloakedPopup.url(),'about:blank');
+  assert.equal(await cloakedPopup.evaluate(()=>new Function('return 6 * 7')()),42,
+    'The about:blank wrapper must inherit a CSP that permits proxy engine evaluation');
   const wrappedUrl=await cloakedPopup.locator('iframe').first().getAttribute('src');
   assert.equal(new URL(wrappedUrl).pathname,'/','Cloaked Celestial should use the shortest entry URL');
   // The wrapper always provides a standalone recovery action even if the

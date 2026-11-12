@@ -31,6 +31,9 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.equal(homepage.headers.get('cross-origin-embedder-policy'),'credentialless');
     assert.equal(homepage.headers.get('x-frame-options'),null);
     assert.doesNotMatch(homepage.headers.get('content-security-policy')||'',/frame-ancestors/);
+    // Proxied games rely on JS string evaluation in this app document.
+    // A page opened within about:blank inherits this document's CSP.
+    assert.match(homepage.headers.get('content-security-policy')||'',/script-src[^;]*'unsafe-eval'/);
     assert.equal(homepage.headers.get('cross-origin-resource-policy'),'cross-origin');
 
     const html=await homepage.text();
@@ -62,6 +65,8 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.match(policy,/script-src 'self' data: blob:/);
     assert.match(policy,/script-src[^;]*data:/); // Lightning's official loader imports a data: module.
     assert.match(policy,/connect-src 'self' data:/);
+    assert.match(policy,/script-src[^;]*'unsafe-eval'/);
+    assert.doesNotMatch(policy,/script-src[^;]*'unsafe-inline'/);
 
 
     assert.match(await cssAsset.text(),/browser-window/);
@@ -147,6 +152,10 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
       const response=await fetch(url+asset,{headers:{Cookie:cookie}});
       assert.equal(response.status,200,asset+' should be served after sign-in');
       assert.match(response.headers.get('content-type')||'',/javascript/,asset+' must have a JS MIME type');
+      if(asset==='/uv/sw.js'||asset==='/baremux/worker.js'){
+        assert.match(response.headers.get('content-security-policy')||'',/script-src[^;]*'unsafe-eval'/,
+          asset+' must allow the dynamic JS required by proxying');
+      }
     }
 
 
