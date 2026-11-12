@@ -6,8 +6,9 @@ import { attachLightningLive } from './live.js';
 import {importBoltData,bootstrapAdministrator,backupBoltData} from './legacy-data.js';
 import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
 import { getGameCatalog } from './game-catalog.js';
+import { generateImage } from './image-provider.js';
 import { ROLE_OPTIONS, isValidRole } from './staff-roles.js';
-import { readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rename, stat, readdir, unlink } from 'node:fs/promises';
 import { randomBytes, createHash, scryptSync, timingSafeEqual } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -224,6 +225,17 @@ async function handleAPI(req,res,url) {
     if(!user)return fail(res,401,'Sign in required');
     if(user.role!=='admin')return fail(res,403,'Administrator required');
     return respond(res,200,{announcements:liveCommunity?.listAnnouncements()||[]});
+  }
+  const aiImage=pathname.match(/^\/api\/ai\/images\/([a-f0-9]{24})\.(png|jpg|webp)$/);
+  if(req.method==='GET'&&aiImage){
+    if(!user)return fail(res,401,'Sign in required');
+    const imgDir=path.join(DATA_DIR,'ai-images',createHash('sha256').update(user.id).digest('hex').slice(0,24));
+    const filename=path.join(imgDir,aiImage[1]+'.'+aiImage[2]);
+    try{
+      const image=await readFile(filename);
+      res.writeHead(200,{'Content-Type':aiImage[2]==='png'?'image/png':aiImage[2]==='jpg'?'image/jpeg':'image/webp','Cache-Control':'private, max-age=86400','X-Content-Type-Options':'nosniff'});
+      return res.end(image);
+    }catch(error){if(error.code==='ENOENT')return fail(res,404,'Image not found');throw error}
   }
   if(req.method==='GET'&&pathname==='/api/games/catalog'){
     if(!user)return fail(res,401,'Sign in required');
@@ -491,6 +503,32 @@ async function handleAPI(req,res,url) {
     await persist();
     notify('dm');
     return respond(res,201,{message:{...row,author:user.username}});
+  }
+  if(pathname==='/api/ai/images'&&req.method==='POST'){
+    if(!user)return fail(res,401,'Sign in required');
+    if(!providers.nvidia)return fail(res,503,'NVIDIA image generation is not configured');
+    if(limited(req,'ai-image:'+user.id,6,3600000))return fail(res,429,'Image generation limit reached. Try again later.');
+    const prompt=typeof body.prompt==='string'?body.prompt.trim():'';
+    if(prompt.length<3||prompt.length>1600)return fail(res,400,'Describe an image using 3 to 1,600 characters');
+    try{
+      const result=await generateImage({apiKey:providers.nvidia,prompt,signal:AbortSignal.timeout(125000)});
+      const imgDir=path.join(DATA_DIR,'ai-images',createHash('sha256').update(user.id).digest('hex').slice(0,24));
+      await mkdir(imgDir,{recursive:true});
+      const imageId=randomBytes(12).toString('hex');
+      const filename=imageId+'.'+result.extension;
+      await writeFile(path.join(imgDir,filename),result.bytes,{flag:'wx',mode:0o600});
+      // Bound disk usage without touching other users or the main account database.
+      const files=(await readdir(imgDir)).filter(name=>/^[a-f0-9]{24}\.(png|jpg|webp)$/.test(name));
+      if(files.length>24){
+        const entries=await Promise.all(files.map(async name=>({name,time:(await stat(path.join(imgDir,name))).mtimeMs})));
+        entries.sort((a,b)=>a.time-b.time);
+        for(const old of entries.slice(0,Math.max(0,entries.length-24)))await unlink(path.join(imgDir,old.name)).catch(()=>{});
+      }
+      return respond(res,200,{image:'/api/ai/images/'+filename,model:result.model,prompt});
+    }catch(error){
+      console.warn('Image generation failed:',error?.message||'unknown');
+      return fail(res,error?.status===401?503:502,error?.message||'Image generation is unavailable');
+    }
   }
   if(pathname==='/api/ai' && req.method==='POST'){
     if(!providers.nvidia)return fail(res,503,'Celestial is unavailable right now.');
