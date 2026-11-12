@@ -328,3 +328,44 @@
 .cel-discord-icon{display:block;width:24px;height:24px;fill:currentColor;stroke:none;flex-shrink:0}
 .dk[data-section="chat"] .cel-discord-icon{width:25px;height:22px}
 .cel-simple-link-icon .cel-discord-icon{width:23px;height:19px}
+
+/* Messaging v3: discreet status, richer controls, actionable announcements. */
+.native-announcements{padding:10px 14px 18px}
+.native-announcements [data-announce]{display:grid;gap:8px}
+.native-announce-editor{display:flex;flex-direction:column;width:100%;gap:6px}
+.native-announce-editor textarea{display:block;resize:vertical;min-height:112px;width:100%;border:1px solid var(--hair-2);border-radius:13px;background:var(--g2);padding:12px;color:var(--ink);font:inherit;font-size:13px;line-height:1.55}
+.native-announce-editor textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.native-announce-editor small{text-align:right;color:var(--ink-3);font-size:11px}
+.native-announce-pin{display:inline-flex;align-items:center;gap:9px;font-size:12px;color:var(--ink-2)}
+.native-announce-pin input{width:16px;height:16px;accent-color:var(--acc)}
+.native-announce-history{border-top:1px solid var(--hair);margin-top:10px;padding:16px 8px}
+.native-announce-history h3{font-size:13px;margin:0 0 13px}
+.native-announce-item{padding:12px 4px;border-bottom:1px solid var(--hair)}
+.native-announce-item>div{display:flex;justify-content:space-between;flex-wrap:wrap;gap:7px}
+.native-announce-item strong{font-size:12px}
+.native-announce-item small{font-size:10px;color:var(--ink-3)}
+.native-announce-item p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.6;margin-top:7px}
+.cel-chat-announcement{display:flex;align-items:center;gap:11px;margin:10px 16px 0;padding:10px 12px;border:1px solid color-mix(in srgb,var(--acc),transparent 65%);background:color-mix(in srgb,var(--acc),transparent 91%);border-radius:12px;color:var(--ink)}
+.cel-chat-announcement>span{font-size:19px;flex:none}
+.cel-chat-announcement strong{font-size:11px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;flex:1}
+.cel-chat-announcement button{font-size:11px;font-weight:750;color:var(--acc);white-space:nowrap}
+.cel-chat-announcement [data-dismiss-announcement]{font-size:17px;font-weight:400;color:var(--ink-3)}
+.cel-chat-typing{padding:5px 22px;color:var(--ink-3);font-size:11px;min-height:25px}
+.cel-chat-typing[hidden]{display:none}
+.cel-compose-hint [data-send-state]{float:right;color:var(--ink-2);font-weight:650}
+.native-compose [data-send-btn][disabled]{opacity:.5;cursor:wait}
+.cel-message-parent{display:block;padding:6px 0 3px;font-size:11px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cel-message-pin{display:inline-block;font-size:10px;font-weight:760;color:var(--acc);margin-top:7px}
+.cel-message-edited{font-size:10px;color:var(--ink-3);font-style:italic}
+.cel-message-actions{display:flex;gap:3px;align-self:flex-start;flex:none;opacity:0}
+.cel-message-actions button{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;color:var(--ink-3);font-size:15px}
+.cel-message-actions button:hover{background:var(--g3);color:var(--ink)}
+.native-message:hover .cel-message-actions,.native-message:focus-within .cel-message-actions{opacity:1}
+.cel-message-reactions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:5px}
+.cel-message-reactions button{border-radius:8px;border:1px solid var(--hair);background:var(--g2);padding:3px 7px;font-size:11px;color:var(--ink-2)}
+.cel-message-reactions button.mine{background:color-mix(in srgb,var(--acc),transparent 86%);border-color:var(--acc);color:var(--ink)}
+.cel-inline-edit{display:flex;flex-direction:column;gap:8px;padding-top:9px}
+.cel-inline-edit textarea{width:100%;min-height:68px;resize:vertical;background:var(--g2);color:var(--ink);border:1px solid var(--hair-2);border-radius:10px;padding:9px 10px;font:inherit;font-size:13px}
+.cel-inline-edit>div{display:flex;justify-content:flex-end;gap:7px}
+@media(hover:none){.cel-message-actions{opacity:1}}
+@media(max-width:600px){.cel-chat-announcement{margin:7px 7px 0;gap:6px;padding:7px}.cel-chat-announcement strong{font-size:10px}.cel-chat-typing{padding:3px 9px}.cel-message-actions button{width:24px;height:24px}.cel-message-reactions button{font-size:10px}}
