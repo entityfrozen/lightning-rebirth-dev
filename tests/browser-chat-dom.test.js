@@ -58,3 +58,12 @@ test('Both proxy engines use separate service workers and transports',()=>{
  assert.ok(browser.includes('data-proxy-mode'));
  assert.ok(browser.includes('createUltravioletFrame'));
 });
+
+test('about:blank browser and Arcade select Ultraviolet by default without changing standalone preferences',()=>{
+ const browser=source('../public/boba/browser.js');
+ const arcade=source('../public/boba/catalog-ui.js');
+ const wrapper=source('../public/boba/about-blank.js');
+ assert.match(browser,/window\.self!==window\.top\?'ultraviolet'/);
+ assert.match(arcade,/if\(window\.self!==window\.top\)modeSelect\.value='ultraviolet'/);
+ assert.match(wrapper,/Embedded browsing starts with Ultraviolet/);
+});

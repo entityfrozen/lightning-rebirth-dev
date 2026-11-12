@@ -16,7 +16,10 @@ const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f
 const get=async()=>[];
 function failPage(frame,url,retry,message='The page could not load.'){const doc=frame.contentDocument;if(!doc)return;doc.body?.replaceChildren();const p=doc.createElement('p');p.textContent=message;const b=doc.createElement('button');b.textContent='Retry';b.onclick=retry;doc.body?.append(p,b);}
 const frames=new WeakMap();
-const defaultProxy=()=>store.get('proxyEngine','scramjet')==='ultraviolet'?'ultraviolet':'scramjet';
+// An about:blank wrapper is a framed workspace. Prefer the engine that does not
+// depend on cross-origin-isolated top-level document privileges.
+const defaultProxy=()=>window.self!==window.top?'ultraviolet':
+  store.get('proxyEngine','scramjet')==='ultraviolet'?'ultraviolet':'scramjet';
 const engine={
  normalise(input){const q=String(input||'').trim();if(!q)return '';try{const u=new URL(q);if(['http:','https:'].includes(u.protocol))return u.href}catch{}if(/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/:?#]|$)/i.test(q))return 'https://'+q;return 'https://www.google.com/search?q='+encodeURIComponent(q)},
  boot:getProxyController,recover:getProxyController,

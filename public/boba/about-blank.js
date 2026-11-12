@@ -38,7 +38,7 @@ export function openAboutBlank(target,appearance={}){
   // Keep an escape hatch in the *wrapper*, not in the framed application:
   // privacy checks or frame restrictions can prevent the iframe loading.
   if(destination.origin===location.origin&&(destination.pathname==='/'||destination.pathname==='/boba/index.html')){
-   label.textContent='Browser requires a standalone Celestial tab.';
+   label.textContent='Embedded browsing starts with Ultraviolet. Scramjet may require a regular tab.';
    const standalone=doc.createElement('button');
    standalone.type='button';
    standalone.dataset.openStandalone='true';

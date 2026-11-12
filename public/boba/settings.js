@@ -49,7 +49,7 @@ export const settings = {
       '<div class="lr native-tab-preview"><img data-preview-icon width="28" height="28" alt=""><div><h3 data-preview-title>Celestial</h3><small>Browser tab preview · title and icon only</small></div><button class="btn s" type="button" data-tab-reset>Reset</button></div>' +
       '<p class="native-tab-note">Cloaking only changes how this tab looks. It does not change the address, browser history, network activity, or school monitoring.</p>' +
       '<div class="lr"><h3>Open in about:blank</h3><button type="button" class="btn s" data-tab-blank>Open cloaked tab</button></div>' +
-      '<p class="native-tab-note">Some browsers block popups and embedded sites. Scramjet requires a standalone tab; the wrapper does not bypass browser or network restrictions.</p>' +
+      '<p class="native-tab-note">Framed tabs prefer Ultraviolet. Scramjet may require a standalone tab, and browsers can still block embedded sites.</p>' +
       '<div class="lr"><h3>Account sync</h3><span class="netst" data-account-sync>Saving preferences across your devices</span></div>' +
       '<div class="lr">' + lic("trash", "#ff6b6b", "#d62e4a") + '<h3>Reset appearance preferences</h3><button class="btn s" data-reset>Reset</button></div></section></div>';
   },

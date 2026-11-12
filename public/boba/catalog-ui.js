@@ -109,6 +109,8 @@ export function openDistributorGame(stage,game){
  for(const [value,label] of [['proxy','Scramjet proxy'],['ultraviolet','Ultraviolet proxy'],['direct','Direct embed']]){
   const option=document.createElement('option');option.value=value;option.textContent=label;modeSelect.append(option);
  }
+ // The about:blank wrapper can't guarantee Scramjet's isolation requirements.
+ if(window.self!==window.top)modeSelect.value='ultraviolet';
  const sourceLink=document.createElement('a');sourceLink.className='btn s';sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';sourceLink.textContent='Open original';
  const fullscreen=document.createElement('button');fullscreen.className='btn s';fullscreen.textContent='Fullscreen';
  const notice=document.createElement('p');notice.className='arcade-help';notice.setAttribute('role','status');
