@@ -133,14 +133,14 @@ try{
   await boba.locator('[data-view="home"].on img[src="/assets/celestial-star.svg"]').waitFor({timeout:10000});
   assert.equal(await boba.locator('[data-view="browser"].on').count(),0,'Home must not be Browser');
   await boba.locator('[data-section="_v84ae39"]').click();
-  await boba.locator('[data-arcade-index]').filter({has:boba.locator('strong', {hasText:'2048'})}).click();
+  await boba.locator('[data-i9]').filter({has:boba.locator('strong', {hasText:'2048'})}).click();
   assert.equal(await boba.locator('[data-value]').count(),16);
   await boba.keyboard.press('ArrowLeft');
   await boba.locator('[data-back]').click();
-  await boba.locator('[data-arcade-index]').filter({has:boba.locator('strong', {hasText:'Tic Tac Toe'})}).click();
+  await boba.locator('[data-i9]').filter({has:boba.locator('strong', {hasText:'Tic Tac Toe'})}).click();
   assert.equal(await boba.locator('[data-pos]').count(),9);
   await boba.locator('[data-back]').click();
-  await boba.locator('[data-arcade-index]').filter({has:boba.locator('strong', {hasText:'Rock Paper Scissors'})}).click();
+  await boba.locator('[data-i9]').filter({has:boba.locator('strong', {hasText:'Rock Paper Scissors'})}).click();
   assert.equal(await boba.locator('[data-view="_v84ae39"] [data-stage] [data-pick]').count(),3);
   await boba.locator('[data-back]').click();
   // Verify Arcade's Scramjet mode uses the actual service worker, not a direct iframe.
