@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {runInNewContext} from 'node:vm';
-import {parseAst} from 'rollup';
+import {parseAst} from 'rollup/parseAst';
 import {codePoints,encodeMarkupSource,encodeClientMarkup} from '../scripts/encode-client-markup.mjs';
 
 test('numeric encoding preserves markup, Unicode, selectors and captions',()=>{

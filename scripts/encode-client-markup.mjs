@@ -1,4 +1,4 @@
-import {parseAst} from 'rollup';
+import {parseAst} from 'rollup/parseAst';
 
 // Only authored UI literals are encoded. This is obfuscation, not encryption.
 // Keep DOM selectors, class names, endpoints and third-party page data intact.
