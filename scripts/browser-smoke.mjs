@@ -153,6 +153,11 @@ try{
     const frame=document.querySelector('[data-view="games"] .cel-dist-frame');
     return !!frame?.src?.includes('/~/sj/');
   },null,{timeout:45000});
+  await arcadeMode.selectOption('ultraviolet');
+  await boba.waitForFunction(()=>{
+    const frame=document.querySelector('[data-view="games"] .cel-dist-frame');
+    return !!frame?.src?.includes('/uv/service/');
+  },null,{timeout:45000});
   await boba.locator('[data-view="games"] [data-back]').click();
   await boba.locator('[data-section="ai"]').click();
   assert.equal(await boba.locator('[data-effort]').inputValue(),'instant');
@@ -237,6 +242,21 @@ try{
     throw Error('Native Scramjet rendered wrong site: '+JSON.stringify(snapshot)+'; '+error.message);
   });
   assert.equal(await boba.locator('.native-browser-error').count(),0,'Scramjet should render a real page instead of an error');
+  // Ultraviolet must intercept a real navigation using its independent scope.
+  await boba.locator('[data-proxy-mode]').selectOption('ultraviolet');
+  await boba.waitForFunction(()=>{
+    const frame=document.querySelector('.page iframe[src*="/uv/service/"]');
+    return !!frame;
+  },null,{timeout:45000});
+  await boba.waitForFunction(()=>{
+    const frame=document.querySelector('.page iframe[src*="/uv/service/"]');
+    try{
+      const doc=frame?.contentDocument;
+      return doc?.title==='Example Domain'&&
+        (doc.body?.textContent||'').includes('Example Domain');
+    }catch{return false}
+  },null,{timeout:45000});
+
 
   await boba.screenshot({path:path.join(screenshots,'boba-native-browser.png'),fullPage:true});
   await boba.close();
