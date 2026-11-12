@@ -149,7 +149,7 @@ function validateWorkspace(input){
  const clean={};
  for(const [key,value] of Object.entries(values)){
    if(!WORKSPACE_KEYS.has(key)&&!/^boba\.ask\.[a-zA-Z0-9_-]{8,50}$/.test(key))return null;
-   if(typeof value!=='string'||value.length>(key.startsWith('boba.ask.')?2000000:key==='boba.notes'?25000:1600))return null;
+   if(typeof value!=='string'||value.length>(key.startsWith('boba.ask.')?2000000:key==='boba.notes'?25000:key==='boba.native.links'?12000:1600))return null;
    clean[key]=value;
  }
  if(JSON.stringify(clean).length>2050000)return null;
