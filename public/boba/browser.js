@@ -222,7 +222,7 @@ const home = {
         u = t && t.url && document.activeElement !== omni && omni.value === t.url ? new URL(t.url) : null;
       } catch {}
       addr.classList.toggle("show", !!u);
-      if (u) disp.innerHTML = "<b>" + esc(u.host.replace(/^www\./, "")) + "</b><span>" + esc(readable((u.pathname + u.search + u.hash).replace(/\/$/, ""))) + "</span>";
+      if(u){\n        disp.replaceChildren();\n        const domain=document.createElement("b");\n        domain.textContent=u.hostname.replace(/^www\\./,"");\n        disp.append(domain);\n      }else disp.replaceChildren();
     };
     const closeTab = (id) => {
       const i = st.tabs.findIndex((t) => t.id === id);
