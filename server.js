@@ -141,17 +141,31 @@ function liveIdentity(headers){
   if(!activeAccount(user))return null;
   return {identity:{id:user.id,username:user.username,role:user.role||'user'},session};
 }
+const WORKSPACE_KEYS=new Set(['celestial.boba.theme','boba.accent','boba.fx','boba.dock.ai','boba.tab.preset','boba.tab.title','boba.tab.icon','celestial.ai.effort','boba.notes','boba.native.links','celestial.2048.best']);
+function validateWorkspace(input){
+ if(!input||typeof input!=='object'||Array.isArray(input))return null;
+ const values=input.values;
+ if(!values||typeof values!=='object'||Array.isArray(values))return null;
+ const clean={};
+ for(const [key,value] of Object.entries(values)){
+   if(!WORKSPACE_KEYS.has(key)&&!/^boba\.ask\.[a-zA-Z0-9_-]{8,50}$/.test(key))return null;
+   if(typeof value!=='string'||value.length>(key.startsWith('boba.ask.')?70000:key==='boba.notes'?25000:1600))return null;
+   clean[key]=value;
+ }
+ if(JSON.stringify(clean).length>110000)return null;
+ return {values:clean};
+}
 function publicAccount(user) {return user ? {id:user.id,username:user.username,joinedAt:user.joinedAt,role:user.role||'user'} : null;}
 function respond(res,status,body,headers={}) {
   res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...headers});
   res.end(JSON.stringify(body));
 }
 function fail(res,status,error) {respond(res,status,{error});}
-async function bodyJSON(req) {
+async function bodyJSON(req,maxLength=18000) {
   let content='';
   for await (const chunk of req) {
     content += chunk;
-    if(content.length > 18000) throw new Error('Request is too large');
+    if(content.length > maxLength) throw new Error('Request is too large');
   }
   if(!req.headers['content-type']?.startsWith('application/json')) throw new Error('JSON content type required');
   try{return JSON.parse(content || '{}');}catch{throw new Error('Invalid JSON');}
@@ -209,6 +223,10 @@ async function handleAPI(req,res,url) {
     if(!user)return fail(res,401,'Sign in required');
     const catalog=await getGameCatalog();
     return respond(res,200,catalog,{'Cache-Control':'private, max-age=1800'});
+  }
+  if(req.method==='GET'&&pathname==='/api/account/workspace'){
+    if(!user)return fail(res,401,'Sign in required');
+    return respond(res,200,{workspace:user.workspace||null});
   }
   if(req.method==='GET' && pathname==='/api/me') return respond(res,200,{user:publicAccount(user),stats:{members:db.users.length,drops:db.drops.length,messages:db.messages.length}});
   if(req.method==='GET'&&pathname==='/api/admin/config'){
@@ -295,7 +313,16 @@ async function handleAPI(req,res,url) {
   }
   if(!['POST','DELETE'].includes(req.method)) return fail(res,404,'API route not found');
   if(!safeOrigin(req))return fail(res,403,'Origin not allowed');
-  const body=req.method==='POST'?await bodyJSON(req):{};
+  const body=req.method==='POST'?await bodyJSON(req,pathname==='/api/account/workspace'?135000:18000):{};
+  if(pathname==='/api/account/workspace'&&req.method==='POST'){
+    if(!user)return fail(res,401,'Sign in required');
+    if(limited(req,'workspace:'+user.id,120,600000))return fail(res,429,'Too many workspace updates');
+    const next=validateWorkspace(body);
+    if(!next)return fail(res,400,'Invalid workspace settings');
+    user.workspace={...next,updatedAt:Date.now()};
+    await persist();
+    return respond(res,200,{ok:true,updatedAt:user.workspace.updatedAt});
+  }
   if(pathname==='/api/register' && req.method==='POST') {
     if(limited(req,'register',7,600000))return fail(res,429,'Too many sign-up attempts');
     const username=cleanLine(body.username,40);const password=body.password;
