@@ -152,7 +152,22 @@ try{
   await boba.waitForFunction(()=>{
     const frame=document.querySelector('[data-view="games"] .cel-dist-frame');
     return !!frame?.src?.includes('/~/sj/');
-  },null,{timeout:45000});
+  },null,{timeout:45000}).catch(async error=>{
+    const state=await boba.evaluate(async()=>{
+      const arcade=document.querySelector('[data-view="games"]');
+      const frame=arcade?.querySelector('.cel-dist-frame');
+      const registrations=await navigator.serviceWorker.getRegistrations();
+      return {
+        mode:arcade?.querySelector('select[aria-label="Embedding mode"]')?.value,
+        source:arcade?.querySelector('select[aria-label="Choose source"]')?.value,
+        iframeSrc:frame?.src||null,
+        messages:[...(arcade?.querySelectorAll('.arcade-help')||[])].map(el=>el.textContent),
+        workers:registrations.map(r=>({scope:r.scope,active:r.active?.scriptURL||null})),
+        controlled:!!navigator.serviceWorker.controller
+      };
+    });
+    throw Error('Arcade Scramjet iframe did not initialize: '+JSON.stringify(state)+'; '+error.message);
+  });
   await arcadeMode.selectOption('ultraviolet');
   await boba.waitForFunction(()=>{
     const frame=document.querySelector('[data-view="games"] .cel-dist-frame');
