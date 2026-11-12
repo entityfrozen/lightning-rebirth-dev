@@ -444,38 +444,6 @@
 }
 .thm[data-pal="touhou"]{position:relative;overflow:hidden}
 .thm[data-pal="touhou"] .pv{border:2px solid #bc2948;box-shadow:inset 0 0 0 3px #fff9ef,0 0 0 1px #b99157}
-.thm[data-pal="touhou"]::after{
- content:"✦ SPECIAL";
- position:absolute;
- top:5px;right:5px;
- font-size:8px;
- letter-spacing:.05em;
- font-weight:800;
- border-radius:4px;
- padding:3px 5px;
- background:#bf2e4c;
- color:white;
-}
-.reimu-settings-special{
- position:relative;
- gap:12px;
- padding:16px 20px;
- border:1px solid #bc49627a;
- border-bottom:3px solid #be2948;
- background:linear-gradient(120deg,#fff9f5e8,#f5d0d2d6);
- border-radius:11px;
-}
-.reimu-settings-special h3{color:#802e41}
-.reimu-settings-special small{display:block;color:#8d5660;font-size:11px;line-height:1.5;margin-top:5px}
-.reimu-settings-special .btn{margin-left:auto;white-space:nowrap;background:#ae2843;color:#fff;border-radius:7px}
-.reimu-settings-symbol{
- width:48px;height:48px;flex-shrink:0;
- display:grid;place-items:center;
- border:2px solid #ba334e;
- border-radius:50%;
- background:#fff9f1;color:#ae2843;
- font:700 14px/1.2 Georgia,serif;
-}
 .reimu-shrine-overlay{
  position:fixed;
  right:clamp(18px,4vw,60px);
@@ -544,8 +512,6 @@
 :root[data-fx="lite"] .reimu-shrine-overlay{opacity:.16}
 @media(max-width:650px){
  .reimu-shrine-overlay{width:55px;height:72px;right:14px;bottom:18px;transform:scale(.7);transform-origin:bottom right;opacity:.22}
- .reimu-settings-special{flex-wrap:wrap}
- .reimu-settings-special .btn{margin-left:0}
 }
 @media(prefers-reduced-motion:reduce){
  .reimu-burst{display:none}
