@@ -20,3 +20,12 @@ test('Arcade markup and styles use matching class names without legacy cel-games
   assert.ok(styles.includes('.'+name),name+' has matching CSS');
  }
 });
+
+test('Arcade card buttons use stable numeric indices rather than exposing internal game IDs',()=>{
+ const markup=read('../public/boba/games.js');
+ assert.match(markup,/data-arcade-index/);
+ assert.match(markup,/games\.indexOf\(g\)/);
+ assert.match(markup,/games\[index\]/);
+ assert.doesNotMatch(markup,/data-game="'+g\.id/);
+ assert.doesNotMatch(markup,/b\.dataset\.game/);
+});
