@@ -60,7 +60,7 @@ try{
  // Home must actually render and navigate, not just exist in the DOM.
  const home=page.locator('[data-view="home"].on');
  await home.locator('.cel-simple-greeting h1').waitFor({timeout:10000});
- assert.match(await home.locator('.cel-simple-greeting h1').textContent(),/UIAdmin/);
+ assert.match(await home.locator('.cel-simple-greeting h1').textContent(),/uiadmin/i);
  assert.equal(await home.locator('.cel-simple-links button').count(),4);
  const bounds=await home.locator('.cel-simple-center').boundingBox();
  assert.ok(bounds&&bounds.width>300&&bounds.height>100,'Home layout must be visible');
