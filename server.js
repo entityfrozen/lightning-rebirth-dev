@@ -2,6 +2,9 @@
 import http from 'node:http';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { bootstrap } from '@mercuryworkshop/proxy-bootstrap';
+import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
+import { baremuxPath } from '@mercuryworkshop/bare-mux/node';
+import { epoxyPath } from '@mercuryworkshop/epoxy-transport';
 import { attachLightningLive } from './live.js';
 import {importBoltData,bootstrapAdministrator,backupBoltData} from './legacy-data.js';
 import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
@@ -15,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
+const PROXY_VENDOR_ASSETS=[['/uv/',path.resolve(uvPath)],['/baremux/',path.resolve(baremuxPath)],['/epoxy/',path.resolve(epoxyPath)]];
 const DATA_DIR=path.resolve(ROOT,process.env.BOLT_DATA_DIR||
   process.env.RAILWAY_VOLUME_MOUNT_PATH||
   (process.env.LIGHTNING_DATA_FILE?path.dirname(process.env.LIGHTNING_DATA_FILE):path.join(ROOT,'data')));
@@ -261,7 +265,7 @@ async function handleAPI(req,res,url) {
     return respond(res,200,{configured:Boolean(providers.nvidia)});
   }
 
-  if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),authenticated:Boolean(user)});
+  if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),ultraviolet:Boolean(proxyBackend),authenticated:Boolean(user)});
   if(req.method==='GET' && pathname==='/api/community/members'){
     if(!user)return fail(res,401,'Sign in required');
     // The community directory includes approved accounts, even when offline.
@@ -613,7 +617,7 @@ async function handleAPI(req,res,url) {
   }
   return fail(res,404,'API route not found');
 }
-const types={'.json':'application/json; charset=utf-8','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
+const types={'.json':'application/json; charset=utf-8','.map':'application/json; charset=utf-8','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.wasm':'application/wasm','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.woff2':'font/woff2','.ico':'image/x-icon'};
 async function staticFile(req,res,url) {
   if(req.method!=='GET' && req.method!=='HEAD')return fail(res,405,'Method not allowed');
   let filename;
@@ -624,6 +628,8 @@ async function staticFile(req,res,url) {
   // A missed Scramjet service-worker interception must fail clearly rather
   // than silently serving index.html inside the browser iframe.
   if(filename.startsWith('/~/sj/'))return fail(res,502,'Proxy worker did not intercept this navigation; reload the browser.');
+  if(filename.startsWith('/uv/service/'))return fail(res,502,'Ultraviolet worker did not intercept this navigation; reload the browser.');
+  if(PROXY_VENDOR_ASSETS.some(([prefix])=>filename.startsWith(prefix))&&!liveIdentity(req.headers))return fail(res,401,'Sign in to use the browser proxy.');
   // Unknown asset/route requests are not Celestial homepage navigation.
   if(!path.extname(filename)&&!filename.startsWith('/assets/'))return fail(res,404,'Page not found');
   // Only expose compiled native assets; the source modules and HTML templates
@@ -632,13 +638,18 @@ async function staticFile(req,res,url) {
      /^\/boba\/(?:original|native|auth)\.css$/.test(filename) ||
      /^\/boba\/(?:index|auth)\.template\.html$/.test(filename) ||
      filename==='/boba/dist/.vite/manifest.json')return fail(res,404,'File not found');
-  const filepath=path.resolve(PUBLIC,'.'+filename);
-  if(!(filepath===PUBLIC||filepath.startsWith(PUBLIC+path.sep)))return fail(res,403,'Invalid file path');
+  const vendor=PROXY_VENDOR_ASSETS.find(([prefix])=>filename.startsWith(prefix));
+  // UV's custom worker/config take precedence over its vendor dist files.
+  const customUv=filename==='/uv/sw.js'||filename==='/uv/uv.config.js';
+  const base=vendor&&!customUv?vendor[1]:PUBLIC;
+  const relative=vendor&&!customUv?filename.slice(vendor[0].length):filename.replace(/^\//,'');
+  const filepath=path.resolve(base,relative);
+  if(!(filepath===base||filepath.startsWith(base+path.sep)))return fail(res,403,'Invalid file path');
   const type=types[path.extname(filepath)];if(!type)return fail(res,404,'File not found');
   try {
     const info=await stat(filepath);if(!info.isFile())throw Error('Not a file');
     const content=await readFile(filepath);
-    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'credentialless','Cross-Origin-Resource-Policy':type.startsWith('text/html')?'cross-origin':'same-origin','Content-Security-Policy':"default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com https://selenite.cc https://wasm.rip https://raw.githubusercontent.com https://raw.githack.com; connect-src 'self' data: https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'",'Cache-Control':/^\/boba\/dist\/assets\//.test(filename)?'public, max-age=31536000, immutable':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
+    res.writeHead(200,{'Content-Type':type,'Content-Length':content.length,'X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'credentialless','Cross-Origin-Resource-Policy':type.startsWith('text/html')?'cross-origin':'same-origin','Content-Security-Policy':"default-src 'self'; script-src 'self' data: blob: 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://images.unsplash.com https://selenite.cc https://wasm.rip https://raw.githubusercontent.com https://raw.githack.com; connect-src 'self' data: https://*.unsplash.com wss: ws:; frame-src 'self' https: http:; font-src 'self'; object-src 'none'; base-uri 'none'",'Cache-Control':/^\/boba\/dist\/assets\//.test(filename)?'public, max-age=31536000, immutable':filepath.includes('/assets/')?'public, max-age=3600':'no-cache'});
     return res.end(req.method==='HEAD'?undefined:content);
   }catch{return fail(res,404,'File not found');}
 }
