@@ -10,35 +10,10 @@ const keys=[
 let userId='',timer=0,active=false,pending=Promise.resolve(),dirty=false;
 const ownerKey='celestial.workspace.localOwner';
 const localKeys=()=>[...keys,...(userId?['boba.ask.'+userId]:[])];
-const snapshot=()=>{
- const values=Object.fromEntries(localKeys().flatMap(key=>{
-   const value=localStorage.getItem(key);
-   return value===null?[]:[[key,value]];
- }));
- const chatKey='boba.ask.'+userId;
- // Keep the device's full chat history untouched. If it exceeds the
- // account transfer limit, prioritize recent threads in the cloud copy.
- if(values[chatKey]?.length>210000){
-   try{
-     const chats=JSON.parse(values[chatKey]);
-     if(Array.isArray(chats)){
-       const newest=[...chats].sort((a,b)=>(b.updated||0)-(a.updated||0));
-       const copied=[];
-       for(const chat of newest){
-         const item={...chat,messages:Array.isArray(chat.messages)?chat.messages.slice(-48):[]};
-         copied.push(item);
-         if(JSON.stringify(copied).length>205000){
-           copied.pop();
-           if(!copied.length)copied.push({...item,messages:item.messages.slice(-12)});
-           break;
-         }
-       }
-       values[chatKey]=JSON.stringify(copied);
-     }
-   }catch{delete values[chatKey]}
- }
- return {values};
-};
+const snapshot=()=>({values:Object.fromEntries(localKeys().flatMap(key=>{
+  const value=localStorage.getItem(key);
+  return value===null?[]:[[key,value]];
+}))});
 function hydrate(values){
  for(const key of localKeys()){
   if(Object.hasOwn(values,key))localStorage.setItem(key,values[key]);
