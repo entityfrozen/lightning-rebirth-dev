@@ -105,13 +105,13 @@ export function openDistributorGame(stage,game){
  }
  const modeSelect=document.createElement('select');
  modeSelect.setAttribute('aria-label','Embedding mode');
- for(const [value,label] of [['direct','Direct embed'],['proxy','Scramjet proxy']]){
+ for(const [value,label] of [['proxy','Scramjet proxy'],['direct','Direct embed']]){
   const option=document.createElement('option');option.value=value;option.textContent=label;modeSelect.append(option);
  }
  const sourceLink=document.createElement('a');sourceLink.className='btn s';sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';sourceLink.textContent='Open original';
  const fullscreen=document.createElement('button');fullscreen.className='btn s';fullscreen.textContent='Fullscreen';
  const notice=document.createElement('p');notice.className='arcade-help';notice.setAttribute('role','status');
- const frame=document.createElement('iframe');frame.className='cel-dist-frame';frame.title=game.name;
+ let frame=document.createElement('iframe');frame.className='cel-dist-frame';frame.title=game.name;
  frame.referrerPolicy='no-referrer';
  frame.allow='fullscreen; gamepad; autoplay; clipboard-write; encrypted-media';
  frame.setAttribute('allowfullscreen','');
@@ -122,7 +122,12 @@ export function openDistributorGame(stage,game){
   if(!item)return;
   const run=++epoch;
   if(proxyFrame){disposeProxyFrame(proxyFrame);proxyFrame=null}
-  frame.removeAttribute('src');
+  const replacement=document.createElement('iframe');
+  replacement.className='cel-dist-frame';replacement.title=game.name;
+  replacement.referrerPolicy='no-referrer';
+  replacement.allow='fullscreen; gamepad; autoplay; clipboard-write; encrypted-media';
+  replacement.setAttribute('allowfullscreen','');
+  frame.replaceWith(replacement);frame=replacement;
   sourceLink.href=item.url;
   attribution.textContent='Source: '+item.name+(item.creator?' · Credit: '+item.creator:'')+' · Artwork and rights belong to their respective creators.';
   if(modeSelect.value==='direct'){
@@ -132,11 +137,16 @@ export function openDistributorGame(stage,game){
   }
   notice.textContent='Connecting through Scramjet…';
   try{
+   const statusResponse=await fetch('/api/browser/status',{credentials:'same-origin'});
+   if(!statusResponse.ok)throw Error('Proxy status unavailable (HTTP '+statusResponse.status+')');
+   const status=await statusResponse.json();
+   if(!status.authenticated)throw Error('Sign in to use Scramjet');
+   if(!status.proxy)throw Error('Scramjet backend is unavailable');
    const controllerFrame=await createProxyFrame(frame);
    if(disposed||run!==epoch){disposeProxyFrame(controllerFrame);return}
    proxyFrame=controllerFrame;
    controllerFrame.go(item.url);
-   notice.textContent='Scramjet is connecting. If this page does not load, switch to Direct embed or Open original.';
+   notice.textContent='Scramjet is loading this page. If it stays blank, try Direct embed or Open original.';
   }catch(error){
    if(disposed||run!==epoch)return;
    notice.textContent='Scramjet failed: '+String(error.message||'Unavailable')+'. Switching to direct embed.';
