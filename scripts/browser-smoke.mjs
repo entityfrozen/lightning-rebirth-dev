@@ -128,40 +128,40 @@ try{
   assert.equal(await boba.locator('script[src="/boba/native.js"],link[href="/boba/original.css"]').count(),0);
   assert.equal(await boba.locator('script[src*="/boba/dist/assets/app-"]').count(),1);
   assert.equal(await boba.locator('[data-section="apps"]').count(),0);
-  assert.equal(await boba.locator('[data-section="_v84ae39"]').count(),1);
+  assert.equal(await boba.locator('[data-section="games"]').count(),1);
   await boba.locator('[data-section="home"]').click();
-  await boba.locator('[data-view="home"].on img[src="/assets/celestial-star.svg"]').waitFor({timeout:10000});
+  await boba.locator('[data-view="home"].on .cel-simple-wordmark').waitFor({timeout:10000});
   assert.equal(await boba.locator('[data-view="browser"].on').count(),0,'Home must not be Browser');
-  await boba.locator('[data-section="_v84ae39"]').click();
-  await boba.locator('[data-i9]').filter({has:boba.locator('strong', {hasText:'2048'})}).click();
-  assert.equal(await boba.locator('[data-value]').count(),16);
+  await boba.locator('[data-section="games"]').click();
+  await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'2048'})}).click();
+  assert.equal(await boba.locator('.cel-2048-tile').count(),16);
   await boba.keyboard.press('ArrowLeft');
   await boba.locator('[data-back]').click();
-  await boba.locator('[data-i9]').filter({has:boba.locator('strong', {hasText:'Tic Tac Toe'})}).click();
-  assert.equal(await boba.locator('[data-pos]').count(),9);
+  await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'Tic Tac Toe'})}).click();
+  assert.equal(await boba.locator('.cel-ttt-cell').count(),9);
   await boba.locator('[data-back]').click();
-  await boba.locator('[data-i9]').filter({has:boba.locator('strong', {hasText:'Rock Paper Scissors'})}).click();
-  assert.equal(await boba.locator('[data-view="_v84ae39"] [data-stage] [data-pick]').count(),3);
+  await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'Rock Paper Scissors'})}).click();
+  assert.equal(await boba.locator('.cel-rps-choices [data-pick]').count(),3);
   await boba.locator('[data-back]').click();
   // Verify Arcade's Scramjet mode uses the actual service worker, not a direct iframe.
-  await boba.locator('[data-view="_v84ae39"] [data-entry-index]').first().waitFor({timeout:20000});
-  await boba.locator('[data-view="_v84ae39"] [data-entry-index]').first().click();
-  const arcadeMode=boba.locator('[data-view="_v84ae39"] select[aria-label="Embedding mode"]');
+  await boba.locator('[data-view="games"] .cel-dist-card').first().waitFor({timeout:20000});
+  await boba.locator('[data-view="games"] .cel-dist-card').first().click();
+  const arcadeMode=boba.locator('[data-view="games"] select[aria-label="Embedding mode"]');
   await arcadeMode.waitFor({timeout:10000});
   assert.equal(await arcadeMode.inputValue(),'proxy','Arcade should default to Scramjet');
   await boba.waitForFunction(()=>{
-    const frame=document.querySelector('[data-view="_v84ae39"] [data-stage] iframe');
+    const frame=document.querySelector('[data-view="games"] .cel-dist-frame');
     return !!frame?.src?.includes('/~/sj/');
   },null,{timeout:45000}).catch(async error=>{
     const state=await boba.evaluate(async()=>{
-      const arcade=document.querySelector('[data-view="_v84ae39"]');
-      const frame=arcade?.querySelector('[data-stage] iframe');
+      const arcade=document.querySelector('[data-view="games"]');
+      const frame=arcade?.querySelector('.cel-dist-frame');
       const registrations=await navigator.serviceWorker.getRegistrations();
       return {
         mode:arcade?.querySelector('select[aria-label="Embedding mode"]')?.value,
         source:arcade?.querySelector('select[aria-label="Choose source"]')?.value,
         iframeSrc:frame?.src||null,
-        messages:[...(arcade?.querySelectorAll('[role="status"]')||[])].map(el=>el.textContent),
+        messages:[...(arcade?.querySelectorAll('.arcade-help')||[])].map(el=>el.textContent),
         workers:registrations.map(r=>({scope:r.scope,active:r.active?.scriptURL||null})),
         controlled:!!navigator.serviceWorker.controller
       };
@@ -170,10 +170,10 @@ try{
   });
   await arcadeMode.selectOption('ultraviolet');
   await boba.waitForFunction(()=>{
-    const frame=document.querySelector('[data-view="_v84ae39"] [data-stage] iframe');
+    const frame=document.querySelector('[data-view="games"] .cel-dist-frame');
     return !!frame?.src?.includes('/uv/service/');
   },null,{timeout:45000});
-  await boba.locator('[data-view="_v84ae39"] [data-back]').click();
+  await boba.locator('[data-view="games"] [data-back]').click();
   await boba.locator('[data-section="ai"]').click();
   assert.equal(await boba.locator('[data-effort]').inputValue(),'instant');
   assert.equal(new URL(boba.url()).pathname,'/','Signed-in Celestial should use the root URL');
@@ -205,28 +205,28 @@ try{
   await boba.locator('[data-view="account"].on [data-admin]:not([hidden])').waitFor({timeout:10000});
   await boba.locator('[data-section="chat"]').click();
   await boba.locator('[data-view="chat"].on [data-status]').filter({hasText:'Live'}).waitFor({timeout:10000});
-  await boba.locator('textarea[aria-label="Message"]').fill('Native Boba smoke message');
-  await boba.locator('[data-send-btn]').click();
-  await boba.locator('[role="log"]').getByText('Native Boba smoke message',{exact:true}).waitFor({timeout:10000});
-  const posted=boba.locator('[role="log"] article').filter({hasText:'Native Boba smoke message'});
-  assert.match(await posted.locator('[data-role-badge]').textContent(),/ADMIN/);
-  assert.doesNotMatch(await posted.locator('[data-role-badge]').textContent(),/[\[\]]/);
+  await boba.locator('.native-compose input').fill('Native Boba smoke message');
+  await boba.locator('.native-compose button').click();
+  await boba.locator('.native-feed').getByText('Native Boba smoke message',{exact:true}).waitFor({timeout:10000});
+  const posted=boba.locator('.native-message').filter({hasText:'Native Boba smoke message'});
+  assert.match(await posted.locator('.native-role').textContent(),/ADMIN/);
+  assert.doesNotMatch(await posted.locator('.native-role').textContent(),/[\[\]]/);
   const postedTime=await posted.locator('small[datetime]').getAttribute('datetime');
   assert.ok(postedTime && Number.isFinite(Date.parse(postedTime)),'timestamp uses the original message date');
   boba.once('dialog',dialog=>dialog.accept());
   await pause(250);
   await posted.locator('[data-delete-message]').click({force:true});
-  await boba.locator('[role="log"]').getByText('Native Boba smoke message',{exact:true}).waitFor({state:'detached',timeout:10000});
+  await boba.locator('.native-feed').getByText('Native Boba smoke message',{exact:true}).waitFor({state:'detached',timeout:10000});
 
   // Administrator can clear the entire active public channel.
   await boba.locator('[data-section="chat"]').click();
-  await boba.locator('textarea[aria-label="Message"]').fill('Clear channel smoke test');
-  await boba.locator('[data-send-btn]').click();
-  await boba.locator('[role="log"]').getByText('Clear channel smoke test',{exact:true}).waitFor({timeout:10000});
+  await boba.locator('.native-compose input').fill('Clear channel smoke test');
+  await boba.locator('.native-compose button').click();
+  await boba.locator('.native-feed').getByText('Clear channel smoke test',{exact:true}).waitFor({timeout:10000});
   boba.once('dialog',dialog=>dialog.accept());
   await pause(250);
   await boba.locator('[data-clear-chat]').click();
-  await boba.locator('[role="log"]').getByText('Clear channel smoke test',{exact:true}).waitFor({state:'detached',timeout:10000});
+  await boba.locator('.native-feed').getByText('Clear channel smoke test',{exact:true}).waitFor({state:'detached',timeout:10000});
   await boba.locator('[data-section="browser"]').click();
   await boba.locator('[data-omni]').fill('https://example.com/');
   await boba.locator('[data-omni]').press('Enter');
@@ -253,11 +253,11 @@ try{
     const snapshot=await boba.evaluate(()=>{
       const frame=document.querySelector('.page iframe');
       try{return {src:frame?.src,title:frame?.contentDocument?.title,body:frame?.contentDocument?.body?.textContent?.slice(0,250),
-        error:document.querySelector('[data-browser-error]')?.textContent}}catch(e){return {error:e.message,src:frame?.src}}
+        error:document.querySelector('.native-browser-error')?.textContent}}catch(e){return {error:e.message,src:frame?.src}}
     });
     throw Error('Native Scramjet rendered wrong site: '+JSON.stringify(snapshot)+'; '+error.message);
   });
-  assert.equal(await boba.locator('[data-browser-error]').count(),0,'Scramjet should render a real page instead of an error');
+  assert.equal(await boba.locator('.native-browser-error').count(),0,'Scramjet should render a real page instead of an error');
   // Ultraviolet must intercept a real navigation using its independent scope.
   await boba.locator('[data-proxy-mode]').selectOption('ultraviolet');
   await boba.waitForFunction(()=>{

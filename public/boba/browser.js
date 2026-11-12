@@ -213,7 +213,7 @@ const home = {
     const clearError=t=>{t.errorEl?.remove();t.errorEl=null;};
     const showError=(t,message)=>{
       clearInterval(t.lt);t.busy=false;sync();clearError(t);
-      const panel=document.createElement('div');panel.className='native-browser-error';panel.dataset.browserError='';
+      const panel=document.createElement('div');panel.className='native-browser-error';
       const heading=document.createElement('h2');heading.textContent="This page couldn't be opened";
       const detail=document.createElement('p');detail.textContent=message||'The selected proxy could not load this site.';
       const buttons=document.createElement('div');
