@@ -69,11 +69,21 @@
       "Registering the browser worker"
     );
     await withTimeout(navigator.serviceWorker.ready, "Activating the browser worker");
-    const worker = navigator.serviceWorker.controller ||
-      registration.active ||
-      (await navigator.serviceWorker.getRegistration(paths.worker))?.active;
-    if (!worker) throw new Error("The browser worker did not activate.");
-    return worker;
+    // A newly installed worker may be active without controlling this tab.
+    // Scramjet navigations require a controlling worker, not merely an active one.
+    if (!navigator.serviceWorker.controller) {
+      await withTimeout(new Promise((resolve, reject) => {
+        const onChange = () => {
+          if (!navigator.serviceWorker.controller) return;
+          navigator.serviceWorker.removeEventListener("controllerchange", onChange);
+          resolve();
+        };
+        navigator.serviceWorker.addEventListener("controllerchange", onChange);
+        registration.active?.postMessage({type:"SKIP_WAITING"});
+        if (navigator.serviceWorker.controller) onChange();
+      }), "Waiting for the Scramjet worker to control this page", 12000);
+    }
+    return navigator.serviceWorker.controller;
   }
 
   window.initBootstrap = function initBootstrap() {
