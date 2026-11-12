@@ -13,7 +13,7 @@ test('native navigation separates star Home, Browser and Celestial Originals',()
  const native=readFileSync(new URL('../public/boba/native.js',import.meta.url),'utf8');
  const template=readFileSync(new URL('../public/boba/index.template.html',import.meta.url),'utf8');
  const shell=readFileSync(new URL('../public/boba/shell.js',import.meta.url),'utf8');
- assert.ok(native.includes('mountGames')&&native.includes('mountHome'));
+ assert.ok(native.includes('mountArcade')&&native.includes('mountHome'));
  assert.ok(native.includes("mountBrowser(view('browser'))"));
  assert.ok(template.includes('id="root"'), 'minimal HTML has the app root');
  for(const name of ['home','browser','games']){

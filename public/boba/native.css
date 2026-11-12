@@ -518,4 +518,9 @@
  .reimu-shrine-overlay.entering{animation:none}
  :root[data-palette="touhou"] .cel-simple-link-icon:hover{transform:none}
 }
-\n/* Connect Four uses a single falling disc animation per turn, not all discs on every redraw. */\n.cel-connect-board{overflow:visible}\n.cel-connect-cell{position:relative;overflow:visible;touch-action:manipulation}\n.cel-connect-cell span{will-change:transform}\n@media(prefers-reduced-motion:reduce){.cel-connect-cell span{will-change:auto}}\n
+
+/* Connect Four uses a single falling disc animation per turn, not all discs on every redraw. */
+.cel-connect-board{overflow:visible}
+.cel-connect-cell{position:relative;overflow:visible;touch-action:manipulation}
+.cel-connect-cell span{will-change:transform}
+@media(prefers-reduced-motion:reduce){.cel-connect-cell span{will-change:auto}}
