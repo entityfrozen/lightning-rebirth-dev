@@ -1,5 +1,6 @@
 import {esc} from './common.js';
 import {createProxyFrame,disposeProxyFrame} from './proxy.js';
+import {createUltravioletFrame} from './uv-proxy.js';
 
 const DISTRIBUTORS=[
   ['All','All titles'],
@@ -105,7 +106,7 @@ export function openDistributorGame(stage,game){
  }
  const modeSelect=document.createElement('select');
  modeSelect.setAttribute('aria-label','Embedding mode');
- for(const [value,label] of [['proxy','Scramjet proxy'],['direct','Direct embed']]){
+ for(const [value,label] of [['proxy','Scramjet proxy'],['ultraviolet','Ultraviolet proxy'],['direct','Direct embed']]){
   const option=document.createElement('option');option.value=value;option.textContent=label;modeSelect.append(option);
  }
  const sourceLink=document.createElement('a');sourceLink.className='btn s';sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';sourceLink.textContent='Open original';
@@ -116,12 +117,13 @@ export function openDistributorGame(stage,game){
  frame.allow='fullscreen; gamepad; autoplay; clipboard-write; encrypted-media';
  frame.setAttribute('allowfullscreen','');
  const attribution=document.createElement('p');attribution.className='cel-dist-attribution';
- let proxyFrame=null,epoch=0,disposed=false;
+ let proxyFrame=null,uvFrame=null,epoch=0,disposed=false;
  async function switchSource(){
   const item=game.sources[Number(sourceSelect.value)];
   if(!item)return;
   const run=++epoch;
   if(proxyFrame){disposeProxyFrame(proxyFrame);proxyFrame=null}
+  if(uvFrame){uvFrame.dispose();uvFrame=null}
   const replacement=document.createElement('iframe');
   replacement.className='cel-dist-frame';replacement.title=game.name;
   replacement.referrerPolicy='no-referrer';
@@ -133,6 +135,19 @@ export function openDistributorGame(stage,game){
   if(modeSelect.value==='direct'){
    notice.textContent='Direct embed enabled. Some websites block iframe embedding; use Scramjet or Open original if this stays blank.';
    frame.src=item.url;
+   return;
+  }
+  if(modeSelect.value==='ultraviolet'){
+   notice.textContent='Starting Ultraviolet…';
+   try{
+    const connection=await createUltravioletFrame(frame,item.url);
+    if(disposed||run!==epoch){connection.dispose();return}
+    uvFrame=connection;
+    notice.textContent='Ultraviolet is loading. If this page stays blank, try Scramjet or Open original.';
+   }catch(error){
+    if(disposed||run!==epoch)return;
+    notice.textContent='Ultraviolet error: '+String(error.message||'Connection failed')+'. Try Scramjet or Open original.';
+   }
    return;
   }
   notice.textContent='Connecting through Scramjet…';
@@ -160,5 +175,5 @@ export function openDistributorGame(stage,game){
  bar.append(sourceSelect,modeSelect,sourceLink,fullscreen);
  stage.append(bar,frame,notice,attribution);
  switchSource();
- return()=>{disposed=true;epoch++;disposeProxyFrame(proxyFrame);proxyFrame=null;frame.removeAttribute('src')};
+ return()=>{disposed=true;epoch++;disposeProxyFrame(proxyFrame);proxyFrame=null;uvFrame?.dispose();uvFrame=null;frame.removeAttribute('src')};
 }
