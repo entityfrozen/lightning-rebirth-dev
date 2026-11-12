@@ -3,28 +3,29 @@
 // Proxy assets and Wisp remain session-protected by the server.
 let controllerPromise=null;
 let keepalive=null;
-async function loadBootstrap() {
-  if(typeof window.initBootstrap==='function')return;
-  await new Promise((resolve,reject)=>{
-    const prior=document.querySelector('script[data-celestial-proxy]');
-    if(prior){
-      if(prior.dataset.state==='loaded'){
-        if(typeof window.initBootstrap==='function'){resolve();return;}
-        prior.remove();
-      }else if(prior.dataset.state!=='error'){
-        prior.addEventListener('load',resolve,{once:true});
-        prior.addEventListener('error',()=>reject(Error('Browser bootstrap unavailable')),{once:true});
-        return;
-      }else prior.remove();
-    }
-    const element=document.createElement('script');
-    element.dataset.celestialProxy='true';
-    element.src='/proxy-entry.js';
-    element.onload=()=>{element.dataset.state='loaded';resolve();};
-    element.onerror=()=>{element.dataset.state='error';reject(Error('Browser engine unavailable. Sign in and try again.'));};
-    document.head.append(element);
-  });
-  if(typeof window.initBootstrap!=='function')throw Error('Scramjet bootstrap could not initialize.');
+async function loadBootstrap(){
+ if(typeof window.initBootstrap==='function')return;
+ const load=url=>new Promise((resolve,reject)=>{
+  const element=document.createElement('script');
+  element.dataset.celestialProxy='true';
+  element.src=url;
+  element.onload=()=>typeof window.initBootstrap==='function'?resolve():reject(Error('Bootstrap did not initialize: '+url));
+  element.onerror=()=>reject(Error('Could not load '+url));
+  document.head.append(element);
+ });
+ // Lightning's official proxy-bootstrap was working before the custom loader.
+ // Use it first; retain the same-origin loader only for compatibility.
+ if(!window.__celestialProxyLoader){
+  window.__celestialProxyLoader=(async()=>{
+   try{await load('/bootstrap-init.js')}
+   catch(primaryError){
+    if(typeof window.initBootstrap==='function')return;
+    try{await load('/proxy-entry.js')}
+    catch(fallbackError){throw Error('Scramjet bootstrap failed: '+primaryError.message+'; '+fallbackError.message)}
+   }
+  })().catch(error=>{window.__celestialProxyLoader=null;throw error});
+ }
+ await window.__celestialProxyLoader;
 }
 export async function getProxyController(){
   if(!controllerPromise)controllerPromise=(async()=>{
