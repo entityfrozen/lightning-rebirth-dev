@@ -496,7 +496,7 @@ try{
     consoleErrors:events.slice(-12),screenshots
   },null,2));
 }catch(error){
-  console.error('Browser smoke test failed:',error.message);
+  console.error('Browser smoke test failed:',error.stack||error.message);
   console.error('Browser console:',events.slice(-20).join('\n'));
   console.error('Server output:',output.slice(-4000));
   process.exitCode=1;
