@@ -49,7 +49,10 @@ export async function completeAi({
 }){
   // Prefer the configured model, but always try a known hosted text model before the multimodal backup.
   const mode=['instant','smart','ultra'].includes(effort)?effort:'smart';
-  const configured=[model,TEXT_MODEL,backupModel].filter((name,index,array)=>name&&array.indexOf(name)===index);
+  const hasImage=messages.some(message=>Array.isArray(message.content)&&message.content.some(part=>part.type==='image_url'));
+  // Vision requests must never fall back to a text-only model that silently ignores the image.
+  const configured=(hasImage?[VISION_BACKUP,VISION_MODEL]:[model,TEXT_MODEL,backupModel])
+   .filter((name,index,array)=>name&&array.indexOf(name)===index);
   // Once a model times out, start subsequent chats with the working alternative.
   // A failed model is tried again later, rather than permanently disabled.
   const now=Date.now();
@@ -58,7 +61,8 @@ export async function completeAi({
   let lastError=null,failures=[];
   for(const [index,name] of models.entries()){
     if(signal?.aborted)throw signal.reason||new Error("Request cancelled");
-    if(index)onStatus("Trying another available AI model…");
+    if(index)onStatus(hasImage?"Trying another vision model…":"Trying another available AI model…");
+    else if(hasImage)onStatus("Analyzing your image…");
     else if(name!==model)onStatus("Using the faster AI model…");
     const controller=new AbortController();
     const onAbort=()=>controller.abort(signal?.reason);
