@@ -9,7 +9,7 @@ const links=[
 
 function hello(){
   const hour=new Date().getHours();
-  return hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
+  return hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
 }
 
 export function mountHome(root,user,navigate,openBrowser){
@@ -24,8 +24,7 @@ export function mountHome(root,user,navigate,openBrowser){
       </header>
       <div class="cel-simple-center">
         <div class="cel-simple-greeting">
-          <span class="cel-simple-eyebrow">YOUR SPACE</span>
-          <h1>${esc(hello())}, ${esc(user.username)}.</h1>
+          <h1><span data-greeting>${esc(hello())}</span>, ${esc(user.username)}.</h1>
           <p>What would you like to do today?</p>
         </div>
         <form class="cel-simple-search" data-search role="search">
@@ -38,8 +37,13 @@ export function mountHome(root,user,navigate,openBrowser){
           ${links.map(([id,name,icon])=>`<button type="button" data-go="${id}"><span class="cel-simple-link-icon">${ico(icon)}</span><span>${name}</span></button>`).join('')}
         </nav>
       </div>
-      <footer class="cel-simple-footer">Make some space for yourself.</footer>
     </main>`;
+  const updateGreeting=()=>{const label=root.querySelector('[data-greeting]');if(label)label.textContent=hello();};
+  updateGreeting();
+  const greetingTimer=setInterval(updateGreeting,60_000);
+  // The home view stays mounted for the session; stop refreshing if removed.
+  const originalOnRemove=()=>clearInterval(greetingTimer);
+  root.addEventListener('celestial:unmount',originalOnRemove,{once:true});
   root.querySelector('.cel-simple-date').textContent=new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',year:'numeric'}).format(new Date());
   root.querySelector('[data-search]').addEventListener('submit',event=>{
     event.preventDefault();
