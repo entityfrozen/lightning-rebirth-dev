@@ -49,7 +49,12 @@ export function mountChat(root,user){
   $r('[data-title]').textContent=dm?dm.username:'# '+(c?.name||'general');$r('[data-status]').textContent=socket?.readyState===WebSocket.OPEN?'Live':'Reconnecting…';
   const feed=$r('.native-feed'),near=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100,previousScroll=feed.scrollTop;
   const roster=new Map((s?.members||[]).map(p=>[p.id,p]));for(const p of people)roster.set(p.id,{...roster.get(p.id),...p});const all=[...roster.values()];const rows=dm?dmRows:(s?.messages?.[c?.id]||[]);
-  feed.innerHTML=rows.map(m=>{const p=roster.get(dm?m.from:m.userId)||all.find(x=>(x.username||x.name)===(dm?m.author:m.by||m.username));const name=dm?m.author:m.by||m.username||p?.username||'Member';const parent=!dm&&m.replyTo?rows.find(item=>item.id===m.replyTo):null;return '<article class="native-message'+(String(dm?m.text:m.message||'').split(/\s+/).some(part=>part.toLowerCase().replace(/[^a-z0-9_@-]/g,'')==='@'+user.username.toLowerCase())?' mentioned':'')+'"><span class="native-person-icon">'+esc(name.slice(0,2).toUpperCase())+'</span><div><div class="native-message-meta"><b>'+esc(name)+'</b>'+badge(p)+timestamp(m)+'</div>'+(parent?'<small class="cel-message-parent">↳ '+esc(parent.by||parent.username||'Member')+': '+esc((parent.message||'').slice(0,85))+'</small>':'')+(m.announcement?'<small class="cel-message-parent">📣 Official announcement</small>':'')+'<p>'+mentionHTML(dm?m.text:m.message)+'</p>'+(m.editedAt?'<small class="cel-message-edited">edited</small>':'')+'</div><button class="cel-reply-action" type="button" data-reply-id="'+esc(m.id)+'" aria-label="Reply">↩</button>'+(!dm&&(user.role==='admin'||m.userId===user.id)?'<button type="button" class="native-delete-message" aria-label="Delete message" title="Delete message" data-delete-message="'+esc(m.id)+'" data-delete-channel="'+esc(c?.id||'')+'">'+ico('trash')+'</button>':'')+'</article>'}).join('');
+  feed.innerHTML=rows.map(m=>{const p=roster.get(dm?m.from:m.userId)||all.find(x=>(x.username||x.name)===(dm?m.author:m.by||m.username));const name=dm?m.author:m.by||m.username||p?.username||'Member';const parent=!dm&&m.replyTo?rows.find(item=>item.id===m.replyTo):null;return '<article class="native-message'+(String(dm?m.text:m.message||'').split(/\s+/).some(part=>part.toLowerCase().replace(/[^a-z0-9_@-]/g,'')==='@'+user.username.toLowerCase())?' mentioned':'')+'"><span class="native-person-icon">'+esc(name.slice(0,2).toUpperCase())+'</span><div><div class="native-message-meta"><b>'+esc(name)+'</b>'+badge(p)+timestamp(m)+'</div>'+(parent?'<small class="cel-message-parent">↳ '+esc(parent.by||parent.username||'Member')+': '+esc((parent.message||'').slice(0,85))+'</small>':'')+(m.announcement?'<small class="cel-message-parent">📣 Official announcement</small>':'')+'<p>'+mentionHTML(dm?m.text:m.message)+'</p>'+(m.editedAt?'<small class="cel-message-edited">edited</small>':'')+
+(!dm&&m.pinnedAt?'<span class="cel-message-pin">📌 Pinned</span>':'')+
+(!dm?'<div class="cel-message-reactions">'+Object.entries(m.reactions||{}).filter(([,votes])=>Array.isArray(votes)&&votes.length).map(([emoji,votes])=>'<button type="button" data-react="'+esc(m.id)+'" data-emoji="'+esc(emoji)+'" class="'+(votes.includes(user.id)?'mine':'')+'">'+esc(emoji)+' '+votes.length+'</button>').join('')+'</div>':'')+'</div>'+
+(!dm?'<div class="cel-message-actions"><button class="cel-reply-action" type="button" data-reply-id="'+esc(m.id)+'" title="Reply">↩</button><button type="button" data-react="'+esc(m.id)+'" data-emoji="❤️" title="React">♡</button>'+
+(m.userId===user.id&&Date.now()-(Number(m.at)||0)<900000?'<button type="button" data-edit-message="'+esc(m.id)+'" title="Edit message">✎</button>':'')+
+((user.role==='admin'||user.role==='community_manager'||user.role==='moderator')?'<button type="button" data-pin-message="'+esc(m.id)+'" title="'+(m.pinnedAt?'Unpin':'Pin')+'">📌</button>':'')+'</div>':'')+(!dm&&(user.role==='admin'||m.userId===user.id)?'<button type="button" class="native-delete-message" aria-label="Delete message" title="Delete message" data-delete-message="'+esc(m.id)+'" data-delete-channel="'+esc(c?.id||'')+'">'+ico('trash')+'</button>':'')+'</article>'}).join('');
   if(near)feed.scrollTop=feed.scrollHeight;else feed.scrollTop=previousScroll;
   input.disabled=!dm&&!!c?.readOnly&&user.role!=='admin';
   if(input.disabled)input.placeholder='Only staff can post in this channel';
@@ -111,6 +116,38 @@ export function mountChat(root,user){
  $r('.native-feed').addEventListener('click',e=>{
   const replyButton=e.target.closest('[data-reply-id]');
   if(replyButton){const row=(dm?dmRows:(server()?.messages?.[channelId]||[])).find(m=>m.id===replyButton.dataset.replyId);if(row){reply={id:row.id,author:row.by||row.author||'Member',text:row.message||row.text||''};$r('[data-reply]').hidden=false;$r('[data-reply-text]').textContent='Replying to '+reply.author+': '+reply.text.slice(0,70);input.focus()}return}
+  const reactButton=e.target.closest('[data-react]');
+  if(reactButton&&!dm){
+   send({type:'v2React',serverId,channel:channelId,messageId:reactButton.dataset.react,emoji:reactButton.dataset.emoji});return;
+  }
+  const pin=e.target.closest('[data-pin-message]');
+  if(pin&&!dm){
+   send({type:'v2PinMessage',serverId,channel:channelId,messageId:pin.dataset.pinMessage});return;
+  }
+  const edit=e.target.closest('[data-edit-message]');
+  if(edit&&!dm){
+   const row=server()?.messages?.[channelId]?.find(m=>m.id===edit.dataset.editMessage);
+   if(!row||row.userId!==user.id)return;
+   const article=edit.closest('.native-message');
+   const body=article?.querySelector('p');
+   if(!body)return;
+   const form=document.createElement('form');form.className='cel-inline-edit';
+   const textarea=document.createElement('textarea');textarea.maxLength=1500;textarea.value=row.message||'';
+   const buttons=document.createElement('div');
+   const save=document.createElement('button');save.type='submit';save.className='btn k s';save.textContent='Save';
+   const cancel=document.createElement('button');cancel.type='button';cancel.className='btn s';cancel.textContent='Cancel';
+   buttons.append(save,cancel);form.append(textarea,buttons);
+   const original=body;original.hidden=true;original.after(form);textarea.focus();
+   cancel.onclick=()=>{original.hidden=false;form.remove()};
+   textarea.onkeydown=event=>{if(event.key==='Escape')cancel.click();if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();form.requestSubmit()}};
+   form.onsubmit=event=>{
+    event.preventDefault();const message=textarea.value.trim();
+    if(!message)return;save.disabled=true;
+    if(send({type:'v2EditMessage',serverId,channel:channelId,messageId:row.id,message}))form.remove();
+    else{save.disabled=false;say('Reconnecting — edit not saved.')}
+   };
+   return;
+  }
   const button=e.target.closest('[data-delete-message]');
   if(!button||dm||!(user.role==='admin'||(server()?.messages?.[channelId]||[]).some(m=>m.id===button.dataset.deleteMessage&&m.userId===user.id)))return;
   const messageId=button.dataset.deleteMessage;
