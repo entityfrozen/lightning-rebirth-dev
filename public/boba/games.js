@@ -1,11 +1,9 @@
 import {esc,ico} from './common.js';
 import {mountDistributorLibrary,openDistributorGame} from './catalog-ui.js';
 import {extraGames,playChess,playConnectFour,playMines,playSnake} from './extra-games.js';
+import {uiLabel} from './opaque-ui.js';
 
-// Source stays readable in Git. Production is bundled/minified; selected
-// interface strings are encoded in the shipped bundle as an extra deterrent.
-const label=(...points)=>String.fromCharCode(...points);
-const gameWord='Arcade';
+const gameWord=uiLabel(1);
 const arcadeItems=[...extraGames,
  {id:'2048',title:'2048',subtitle:'Slide. Merge. Repeat.',kind:'puzzle',symbol:'2048'},
  {id:'ttt',title:'Tic Tac Toe',subtitle:'You versus the computer.',kind:'strategy',symbol:'✕ ○'},
@@ -60,7 +58,7 @@ function playRps(stage){
 }
 export function mountArcade(root){
  let search='',active=null,dispose=null;
- root.innerHTML='<div class="arcade-shell"><header class="arcade-head"><div><span class="cel-home-kicker">CELESTIAL ORIGINALS</span><h1 data-heading></h1><p>A quick break, right where you are.</p></div><label class="arcade-search">'+ico('search')+'<input type="search" placeholder="Search the arcade" aria-label="Search the arcade"></label></header><section class="arcade-grid" data-grid></section><section class="arcade-stage" data-stage hidden><header><button class="btn s" type="button" data-back>← Arcade</button><h2 data-game-title></h2></header><div data-play-area></div></section></div>';
+ root.innerHTML='<div class="arcade-shell"><header class="arcade-head"><div><span class="cel-home-kicker">CELESTIAL ORIGINALS</span><h1 data-heading></h1><p>A quick break, right where you are.</p></div><label class="arcade-search">'+ico('search')+'<input type="search" placeholder="'+uiLabel(3)+'" aria-label="'+uiLabel(3)+'"></label></header><section class="arcade-grid" data-grid></section><section class="arcade-stage" data-stage hidden><header><button class="btn s" type="button" data-back>← '+uiLabel(1)+'</button><h2 data-game-title></h2></header><div data-play-area></div></section></div>';
  root.querySelector('[data-heading]').textContent=gameWord;
  const grid=root.querySelector('[data-grid]'),stage=root.querySelector('[data-stage]'),area=root.querySelector('[data-play-area]');
  const distributor=mountDistributorLibrary(root,{launch:game=>{

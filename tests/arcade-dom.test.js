@@ -35,6 +35,6 @@ test('Arcade startup calls the mount function exported by the game module',()=>{
  const games=read('../public/boba/games.js');
  assert.match(entry,/import\s*\{\s*mountArcade\s*\}\s*from\s*['"]\.\/games\.js['"]/);
  assert.match(games,/export function mountArcade\s*\(/);
- assert.match(entry,/mountSafely\('Arcade',view\('games'\),\(\)=>mountArcade\(view\('games'\)\)\)/);
+ assert.match(entry,/mountSafely\(uiLabel\(1\),view\('games'\),\(\)=>mountArcade\(view\('games'\)\)\)/);
  assert.doesNotMatch(entry,/\bmountGames\s*\(/);
 });

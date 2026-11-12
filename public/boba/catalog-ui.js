@@ -1,4 +1,5 @@
 import {esc} from './common.js';
+import {uiLabel} from './opaque-ui.js';
 import {createProxyFrame,disposeProxyFrame} from './proxy.js';
 import {createUltravioletFrame} from './uv-proxy.js';
 
@@ -15,11 +16,11 @@ export function mountDistributorLibrary(root,{launch}){
   section.className='cel-dist-section';
   section.innerHTML=`
     <header class="cel-dist-header">
-      <div><span class="cel-home-kicker">ARCADE LIBRARY</span><h2>Discover more.</h2>
+      <div><span class="cel-home-kicker">${uiLabel(4)}</span><h2>Discover more.</h2>
       <p>Titles from Selenite, WASM.rip and GN-Math, in one library.</p></div>
       <span class="cel-dist-count" data-count>Loading library…</span>
     </header>
-    <div class="cel-dist-filters" data-filters role="group" aria-label="Arcade sources"></div>
+    <div class="cel-dist-filters" data-filters role="group" aria-label="${uiLabel(5)}"></div>
     <p class="cel-dist-status" data-status role="status">Loading distributor entries…</p>
     <div class="cel-dist-grid" data-grid></div>
     <button class="btn s cel-dist-more" type="button" data-more hidden>Show more entries</button>

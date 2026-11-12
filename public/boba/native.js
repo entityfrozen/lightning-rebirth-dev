@@ -10,6 +10,7 @@ import {mountChat} from './chat.js';
 import {settings} from './settings.js';
 import {mountAdmin} from './admin.js';
 import {N} from './icons.js';
+import {uiLabel,viewId} from './opaque-ui.js';
 mountShell();
 applyPrefs();
 mountReimuEffects();
@@ -21,9 +22,9 @@ async function start(){
  try{await startAccountSync(user)}catch(error){console.warn('Account preferences unavailable:',error)}
  applyPrefs();
  window.dispatchEvent(new Event('celestial:reimu-refresh'));
- const items=[['home','Home','star'],['browser','Browser','web'],['games','Arcade','play'],['chat','Chat','discord'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
+ const items=[['home','Home','star'],['browser','Browser','web'],['games',uiLabel(1),'play'],['chat',uiLabel(2),'discord'],['ai','Ask','ask'],['settings','Settings','settings'],['account','Account','user']];
  if(user.role==='admin')items.splice(items.length-1,0,['admin','Administration','shield']);
- const view=id=>$('[data-view="'+id+'"]');
+ const view=id=>$('[data-view="'+viewId(id)+'"]');
  let current='home',paintSettings=()=>{},loadAdmin=()=>{};
  const mountSafely=(name,element,callback)=>{
   try{return callback()}catch(error){
@@ -39,14 +40,14 @@ async function start(){
  const browser=mountSafely('Browser',view('browser'),()=>mountBrowser(view('browser')))||{tabs:[],navigate(){},available:false};
  const open=url=>{navigate('browser');browser.navigate(url,true)};
  mountSafely('Home',view('home'),()=>mountHome(view('home'),user,navigate,open));
- mountSafely('Arcade',view('games'),()=>mountArcade(view('games')));
+ mountSafely(uiLabel(1),view('games'),()=>mountArcade(view('games')));
  function navigate(id){
   if(!items.some(x=>x[0]===id))id='home';
   current=id;
   if(id!=='browser'){$('[data-wv]')?.classList.remove('max');dock.classList.remove('hide')}
   const active=id;
-  for(const el of views.querySelectorAll('.view')){const on=el.dataset.view===active;el.classList.toggle('on',on);el.setAttribute('aria-hidden',String(!on));el.inert=!on}
-  for(const el of dock.querySelectorAll('.dk')){const on=el.dataset.section===id;el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')}
+  for(const el of views.querySelectorAll('.view')){const on=el.dataset.view===viewId(active);el.classList.toggle('on',on);el.setAttribute('aria-hidden',String(!on));el.inert=!on}
+  for(const el of dock.querySelectorAll('.dk')){const on=el.dataset.section===viewId(id);el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')}
   if(id==='browser'&&browser.available!==false&&!browser.tabs.length) $('[data-wnew]')?.click();
   if(id==='settings')paintSettings();
   if(id==='admin')loadAdmin();
@@ -60,9 +61,9 @@ async function start(){
   if(current==='ai'&&ai?.hidden)navigate('home');
  };
  window.addEventListener('celestial:dock-settings',updateDock);
- for(const [id,label,key] of items){const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=id;b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='home'?'<img src="/assets/celestial-star.svg" alt="" class="cel-dock-star">':id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)}
+ for(const [id,label,key] of items){const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=viewId(id);b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='home'?'<img src="/assets/celestial-star.svg" alt="" class="cel-dock-star">':id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)}
  mountSafely('AI',view('ai'),()=>mountAsk(view('ai'),user));
- mountSafely('Chat',view('chat'),()=>mountChat(view('chat'),user));
+ mountSafely(uiLabel(2),view('chat'),()=>mountChat(view('chat'),user));
  mountSafely('Account',view('account'),()=>mountAccount(view('account'),user));
  if(user.role==='admin')loadAdmin=mountSafely('Administration',view('admin'),()=>mountAdmin(view('admin'),user))||(()=>{});
  mountSafely('Settings',view('settings'),()=>{
