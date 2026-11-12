@@ -8,7 +8,7 @@ export function mountAdmin(root,user){
  async function loadAnnouncements(){
   try{
    const {announcements=[]}=await api('/api/admin/announcements');
-   $r('[data-announce-list]').innerHTML=announcements.length?announcements.map(item=>'<article class="native-announce-item"><div><strong>'+esc(item.by||'Administration')+'</strong><small>'+esc(new Date(item.at).toLocaleString())+(item.pinnedAt?' · Pinned':'')+'</small></div><p>'+esc(item.message)+'</p></article>').join(''):'<p class="native-admin-note">No announcements published yet.</p>';
+   $r('[data-announce-list]').innerHTML=announcements.length?announcements.map(item=>'<article class="native-announce-item"><div><strong>'+esc(item.by||'Administration')+'</strong><small>'+esc(new Date(item.at).toLocaleString())+(item.pinnedAt?' · Pinned':'')+'</small><button class="btn s" type="button" data-remove-announcement="'+esc(item.id)+'" aria-label="Remove announcement">Remove</button></div><p>'+esc(item.message)+'</p></article>').join(''):'<p class="native-admin-note">No announcements published yet.</p>';
   }catch(error){$r('[data-announce-list]').textContent=error.message}
  }
  const announceForm=$r('[data-announce]');
@@ -32,6 +32,16 @@ export function mountAdmin(root,user){
  root.addEventListener('submit',async e=>{const f=e.target;if(!f.matches('[data-edit]'))return;e.preventDefault();const id=f.dataset.edit,old=data.accounts.find(a=>a.id===id),p={username:f.elements.username.value};if(id!==user.id){if(f.elements.role.value!==old.role)p.role=f.elements.role.value;if(f.elements.enabled.checked!==old.enabled)p.enabled=f.elements.enabled.checked;if(f.elements.approved.checked!==old.approved)p.approved=f.elements.approved.checked}if(f.elements.password.value)p.password=f.elements.password.value;const m=$('[data-row-msg]',f);try{await api('/api/admin/config/accounts/'+encodeURIComponent(id),p);if(id===user.id&&p.password){location.replace('/');return}await load();msg('[data-account-msg]','Account updated.')}catch(err){m.textContent=err.message;m.hidden=false}});
  root.addEventListener('click',async e=>{const t=e.target.closest('[data-test]'),c=e.target.closest('[data-clear]');if(e.target.closest('[data-refresh]'))load().catch(err=>msg('[data-account-msg]',err.message));if(t){t.disabled=true;msg('[data-provider-msg]','Testing…');try{const d=await api('/api/admin/config/test',{provider:t.dataset.test});msg('[data-provider-msg]',d.ok?'Connection successful.':'Connection failed'+(d.status?' (HTTP '+d.status+')':'.'))}catch(err){msg('[data-provider-msg]',err.message)}finally{t.disabled=false}}if(c&&confirm('Remove this saved provider key?')){try{await api('/api/admin/config/providers',{[c.dataset.clear]:''});await load();msg('[data-provider-msg]','Key removed.')}catch(err){msg('[data-provider-msg]',err.message)}}});
  void loadAnnouncements();
+ $r('[data-announce-list]').addEventListener('click',async event=>{
+  const button=event.target.closest('[data-remove-announcement]');
+  if(!button||!confirm('Remove this announcement from everyone’s chat?'))return;
+  button.disabled=true;
+  try{
+    await api('/api/admin/announcements/remove',{id:button.dataset.removeAnnouncement});
+    msg('[data-announce-msg]','Announcement removed.');
+    await loadAnnouncements();
+  }catch(error){button.disabled=false;msg('[data-announce-msg]',error.message)}
+ });
  $r('[data-filter]').oninput=paintAccounts;$r('[data-state]').onchange=paintAccounts;
  return ()=>load().catch(err=>msg('[data-account-msg]',err.message));
 }
