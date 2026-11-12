@@ -59,7 +59,7 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.match(loaderCode,/libcurl-client\.js/);
     assert.doesNotMatch(loaderCode,/import\(["']data:/);
     const policy=loader.headers.get('content-security-policy')||'';
-    assert.match(policy,/script-src 'self' blob:/);
+    assert.match(policy,/script-src 'self' data: blob:/);
     assert.doesNotMatch(policy,/script-src[^;]*data:/);
     assert.match(policy,/connect-src 'self' data:/);
 
