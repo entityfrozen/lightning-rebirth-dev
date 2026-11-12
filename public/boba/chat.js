@@ -82,6 +82,12 @@ export function mountChat(root,user){
     if(document.visibilityState==='hidden'&&'Notification' in window&&Notification.permission==='granted')
       new Notification('Celestial announcement',{body:m.entry.message.slice(0,150)});
    }
+   if(m.type==='v2AnnouncementRemoved'){
+    if(announcement?.id===m.id)announcement=null;
+    const main=servers.find(s=>s.id==='lightning-main');
+    if(main?.messages?.announcements)main.messages.announcements=main.messages.announcements.filter(item=>item.id!==m.id);
+    paintAnnouncement();render();return;
+   }
    if(m.type==='v2Typing'){
     typingUsers.set(m.userId,{name:m.name||'Someone',at:Date.now(),serverId:m.serverId,channel:m.channel});paintTyping();return;
    }
