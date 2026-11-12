@@ -25,7 +25,10 @@
     "vite": "^7.0.0",
     "@fluentui/react-icons": "^2.0.341",
     "javascript-obfuscator": "^5.8.0",
-    "chess.js": "^1.4.0"
+    "chess.js": "^1.4.0",
+    "@titaniumnetwork-dev/ultraviolet": "3.2.10",
+    "@mercuryworkshop/bare-mux": "2.1.9",
+    "@mercuryworkshop/epoxy-transport": "2.1.28"
   },
   "engines": {
     "node": ">=20.19.0"
