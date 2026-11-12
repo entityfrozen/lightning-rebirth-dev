@@ -183,12 +183,21 @@ const home = {
       const buttons=document.createElement('div');
       const again=document.createElement('button');again.className='btn k s';again.textContent='Try again';again.onclick=()=>navigate(t.url);
       const direct=document.createElement('a');direct.className='btn s';direct.textContent='Open site directly';direct.href=t.url;direct.target='_blank';direct.rel='noopener noreferrer';
-      buttons.append(again,direct);panel.append(heading,detail,buttons);page.append(panel);t.errorEl=panel;
+      const embed=document.createElement('button');embed.className='btn s';embed.textContent='Try direct embed';
+      embed.onclick=()=>{
+        clearError(t);
+        clearInterval(t.lt);
+        t.busy=false;
+        t.direct=true;
+        if(t.frame){ctx.engine.dispose(t.frame);t.frame.src=t.url}
+        sync();
+      };
+      buttons.append(again,embed,direct);panel.append(heading,detail,buttons);page.append(panel);t.errorEl=panel;
     };
     const loaded=t=>{
       let d=null;
       try{d=t.frame?.contentDocument}catch{}
-      if(!t.frame?.src.includes('/~/sj/')||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
+      if(t.direct||!t.frame?.src.includes('/~/sj/')||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
       if(ctx.engine.failed(d)){showError(t,'The proxied site returned an error.');return true}
       clearInterval(t.lt);t.busy=false;sync();clearError(t);track(t);return true;
     };
@@ -253,6 +262,7 @@ const home = {
       if (!url) return;
       const t = fresh || !tab() ? newTab() : tab();
       t.title = hostOf(url) || "Page";
+      t.direct=false;
       loading(t);
       paint();
       const first = !t.frame;
