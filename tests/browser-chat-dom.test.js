@@ -32,3 +32,10 @@ test('Bare hostnames navigate directly instead of being treated as search terms'
  assert.match(browser,/\^\[a-z0-9-\]/);
  assert.doesNotMatch(browser,/\^\[\\\\w-\]/);
 });
+
+test('Arcade defaults to Scramjet and recreates the iframe when changing sources',()=>{
+ const arcade=source('../public/boba/catalog-ui.js');
+ assert.match(arcade,/\[\['proxy','Scramjet proxy'\],\['direct','Direct embed'\]\]/);
+ assert.match(arcade,/frame\.replaceWith\(replacement\);frame=replacement/);
+ assert.match(arcade,/fetch\('\/api\/browser\/status'/);
+});
