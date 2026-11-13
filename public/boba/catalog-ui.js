@@ -29,8 +29,8 @@ export function mountDistributorLibrary(root,{launch}){
       <p>With thanks to <a href="https://selenite.cc/" target="_blank" rel="noopener noreferrer">Selenite</a>,
       <a href="https://wasm.rip/" target="_blank" rel="noopener noreferrer">WASM.rip</a>, and
       <a href="https://gn-math.github.io/" target="_blank" rel="noopener noreferrer">GN-Math</a>.
-      Each game and its cover artwork belong to their respective developers and porters.
-      Individual credits and alternate sources appear when you select a game.</p>
+      Each title and its cover artwork belong to their respective developers and porters.
+      Individual credits and alternate sources appear when you open an item.</p>
     </footer>`;
   const arcade=root.querySelector('.arcade-shell');
   if(!arcade)throw Error('Arcade container is missing');
@@ -109,13 +109,13 @@ async function resolveExternalGameUrl(game,source,sourceIndex){
  // Built-in specials can supply a URL directly. Distributor entries carry
  // only opaque IDs: request the original source when the player launches it.
  if(source.url)return source.url;
- if(!/^g_[a-zA-Z0-9_-]{24}$/.test(game.id||''))throw Error('Game source is unavailable');
+ if(!/^g_[a-zA-Z0-9_-]{24}$/.test(game.id||''))throw Error('Item source is unavailable');
  const endpoint='/api/brightpath/b?id='+encodeURIComponent(game.id)+'&source='+sourceIndex;
  const response=await fetch(endpoint,{credentials:'same-origin',cache:'no-store'});
- if(!response.ok)throw Error('Unable to resolve game (HTTP '+response.status+')');
+ if(!response.ok)throw Error('Unable to resolve item (HTTP '+response.status+')');
  const payload=await response.json();
  if(typeof payload.url!=='string'||!payload.url.startsWith('https://'))
-  throw Error('The game source URL is invalid');
+  throw Error('The source URL is invalid');
  return payload.url;
 }
 
@@ -139,8 +139,8 @@ export function openDistributorGame(stage,game){
  const vaultLabel=document.createElement('span');vaultLabel.className='cel-dist-vault-status';
  vaultLabel.dataset.vaultStatus='';
  vaultLabel.textContent='Encrypted asset cache: checking…';
- vaultLabel.title='Cached game assets use AES-256-GCM on the server. Live running code remains inspectable in DevTools.';
- let frame=document.createElement('iframe');frame.className='cel-dist-frame';frame.title=game.name;
+ vaultLabel.title='Cached assets use AES-256-GCM on the server. Live running code remains inspectable in DevTools.';
+ let frame=document.createElement('iframe');frame.className='cel-dist-frame';frame.title='Library player';
  frame.referrerPolicy='no-referrer';
  frame.allow='fullscreen; gamepad; autoplay; clipboard-write; encrypted-media';
  frame.setAttribute('allowfullscreen','');
@@ -179,21 +179,21 @@ export function openDistributorGame(stage,game){
   if(proxyFrame){disposeProxyFrame(proxyFrame);proxyFrame=null}
   if(uvFrame){uvFrame.dispose();uvFrame=null}
   const replacement=document.createElement('iframe');
-  replacement.className='cel-dist-frame';replacement.title=game.name;
+  replacement.className='cel-dist-frame';replacement.title='Library player';
   replacement.referrerPolicy='no-referrer';
   replacement.allow='fullscreen; gamepad; autoplay; clipboard-write; encrypted-media';
   replacement.setAttribute('allowfullscreen','');
   frame.replaceWith(replacement);frame=replacement;
   sourceLink.removeAttribute('href');
   attribution.textContent='Source: '+item.name+(item.creator?' · Credit: '+item.creator:'')+' · Artwork and rights belong to their respective creators.';
-  notice.textContent='Preparing game source…';
+  notice.textContent='Preparing source…';
   let target;
   try{
    target=await resolveExternalGameUrl(game,item,Number(sourceSelect.value));
    if(disposed||run!==epoch)return;
   }catch(error){
    if(disposed||run!==epoch)return;
-   notice.textContent='Unable to open this game: '+String(error.message||'Source not found')+'. Try another source.';
+   notice.textContent='Unable to open this item: '+String(error.message||'Source not found')+'. Try another source.';
    return;
   }
   sourceLink.href=target;

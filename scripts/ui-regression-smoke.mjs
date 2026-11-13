@@ -135,6 +135,13 @@ try{
  assert.equal(liveClasses.filter(name=>/^(?:arcade-|cel-|celestial-)/.test(name)).length,0,
   'The production Library should use only neutral class tokens');
  assert.equal(await page.locator('[data-view="s2"]').getAttribute('aria-label'),'Brightpath Library');
+ // Library-owned rendered markup must not expose the generic term, even in
+ // card descriptions, credits, status labels or accessibility attributes.
+ assert.doesNotMatch(await page.locator('[data-view="s2"]').evaluate(el=>el.outerHTML),/\bgame\b/i,
+  'The Library shell should use neutral copy in all of its DOM markup');
+ const originals=page.locator('[data-view="s2"] button[data-index]');
+ assert.equal(await originals.filter({hasText:'UmaVersus'}).locator('small').textContent(),
+  'Challenge rivals in the original online fighter.');
 
  // Test search, no-results and clearing; catalog fetch failures are unrelated.
  const arcade=page.locator('[data-view="s2"].on');
@@ -204,6 +211,12 @@ try{
  },sampleUrl,{timeout:12000});
  assert.ok(gameResolutions>0,'External games should resolve opaque IDs at launch');
  await arcade.locator('[data-vault-status]').filter({hasText:'AES-256-GCM · 7 assets'}).waitFor({timeout:10000});
+ const playerTitle=arcade.locator('[data-stage] [data-item-title] canvas');
+ await playerTitle.waitFor({timeout:10000});
+ assert.ok(await playerTitle.evaluate(el=>el.width>0&&el.height>0),
+  'The launched title should render into canvas pixels');
+ assert.doesNotMatch(await arcade.evaluate(el=>el.outerHTML),/\bgame\b/i,
+  'Opening an entry must not reinsert its full title into the HTML DOM');
  await arcade.locator('[data-back]').click();
  await page.screenshot({path:path.join(screenshots,'arcade.png')});
 

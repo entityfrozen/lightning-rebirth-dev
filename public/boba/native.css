@@ -129,6 +129,8 @@
 .arcade-launch{margin-top:auto;padding-top:16px;font-size:12px;font-weight:700;color:var(--acc)}
 .arcade-stage{max-width:800px;margin:0 auto}.arcade-stage>header{display:flex;align-items:center;gap:20px;margin-bottom:25px}
 .arcade-stage h2{font-size:23px;font-weight:760;letter-spacing:-.03em}
+.arcade-stage [data-item-title]{min-width:0;flex:1}
+.cel-stage-title{display:block;width:100%;height:auto;font:inherit;color:inherit;letter-spacing:inherit;pointer-events:none}
 .cel-2048,.arcade-simple{max-width:480px;margin:10px auto;display:grid;gap:17px}
 .arcade-toolbar,.cel-rps-score{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:center}
 .arcade-toolbar span,.cel-rps-score span{display:grid;place-items:center;border-radius:12px;padding:7px 14px;background:var(--g3);font-size:11px;color:var(--ink-2)}

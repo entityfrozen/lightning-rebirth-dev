@@ -49,3 +49,17 @@ test('Distributor Canvas cards retain neutral accessible names even when titles 
  assert.doesNotMatch(catalog,/aria-label="'\+esc\(game\.name\)/);
  assert.match(catalog,/<canvas class=\\?"cel-dist-name/);
 });
+
+test('Brightpath originals avoid the generic term in rendered text',()=>{
+ const own=read('../public/boba/games.js');
+ const extras=read('../public/boba/extra-games.js');
+ const catalog=read('../public/boba/catalog-ui.js');
+ assert.match(own,/Challenge rivals in the original online fighter/);
+ for(const phrase of ['New game','Start a new game','Game over','Connect Four game board',
+  'Play the original online fighting game','Each game and its cover artwork',
+  'select a game','Preparing game source','Unable to open this game'])
+  assert.ok(![own,extras,catalog].some(source=>source.includes(phrase)),phrase);
+ assert.match(own,/data-stage-title/);
+ assert.match(own,/drawCanvasTitle/);
+ assert.match(catalog,/frame\.title='Library player'/);
+});
