@@ -205,7 +205,7 @@ try{
   await boba.locator('[data-view="account"].on [data-admin]:not([hidden])').waitFor({timeout:10000});
   await boba.locator('[data-section="chat"]').click();
   await boba.locator('[data-view="chat"].on [data-status]').filter({hasText:'Live'}).waitFor({timeout:10000});
-  await boba.locator('.native-compose input').fill('Native Boba smoke message');
+  await boba.locator('.native-compose textarea[aria-label="Message"]').fill('Native Boba smoke message');
   await boba.locator('.native-compose button').click();
   await boba.locator('.native-feed').getByText('Native Boba smoke message',{exact:true}).waitFor({timeout:10000});
   const posted=boba.locator('.native-message').filter({hasText:'Native Boba smoke message'});
@@ -220,7 +220,7 @@ try{
 
   // Administrator can clear the entire active public channel.
   await boba.locator('[data-section="chat"]').click();
-  await boba.locator('.native-compose input').fill('Clear channel smoke test');
+  await boba.locator('.native-compose textarea[aria-label="Message"]').fill('Clear channel smoke test');
   await boba.locator('.native-compose button').click();
   await boba.locator('.native-feed').getByText('Clear channel smoke test',{exact:true}).waitFor({timeout:10000});
   boba.once('dialog',dialog=>dialog.accept());
