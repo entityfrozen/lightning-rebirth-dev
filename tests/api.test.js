@@ -43,7 +43,7 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.equal(loginPage.status,200);
     assert.match(await loginPage.text(),/\/boba\/dist\/assets\/auth-/);
     assert.doesNotMatch(html,/\/bundle\/main\.js/);
-    assert.match(html,/brightpath\.svg/);
+    assert.match(html,/brightpath-icon\.svg/);
     assert.doesNotMatch(html,/lightning-chan|mascotSprite|lightning-mark/);
     const appAsset=await fetch(url+'/bundle/main.js');
     assert.equal(appAsset.status,200);
@@ -74,9 +74,14 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.equal(guestAiStatus.response.status,401);
     const guestAiMessage=await call('/api/ai','POST',{messages:[{role:'user',content:'Hello'}]});
     assert.equal(guestAiMessage.response.status,401);
-    const starAsset=await fetch(url+'/assets/celestial-star.svg');
+    // The restored Brightpath star is a first-class asset, not the
+    // old green book icon used by the previous rebrand.
+    const starAsset=await fetch(url+'/assets/brightpath-star.svg');
     assert.equal(starAsset.status,200);
-    assert.match(await starAsset.text(),/<svg/);
+    assert.match(await starAsset.text(),/Brightpath star/);
+    const tabIcon=await fetch(url+'/assets/brightpath-icon.svg');
+    assert.equal(tabIcon.status,200);
+    assert.match(await tabIcon.text(),/<svg/);
     const studyAsset=await fetch(url+'/assets/study-portal.svg');
     assert.equal(studyAsset.status,200);
     assert.match(await studyAsset.text(),/<svg/);
