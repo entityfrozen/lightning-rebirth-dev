@@ -2,6 +2,7 @@ import {openAboutBlank} from './about-blank.js';
 import { I } from './icons.js';
 import { createProxyFrame, disposeProxyFrame, getProxyController } from './proxy.js';
 import { createUltravioletFrame } from './uv-proxy.js';
+import {maskFrameSearchLinks} from './search-link-mask.js';
 const $=(s,r=document)=>r.querySelector(s);
 const el=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild;};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -194,7 +195,20 @@ const home = {
       };
       read();
       if (t.doc === d) return;
-      t.doc = d;
+      t.unmaskLinks?.();
+      t.unmaskLinks=null;
+      t.doc=d;
+      // The visible markup does not need to expose each proxied search URL.
+      if(t.mode==='scramjet')t.unmaskLinks=maskFrameSearchLinks(d,(href,options)=>{
+        if(options.newTab){
+          const real=ctx.engine.decode(href);
+          if(real)navigate(real,true);
+          else window.open(href,'_blank','noopener,noreferrer');
+          return;
+        }
+        loading(t);
+        t.frame.src=href;
+      });
       const ttl = d.querySelector("title");
       if (ttl) new MutationObserver(read).observe(ttl, { childList: true, characterData: true, subtree: true });
     };
@@ -282,6 +296,7 @@ const home = {
       const i = st.tabs.findIndex((t) => t.id === id);
       if (i < 0) return;
       clearInterval(st.tabs[i].lt);clearError(st.tabs[i]);
+      st.tabs[i].unmaskLinks?.();st.tabs[i].unmaskLinks=null;
       if (st.tabs[i].frame) { ctx.engine.dispose(st.tabs[i].frame); st.tabs[i].frame.remove(); }
       st.tabs.splice(i, 1);
       if (st.active === id && st.tabs.length) st.active = st.tabs[Math.min(i, st.tabs.length - 1)].id;
@@ -462,6 +477,7 @@ const home = {
       if(current.mode===selected)return;
       current.mode=selected;
       if(current.frame){
+        current.unmaskLinks?.();current.unmaskLinks=null;current.doc=null;
         ctx.engine.dispose(current.frame);
         current.frame.remove();
         current.frame=null;
