@@ -62,16 +62,16 @@ export function mountArcade(root){
  let search='',active=null,dispose=null;
  root.innerHTML='<div class="arcade-shell"><header class="arcade-head"><div><span class="cel-home-kicker">BRIGHTPATH ORIGINALS</span><h1 data-heading></h1><p>A quick break, right where you are.</p></div><label class="arcade-search">'+ico('search')+'<input type="search" placeholder="Search the library" aria-label="Search the library"></label></header><section class="arcade-grid" data-grid></section><section class="arcade-stage" data-stage hidden><header><button class="btn s" type="button" data-back>← Library</button><h2 data-item-title></h2></header><div data-canvas></div></section></div>';
  root.querySelector('[data-heading]').textContent=gameWord;
- const grid=root.querySelector('[data-grid]'),stage=root.querySelector('[data-stage]'),area=root.querySelector('[data-play-area]');
+ const grid=root.querySelector('[data-grid]'),stage=root.querySelector('[data-stage]'),area=root.querySelector('[data-canvas]');
  const distributor=mountDistributorLibrary(root,{launch:game=>{
   dispose?.();area.replaceChildren();grid.hidden=true;distributor.hide();
-  stage.hidden=false;active=null;root.querySelector('[data-game-title]').textContent=game.name;
+  stage.hidden=false;active=null;root.querySelector('[data-item-title]').textContent=game.name;
   dispose=openDistributorGame(area,game);
   stage.scrollIntoView({block:'start',behavior:'smooth'});
  }});
  const paint=()=>{const visible=arcadeItems.filter(g=>(g.title+' '+g.kind).toLowerCase().includes(search));grid.innerHTML=visible.map(g=>'<button class="arcade-card" type="button" data-index="'+arcadeItems.indexOf(g)+'"><span class="arcade-symbol">'+esc(g.symbol)+'</span><span class="arcade-category">'+esc(g.kind)+'</span><strong>'+esc(g.title)+'</strong><small>'+esc(g.subtitle)+'</small><span class="arcade-launch">Play now →</span></button>').join('')||'<p>No matching titles.</p>'};
  root.querySelector('input[type=search]').addEventListener('input',e=>{search=e.target.value.trim().toLowerCase();paint();distributor.setQuery(search)});
- grid.onclick=e=>{const b=e.target.closest('[data-arcade-index]');if(!b)return;const index=Number(b.dataset.index);const item=Number.isInteger(index)&&index>=0?arcadeItems[index]:null;if(!item)return;dispose?.();area.replaceChildren();grid.hidden=true;distributor.hide();stage.hidden=false;active=item;root.querySelector('[data-game-title]').textContent=item.title;dispose=item.id==='umaversus'?openDistributorGame(area,{name:'UmaVersus',sources:[{name:'UmaVersus.lol',url:'https://umaversus.lol/',cover:'',creator:'UmaVersus creators'}]}):({chess:playChess,connect4:playConnectFour,mines:playMines,snake:playSnake,'2048':play2048,ttt:playTicTacToe,rps:playRps}[item.id]||playRps)(area)};
+ grid.onclick=e=>{const b=e.target.closest('[data-index]');if(!b)return;const index=Number(b.dataset.index);const item=Number.isInteger(index)&&index>=0?arcadeItems[index]:null;if(!item)return;dispose?.();area.replaceChildren();grid.hidden=true;distributor.hide();stage.hidden=false;active=item;root.querySelector('[data-item-title]').textContent=item.title;dispose=item.id==='umaversus'?openDistributorGame(area,{name:'UmaVersus',sources:[{name:'UmaVersus.lol',url:'https://umaversus.lol/',cover:'',creator:'UmaVersus creators'}]}):({chess:playChess,connect4:playConnectFour,mines:playMines,snake:playSnake,'2048':play2048,ttt:playTicTacToe,rps:playRps}[item.id]||playRps)(area)};
  root.querySelector('[data-back]').onclick=()=>{dispose?.();dispose=null;active=null;area.replaceChildren();grid.hidden=false;distributor.show();stage.hidden=true;paint()};
  paint();
 }
