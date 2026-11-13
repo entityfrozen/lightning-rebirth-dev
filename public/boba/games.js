@@ -60,7 +60,7 @@ function playRps(stage){
 }
 export function mountArcade(root){
  let search='',active=null,dispose=null;
- root.innerHTML='<div class="arcade-shell"><header class="arcade-head"><div><span class="cel-home-kicker">BRIGHTPATH ORIGINALS</span><h1 data-heading></h1><p>A quick break, right where you are.</p></div><label class="arcade-search">'+ico('search')+'<input type="search" placeholder="Search the library" aria-label="Search the arcade"></label></header><section class="arcade-grid" data-grid></section><section class="arcade-stage" data-stage hidden><header><button class="btn s" type="button" data-back>← Library</button><h2 data-item-title></h2></header><div data-canvas></div></section></div>';
+ root.innerHTML='<div class="arcade-shell"><header class="arcade-head"><div><span class="cel-home-kicker">BRIGHTPATH ORIGINALS</span><h1 data-heading></h1><p>A quick break, right where you are.</p></div><label class="arcade-search">'+ico('search')+'<input type="search" placeholder="Search the library" aria-label="Search the library"></label></header><section class="arcade-grid" data-grid></section><section class="arcade-stage" data-stage hidden><header><button class="btn s" type="button" data-back>← Library</button><h2 data-item-title></h2></header><div data-canvas></div></section></div>';
  root.querySelector('[data-heading]').textContent=gameWord;
  const grid=root.querySelector('[data-grid]'),stage=root.querySelector('[data-stage]'),area=root.querySelector('[data-play-area]');
  const distributor=mountDistributorLibrary(root,{launch:game=>{
