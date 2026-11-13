@@ -26,7 +26,9 @@ test('Arcade card buttons use stable numeric indices rather than exposing intern
  assert.match(markup,/data-index/);
  assert.doesNotMatch(markup,/data-arcade-index|data-game-title|data-play-area/);
  assert.match(markup,/querySelector\('\[data-canvas\]'\)/);
- assert.match(markup,/querySelector\('\[data-item-title\]'\)/);
+ assert.match(markup,/<h2 data-item-title aria-label=/);
+ assert.match(markup,/querySelector\('\[data-stage-title\]'\)/);
+ assert.doesNotMatch(markup,/textContent=game\.name|textContent=item\.title/);
  assert.match(markup,/closest\('\[data-index\]'\)/);
  assert.match(markup,/arcadeItems\.indexOf\(g\)/);
  assert.match(markup,/arcadeItems\[index\]/);
