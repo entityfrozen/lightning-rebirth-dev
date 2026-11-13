@@ -118,6 +118,13 @@ try{
  await arcade.locator('button[data-index]').filter({has:page.getByText('2048',{exact:true})}).click();
  assert.equal(await arcade.locator('[data-board][role="group"] [data-value]').count(),16,'2048 must still launch');
  await arcade.locator('[data-back]').click();
+ await arcade.locator('button[data-index]').filter({has:page.getByText('Rock Paper Scissors',{exact:true})}).click();
+ assert.equal(await arcade.locator('[data-stage] [data-pick]').count(),3,'RPS should still mount');
+ const gameClasses=await arcade.locator('[data-stage]').evaluate(el=>
+  [el,...el.querySelectorAll('*')].flatMap(node=>[...node.classList]));
+ assert.equal(gameClasses.filter(name=>/^(?:arcade-|cel-|celestial-)/.test(name)).length,0,
+  'Launched games should use neutral class names');
+ await arcade.locator('[data-back]').click();
  // The library's launch links must be absent from listing metadata and
  // resolved on demand, while Direct embed keeps working as a fallback.
  await arcade.locator('button[data-entry-index]').filter({hasText:'Vault Fixture'}).click();

@@ -26,7 +26,9 @@ export function replaceOpaqueClasses(source,map){
 
 export function opaqueDomClasses({stylesheet}={}){
  const css=stylesheet??readFileSync(resolve('public/boba/native.css'),'utf8');
- const mapping=buildOpaqueClassMap(css);
+ // Include intentionally unstyled classes, too, so inspecting a launched
+ // game cannot reveal the original section names.
+ const mapping=buildOpaqueClassMap(css+'.cel-rps{}.celestial-generated-image{}');
  return {
   name:'brightpath-opaque-dom-classes',
   apply:'build',enforce:'pre',
