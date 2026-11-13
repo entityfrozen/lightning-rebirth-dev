@@ -244,13 +244,13 @@ async function handleAPI(req,res,url) {
       return res.end(image);
     }catch(error){if(error.code==='ENOENT')return fail(res,404,'Image not found');throw error}
   }
-  if(req.method==='GET'&&pathname==='/api/games/catalog'){
+  if(req.method==='GET'&&(pathname==='/api/games/catalog'||pathname==='/api/brightpath/a')){
     if(!user)return fail(res,401,'Sign in required');
     const catalog=await getGameCatalog({vault:gameVault});
     // Do not broadcast every original game URL in a single browser response.
     return respond(res,200,gameVault.publicCatalog(catalog),{'Cache-Control':'private, no-store'});
   }
-  if(req.method==='GET'&&pathname==='/api/games/resolve'){
+  if(req.method==='GET'&&(pathname==='/api/games/resolve'||pathname==='/api/brightpath/b')){
     if(!user)return fail(res,401,'Sign in required');
     const gameId=url.searchParams.get('id')||'';
     const source=url.searchParams.get('source')||'';
@@ -267,7 +267,7 @@ async function handleAPI(req,res,url) {
       console.warn('Encrypted game asset capture skipped:',error.message));
     return;
   }
-  if(req.method==='GET'&&pathname==='/api/games/vault/status'){
+  if(req.method==='GET'&&(pathname==='/api/games/vault/status'||pathname==='/api/brightpath/c')){
     if(!user)return fail(res,401,'Sign in required');
     const gameId=url.searchParams.get('id')||'';
     const source=url.searchParams.get('source')||'';

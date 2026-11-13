@@ -76,7 +76,7 @@ export function mountDistributorLibrary(root,{launch}){
   async function reload(){
     status.textContent='Loading Selenite, WASM.rip and GN-Math…';
     try{
-      const response=await fetch('/api/games/catalog',{credentials:'same-origin'});
+      const response=await fetch('/api/brightpath/a',{credentials:'same-origin'});
       if(!response.ok)throw Error('HTTP '+response.status);
       const data=await response.json();
       if(!Array.isArray(data.games))throw Error('Invalid library data');
@@ -102,7 +102,7 @@ async function resolveExternalGameUrl(game,source,sourceIndex){
  // only opaque IDs: request the original source when the player launches it.
  if(source.url)return source.url;
  if(!/^g_[a-zA-Z0-9_-]{24}$/.test(game.id||''))throw Error('Game source is unavailable');
- const endpoint='/api/games/resolve?id='+encodeURIComponent(game.id)+'&source='+sourceIndex;
+ const endpoint='/api/brightpath/b?id='+encodeURIComponent(game.id)+'&source='+sourceIndex;
  const response=await fetch(endpoint,{credentials:'same-origin',cache:'no-store'});
  if(!response.ok)throw Error('Unable to resolve game (HTTP '+response.status+')');
  const payload=await response.json();
@@ -144,7 +144,7 @@ export function openDistributorGame(stage,game){
    return;
   }
   try{
-   const endpoint='/api/games/vault/status?id='+encodeURIComponent(game.id)+'&source='+sourceIndex;
+   const endpoint='/api/brightpath/c?id='+encodeURIComponent(game.id)+'&source='+sourceIndex;
    const response=await fetch(endpoint,{credentials:'same-origin',cache:'no-store'});
    if(disposed||run!==epoch)return;
    if(!response.ok)throw Error('Vault status unavailable');

@@ -56,15 +56,15 @@ try{
  const sealedId='g_'+'x'.repeat(24);
  const sampleUrl='https://example.com/celestial-vault-test/index.html';
  let gameResolutions=0;
- await page.route('**/api/games/catalog',route=>route.fulfill({
+ await page.route('**/api/brightpath/a',route=>route.fulfill({
   json:{games:[{id:sealedId,name:'Vault Fixture',sources:[
    {name:'Selenite',cover:'',creator:'Fixture'}
   ]}],total:1,unavailable:[],updatedAt:'2026-11-12T00:00:00Z'}
  }));
- await page.route('**/api/games/vault/status?*',route=>route.fulfill({
+ await page.route('**/api/brightpath/c?*',route=>route.fulfill({
   json:{encrypted:true,cached:true,files:7,bytes:1127,partial:false}
  }));
- await page.route('**/api/games/resolve?*',route=>{
+ await page.route('**/api/brightpath/b?*',route=>{
   const target=new URL(route.request().url());
   assert.equal(target.searchParams.get('id'),sealedId);
   assert.equal(target.searchParams.get('source'),'0');
@@ -90,6 +90,19 @@ try{
  await page.screenshot({path:path.join(screenshots,'home.png')});
  await home.locator('[data-go="s2"]').click();
  await page.locator('[data-view="s2"].on button[data-index]').first().waitFor({timeout:10000});
+ // View Source has only the Brightpath shell and hashed production assets.
+ const documentSource=await (await page.request.get(base+'/')).text();
+ assert.match(documentSource,/<title>Brightpath/);
+ assert.doesNotMatch(documentSource,/data-view=["']games|celestial-star\.svg|CELESTIAL ORIGINALS/i);
+ assert.match(documentSource,/\/boba\/dist\/assets\/app-[a-zA-Z0-9_-]+\.js/);
+ assert.doesNotMatch(documentSource,/src=["']\/boba\/(?:native|games|catalog-ui)\.js/);
+ // The actual DOM is still inspectable, but should no longer leak feature
+ // names through CSS classes or raw section identifiers.
+ const liveClasses=await page.locator('[data-view="s2"]').evaluate(node=>
+  [...node.querySelectorAll('*')].flatMap(el=>[...el.classList]));
+ assert.equal(liveClasses.filter(name=>/^(?:arcade-|cel-|celestial-)/.test(name)).length,0,
+  'The production Library should use only neutral class tokens');
+ assert.equal(await page.locator('[data-view="s2"]').getAttribute('aria-label'),'Brightpath Library');
 
  // Test search, no-results and clearing; catalog fetch failures are unrelated.
  const arcade=page.locator('[data-view="s2"].on');
