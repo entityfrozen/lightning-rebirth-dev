@@ -259,7 +259,24 @@ async function handleAPI(req,res,url) {
     const catalog=await getGameCatalog({vault:gameVault});
     const target=gameVault.launchUrl(catalog,gameId,Number(source));
     if(!target)return fail(res,404,'Game source not found');
-    return respond(res,200,{url:target},{'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'});
+    respond(res,200,{url:target},{'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'});
+    // Caching must not hold up launch. The files captured from approved
+    // distributor hosts are encrypted before any disk write; live games
+    // continue through Scramjet/Ultraviolet even when capture fails.
+    void gameVault.captureLaunch(catalog,gameId,Number(source)).catch(error=>
+      console.warn('Encrypted game asset capture skipped:',error.message));
+    return;
+  }
+  if(req.method==='GET'&&pathname==='/api/games/vault/status'){
+    if(!user)return fail(res,401,'Sign in required');
+    const gameId=url.searchParams.get('id')||'';
+    const source=url.searchParams.get('source')||'';
+    if(!/^g_[a-zA-Z0-9_-]{24}$/.test(gameId)||!/^(0|[1-9][0-9]{0,2})$/.test(source))
+      return fail(res,400,'Invalid game or source');
+    const catalog=await getGameCatalog({vault:gameVault});
+    const status=await gameVault.assetStatus(catalog,gameId,Number(source));
+    if(!status)return fail(res,404,'Game source not found');
+    return respond(res,200,status,{'Cache-Control':'private, no-store'});
   }
   if(req.method==='GET'&&pathname==='/api/account/workspace'){
     if(!user)return fail(res,401,'Sign in required');

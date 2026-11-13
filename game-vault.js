@@ -6,6 +6,7 @@
 import {createCipheriv,createDecipheriv,createHmac,randomBytes} from 'node:crypto';
 import {mkdir,readFile,writeFile,rename,unlink} from 'node:fs/promises';
 import path from 'node:path';
+import {createEncryptedGameAssetCache} from './game-asset-vault.js';
 
 const HEADER=Buffer.from('CGV1');
 const AAD=Buffer.from('celestial:external-game-catalog:v1');
@@ -75,6 +76,7 @@ export async function createGameVault({directory,keyHex=process.env.CELESTIAL_GA
  await mkdir(directory,{recursive:true,mode:0o700});
  const key=await loadKey(directory,keyHex);
  const location=path.join(directory,'catalog.enc');
+ const assetCache=await createEncryptedGameAssetCache({directory:path.join(directory,'assets'),key});
  let last=null,publicView=null,lookup=new Map();
  function index(catalog){
   if(last===catalog)return;
@@ -112,6 +114,16 @@ export async function createGameVault({directory,keyHex=process.env.CELESTIAL_GA
    index(catalog);
    const url=lookup.get(gameId)?.sources[sourceIndex]?.url;
    return typeof url==='string'&&url.startsWith('https://')?url:null;
+  },
+  async captureLaunch(catalog,gameId,sourceIndex){
+   const url=this.launchUrl(catalog,gameId,sourceIndex);
+   const name=lookup.get(gameId)?.sources[sourceIndex]?.name;
+   if(!url||!name)throw Error('Game source not found');
+   return assetCache.capture({handle:gameId,index:sourceIndex,sourceName:name,url});
+  },
+  async assetStatus(catalog,gameId,sourceIndex){
+   if(!this.launchUrl(catalog,gameId,sourceIndex))return null;
+   return assetCache.status(gameId,sourceIndex);
   }
  };
 }
