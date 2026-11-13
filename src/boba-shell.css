@@ -1,0 +1,380 @@
+/*
+ * Celestial / Boba shell
+ * The sign-in screen is intentionally not included in these selectors.
+ * Layout and motion follow Boba's right-hand orbital dock and layered glass surfaces,
+ * adapted around Celestial's existing React browser, chat, apps and admin components.
+ */
+.celestial-workspace.boba-workspace {
+  --boba-ink:#273448;
+  --boba-muted:#6c788c;
+  --boba-hair:rgba(46,61,89,.12);
+  --boba-glass:rgba(255,255,255,.68);
+  --boba-glass-high:rgba(255,255,255,.83);
+  --boba-shadow:0 2px 5px #1a2d5410,0 22px 58px -31px #2034567d;
+  --boba-accent:#6e85d6;
+  --boba-spring:cubic-bezier(.34,1.3,.5,1);
+  --boba-ease:cubic-bezier(.22,.78,.2,1);
+  --boba-dock:82px;
+  color:var(--boba-ink);
+  isolation:isolate;
+  background:transparent;
+}
+:root:has(.boba-workspace) {
+  color-scheme:light;
+  --bg:#e8e9f4;
+  --deep:#e2e7f5;
+  --panel:rgba(255,255,255,.69);
+  --panel-bright:rgba(255,255,255,.86);
+  --stroke:rgba(45,68,113,.15);
+  --strong-stroke:rgba(57,90,143,.28);
+  --text:#28344b;
+  --muted:#697991;
+  --quiet:#8793a7;
+  --cyan:#5879bd;
+  --violet:#886cd8;
+  --gold:#b87a58;
+  --mint:#33876e;
+  --accent:#6e85d6;
+  --accent-soft:rgba(121,145,210,.13);
+  --glass-line:rgba(60,74,106,.13);
+  --dock-panel:rgba(255,255,255,.66);
+  --flare-text:#273448;
+  --flare-muted:#738095;
+  --flare-border:rgba(53,67,101,.14);
+}
+body:has(.boba-workspace){background:#e6e8f3}
+body:has(.boba-workspace) .celestial-backdrop{
+  background:radial-gradient(ellipse 45% 70% at 14% 17%,rgba(178,189,247,.60),transparent 75%),
+  radial-gradient(ellipse 48% 62% at 86% 74%,rgba(246,188,203,.51),transparent 73%),
+  radial-gradient(ellipse 65% 60% at 56% 45%,rgba(217,232,250,.78),transparent 80%),
+  linear-gradient(140deg,#eef0f9,#dfebf4 43%,#f2e5ed) !important;
+  filter:none !important;
+  opacity:1 !important;
+}
+body:has(.boba-workspace) .celestial-backdrop::before{
+  background:radial-gradient(circle at 28% 60%,rgba(255,255,255,.5),transparent 43%) !important;
+  opacity:.85 !important;
+}
+body:has(.boba-workspace) .celestial-backdrop::after{opacity:0 !important}
+body:has(.boba-workspace) .celestial-ambient{
+  background:radial-gradient(ellipse at 50% 55%,rgba(255,255,255,.37),transparent 70%) !important;
+}
+body:has(.boba-workspace) canvas{opacity:.32}
+.celestial-workspace.boba-workspace .celestial-stage {
+  position:fixed !important;
+  inset:12px calc(var(--boba-dock) + 11px) 12px 12px !important;
+  left:12px !important;right:calc(var(--boba-dock) + 11px) !important;
+  top:12px !important;bottom:12px !important;
+  min-width:0;min-height:0;
+  border:1px solid rgba(255,255,255,.82) !important;
+  border-radius:30px !important;
+  background:rgba(255,255,255,.22) !important;
+  box-shadow:0 24px 90px -50px rgba(30,40,70,.45),inset 0 1px 0 rgba(255,255,255,.73) !important;
+  overflow:hidden !important;
+  backdrop-filter:blur(22px) saturate(1.3);
+  -webkit-backdrop-filter:blur(22px) saturate(1.3);
+}
+.celestial-workspace.boba-workspace .celestial-activity-layout,
+.celestial-workspace.boba-workspace .celestial-activity-main,
+.celestial-workspace.boba-workspace .celestial-home-main {
+  min-height:0;
+}
+.celestial-workspace.boba-workspace .dock-shell,
+.celestial-workspace.boba-workspace .dock-shell.closed{
+  position:fixed !important;
+  inset:10px 9px 10px auto !important;
+  left:auto !important;right:9px !important;
+  top:10px !important;bottom:10px !important;
+  transform:none !important;
+  width:var(--boba-dock) !important;
+  height:auto !important;
+  z-index:52 !important;
+  border-radius:31px !important;
+  transition:none !important;
+}
+.celestial-workspace.boba-workspace .dock{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:7px !important;
+  width:100% !important;height:100% !important;
+  padding:13px 6px 11px !important;
+  border:1px solid rgba(255,255,255,.91) !important;
+  border-radius:29px !important;
+  background:linear-gradient(150deg,rgba(255,255,255,.8),rgba(255,255,255,.54)) !important;
+  box-shadow:var(--boba-shadow),inset 0 1px 0 rgba(255,255,255,.92) !important;
+  backdrop-filter:blur(30px) saturate(1.9) !important;
+  -webkit-backdrop-filter:blur(30px) saturate(1.9) !important;
+  overflow:visible !important;
+}
+.celestial-workspace.boba-workspace .dock-brand{
+  display:flex !important;
+  width:58px !important;height:58px !important;
+  min-height:58px !important;flex:0 0 58px !important;
+  align-items:center !important;justify-content:center !important;
+  margin:0 0 11px !important;padding:0 !important;
+  border-radius:20px !important;
+  background:rgba(255,255,255,.36) !important;
+  border:1px solid rgba(255,255,255,.58) !important;
+  overflow:visible !important;
+}
+.celestial-workspace.boba-workspace .dock-brand-icon{
+  display:grid !important;
+  place-items:center !important;
+  width:43px !important;height:43px !important;
+  border-radius:16px !important;
+  background:linear-gradient(135deg,#a7b9ff,#d0ade6 60%,#f6c6d0) !important;
+  box-shadow:0 8px 24px #8e80b654 !important;
+  border:1px solid #fff8 !important;
+  color:#fff !important;font-size:25px !important;
+}
+.celestial-workspace.boba-workspace .dock-brand-icon img{
+  width:33px;height:33px;object-fit:contain;filter:brightness(0) invert(1);
+}
+.celestial-workspace.boba-workspace .dock-brand-name,
+.celestial-workspace.boba-workspace .dock-command,
+.celestial-workspace.boba-workspace .dock-section-label,
+.celestial-workspace.boba-workspace .dock-presence,
+.celestial-workspace.boba-workspace .dock-toggle{display:none !important}
+.celestial-workspace.boba-workspace .dock-group,
+.celestial-workspace.boba-workspace .dock-group.main-links,
+.celestial-workspace.boba-workspace.nav-compact .dock-group.main-links{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:6px !important;
+  flex:none !important;
+  width:100% !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+}
+.celestial-workspace.boba-workspace .dock-spacer{display:block !important;flex:1 1 auto !important;min-height:6px !important}
+.celestial-workspace.boba-workspace .dock-group.dock-bottom{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:7px !important;
+  flex:none !important;
+  margin:0 !important;
+  border:0 !important;
+  padding:0 !important;
+  width:100% !important;
+}
+.celestial-workspace.boba-workspace .dock-link,
+.celestial-workspace.boba-workspace.nav-compact .dock-link{
+  position:relative !important;
+  width:51px !important;height:51px !important;
+  min-width:51px !important;min-height:51px !important;
+  max-width:51px !important;
+  display:grid !important;place-items:center !important;
+  padding:0 !important;gap:0 !important;
+  flex:0 0 51px !important;
+  border:0 !important;
+  border-radius:50% !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#76819a !important;
+  transition:transform .43s var(--boba-spring),background .2s var(--boba-ease),color .2s var(--boba-ease) !important;
+}
+.celestial-workspace.boba-workspace .dock-link>svg,
+.celestial-workspace.boba-workspace.nav-compact .dock-link>svg{
+  width:23px !important;height:23px !important;
+  min-width:23px !important;min-height:23px !important;
+  margin:0 !important;opacity:1 !important;
+}
+.celestial-workspace.boba-workspace .dock-link:hover{background:rgba(71,86,122,.09) !important;color:#334762 !important;transform:scale(1.08) !important}
+.celestial-workspace.boba-workspace .dock-link:active{transform:scale(.91) !important}
+.celestial-workspace.boba-workspace .dock-link.active{
+  background:#798bcf !important;
+  color:white !important;
+  box-shadow:0 8px 22px #6d81b95c,inset 0 1px 0 #fff5 !important;
+}
+.celestial-workspace.boba-workspace .dock-link-label{
+  position:absolute !important;right:61px !important;top:50% !important;
+  width:auto !important;height:auto !important;
+  transform:translate(6px,-50%) !important;
+  display:block !important;
+  border-radius:9px !important;
+  background:rgba(43,52,77,.86) !important;
+  color:white !important;padding:7px 11px !important;
+  white-space:nowrap !important;
+  font-size:11px !important;font-weight:650 !important;
+  opacity:0 !important;pointer-events:none !important;
+  transition:opacity .16s,transform .18s var(--boba-ease) !important;
+}
+.celestial-workspace.boba-workspace .dock-link:hover .dock-link-label,
+.celestial-workspace.boba-workspace .dock-link:focus-visible .dock-link-label{
+  opacity:1 !important;transform:translate(0,-50%) !important;
+}
+.celestial-workspace.boba-workspace .dock-count{
+  position:absolute !important;top:0 !important;right:-4px !important;
+  background:#48b799 !important;border:2px solid #f6f8fd !important;
+  color:white !important;border-radius:12px !important;font-size:9px !important;
+}
+.celestial-workspace.boba-workspace .dock-profile{
+  display:grid !important;place-items:center !important;
+  width:51px !important;height:51px !important;
+  min-height:51px !important;padding:0 !important;
+  background:rgba(255,255,255,.45) !important;
+  border:1px solid rgba(62,80,112,.16) !important;
+  border-radius:50% !important;
+  color:#293e66 !important;box-shadow:none !important;
+}
+.celestial-workspace.boba-workspace .dock-avatar{
+  display:grid !important;place-items:center !important;
+  width:39px !important;height:39px !important;
+  border-radius:50% !important;
+  background:linear-gradient(135deg,#bba5e6,#8da8e0) !important;
+  color:white !important;font-size:17px !important;font-weight:750 !important;
+}
+.celestial-workspace.boba-workspace .dock-profile-name{display:none !important}
+.celestial-workspace.boba-workspace .celestial-corner-actions{display:none !important}
+.celestial-workspace.boba-workspace .celestial-home-split,
+.celestial-workspace.boba-workspace .forest-browser{
+  background:transparent !important;
+}
+.celestial-workspace.boba-workspace .forest-browser.home-mode .forest-browser-stage{
+  background:transparent !important;
+  border:0 !important;box-shadow:none !important;
+}
+.celestial-workspace.boba-workspace .forest-browser.home-mode .forest-browser-home{
+  color:#26364f !important;max-width:750px !important;
+}
+.celestial-workspace.boba-workspace .forest-browser-home h1,
+.celestial-workspace.boba-workspace .forest-browser-home h2{
+  color:#26364f !important;text-shadow:0 1px 0 #fff9 !important;
+}
+.celestial-workspace.boba-workspace .forest-browser-home input,
+.celestial-workspace.boba-workspace .browser-address,
+.celestial-workspace.boba-workspace .forest-browser input{
+  color:#283950;
+}
+.celestial-workspace.boba-workspace .glass,
+.celestial-workspace.boba-workspace .celestial-sheet,
+.celestial-workspace.boba-workspace .app-card,
+.celestial-workspace.boba-workspace .settings-card,
+.celestial-workspace.boba-workspace .celestial-chat-toggle{
+  background:linear-gradient(145deg,rgba(255,255,255,.85),rgba(255,255,255,.52)) !important;
+  border:1px solid rgba(255,255,255,.88) !important;
+  box-shadow:var(--boba-shadow) !important;
+  backdrop-filter:blur(27px) saturate(1.6) !important;
+  -webkit-backdrop-filter:blur(27px) saturate(1.6) !important;
+  color:#2e3e59 !important;
+}
+.celestial-workspace.boba-workspace .celestial-chat-toggle{
+  border-radius:22px !important;
+}
+.celestial-workspace.boba-workspace button:focus-visible{
+  outline:2px solid #8a9ee7 !important;outline-offset:3px;
+}
+@media(max-width:720px){
+  .celestial-workspace.boba-workspace{--boba-dock:0px}
+  .celestial-workspace.boba-workspace .celestial-stage{
+    inset:8px 8px 86px !important;
+    left:8px !important;right:8px !important;top:8px !important;bottom:86px !important;
+    border-radius:22px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-shell,
+  .celestial-workspace.boba-workspace .dock-shell.closed{
+    inset:auto 9px 9px !important;
+    left:9px !important;right:9px !important;bottom:9px !important;top:auto !important;
+    width:calc(100% - 18px) !important;height:66px !important;
+    border-radius:24px !important;transform:none !important;
+  }
+  .celestial-workspace.boba-workspace .dock{
+    flex-direction:row !important;justify-content:space-between !important;
+    padding:6px !important;border-radius:24px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-brand,
+  .celestial-workspace.boba-workspace .dock-spacer,
+  .celestial-workspace.boba-workspace .dock-group.dock-bottom .dock-link,
+  .celestial-workspace.boba-workspace .dock-group.dock-bottom .dock-presence{
+    display:none !important;
+  }
+  .celestial-workspace.boba-workspace .dock-group.main-links,
+  .celestial-workspace.boba-workspace.nav-compact .dock-group.main-links{
+    flex-direction:row !important;justify-content:space-around !important;
+    flex:1 1 auto !important;
+  }
+  .celestial-workspace.boba-workspace .dock-link,
+  .celestial-workspace.boba-workspace.nav-compact .dock-link{
+    flex:1 1 auto !important;width:auto !important;max-width:55px !important;
+    min-width:38px !important;height:49px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-group.dock-bottom{
+    flex:0 0 46px !important;width:46px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-profile{width:43px !important;height:43px !important}
+  .celestial-workspace.boba-workspace .dock-avatar{width:35px !important;height:35px !important}
+  .celestial-workspace.boba-workspace .dock-link-label{display:none !important}
+}
+@media(prefers-reduced-motion:reduce){
+  .celestial-workspace.boba-workspace .dock-link{transition:none !important}
+}
+
+/* The mobile dock needs visible destinations, not desktop-style hover tooltips. */
+@media(max-width:720px){
+  .celestial-workspace.boba-workspace .dock-shell,
+  .celestial-workspace.boba-workspace .dock-shell.closed{
+    left:0 !important;right:0 !important;bottom:0 !important;
+    width:100% !important;height:75px !important;
+    border-radius:22px 22px 0 0 !important;
+  }
+  .celestial-workspace.boba-workspace .dock{
+    border-radius:22px 22px 0 0 !important;
+    padding:5px 5px calc(7px + env(safe-area-inset-bottom,0px)) !important;
+  }
+  .celestial-workspace.boba-workspace .celestial-stage{
+    bottom:86px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-link,
+  .celestial-workspace.boba-workspace.nav-compact .dock-link{
+    display:flex !important;flex-direction:column !important;
+    gap:2px !important;justify-content:center !important;align-items:center !important;
+    height:60px !important;max-width:none !important;
+    border-radius:15px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-link>svg,
+  .celestial-workspace.boba-workspace.nav-compact .dock-link>svg{
+    width:21px !important;height:21px !important;
+    min-width:21px !important;min-height:21px !important;
+  }
+  .celestial-workspace.boba-workspace .dock-link-label,
+  .celestial-workspace.boba-workspace .dock-link:hover .dock-link-label{
+    display:block !important;position:static !important;
+    width:auto !important;height:auto !important;
+    padding:0 !important;
+    transform:none !important;opacity:1 !important;
+    background:none !important;
+    color:inherit !important;
+    font-size:9px !important;font-weight:660 !important;
+    line-height:1.1 !important;white-space:nowrap !important;
+  }
+}
+
+
+/* Quick-switch remains available through the compact orbital dock and Ctrl+K. */
+@media(min-width:721px){
+  .celestial-workspace.boba-workspace .dock-command{
+    display:grid !important;place-items:center !important;
+    flex:0 0 44px !important;width:44px !important;height:44px !important;
+    min-height:44px !important;
+    margin:0 auto 8px !important;padding:0 !important;
+    border:1px solid rgba(69,83,120,.13) !important;
+    border-radius:50% !important;
+    background:rgba(255,255,255,.38) !important;
+    color:#7887a4 !important;
+  }
+  .celestial-workspace.boba-workspace .dock-command:hover{
+    background:rgba(113,133,204,.14) !important;
+    color:#5168a6 !important;
+  }
+  .celestial-workspace.boba-workspace .dock-command-icon{
+    display:block !important;font-size:25px !important;line-height:1 !important;
+  }
+  .celestial-workspace.boba-workspace .dock-command-label,
+  .celestial-workspace.boba-workspace .dock-command kbd{display:none !important}
+}

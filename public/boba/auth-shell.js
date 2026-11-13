@@ -1,0 +1,23 @@
+// The HTML entry remains a minimal Brightpath shell. Build the accessible
+// account form from the production bundle, then attach its event handlers.
+export function mountAuthShell(){
+ const root=document.getElementById('root');
+ if(!root)throw Error('Brightpath account container is missing');
+ root.innerHTML=`<div class="atmo" aria-hidden="true"><div class="amb"></div><div class="wash"></div><div class="veil"></div><div class="grain"></div></div>
+<main class="acct auth-page">
+<section class="auth gl g2 r" aria-label="Brightpath account">
+<img class="auth-logo" src="/assets/brightpath-star.svg" alt="Brightpath">
+<div class="seg" data-amode role="group" aria-label="Account action"><span class="th"></span><button type="button" class="on" data-v="in" aria-pressed="true">Sign in</button><button type="button" data-v="up" aria-pressed="false">Create account</button></div>
+<h2 class="ah" data-atitle hidden></h2>
+<form data-aform>
+<label class="fld" data-f="user"><svg viewBox="0 0 256 256" aria-hidden="true"><path d="M230.93,220a8,8,0,0,1-6.93,4H32a8,8,0,0,1-6.92-12c15.23-26.33,38.7-45.21,66.09-54.16a72,72,0,1,1,73.66,0c27.39,8.95,50.86,27.83,66.09,54.16A8,8,0,0,1,230.93,220Z"/></svg><input name="username" maxlength="32" minlength="3" required autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Username" aria-label="Username"></label>
+<label class="fld" data-f="password"><svg viewBox="0 0 256 256" aria-hidden="true"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96Z"/></svg><input name="password" type="password" minlength="8" maxlength="128" required autocomplete="current-password" placeholder="Password" aria-label="Password"><button class="reveal" type="button" data-reveal="password" aria-label="Show password">Show</button></label>
+<label class="fld" data-f="confirm" hidden><svg viewBox="0 0 256 256" aria-hidden="true"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96Z"/></svg><input name="confirmPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Confirm password" aria-label="Confirm password" disabled><button class="reveal" type="button" data-reveal="confirmPassword" aria-label="Show confirmation password">Show</button></label>
+<p class="msg" data-amsg role="status" aria-live="polite" hidden></p>
+<button class="btn k" type="submit" data-asub>Sign in</button>
+<p class="note" data-anote hidden>New accounts are approved by an admin.</p>
+<div class="alt"><button type="button" data-alt>Create an account</button></div>
+</form>
+</section>
+</main>`;
+}

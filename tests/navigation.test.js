@@ -7,7 +7,7 @@ const browser=readFileSync(new URL('../src/Browser.jsx',import.meta.url),'utf8')
 const css=readFileSync(new URL('../src/navigation.css',import.meta.url),'utf8');
 
 test('primary navigation is always available with visible labels',()=>{
-  for(const item of ['Home','Browser','Apps','Chat','AI']){
+  for(const item of ['Home','Browser','Chat','AI']){
     assert.match(shell,new RegExp("label:'"+item+"'"));
   }
   assert.match(shell,/aria-label="Main navigation"/);
@@ -29,7 +29,7 @@ test('mobile navigation keeps labeled destinations accessible',()=>{
 });
 
 test('the home page explains where every primary action goes',()=>{
-  for(const label of ['Browser','Apps','Chat','AI']){
+  for(const label of ['Browser','Chat','AI']){
     assert.match(browser,new RegExp("label:'"+label+"'"));
   }
   assert.match(browser,/homeMode\?<div className="celestial-home-starter"/);

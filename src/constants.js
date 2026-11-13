@@ -4,7 +4,6 @@ export const channels = {
   showcase: { name: 'showcase', description: 'Show the things you are working on.' }
 };
 export const navigation = [
-  { id: 'arcade', label: 'Arcade', detail: 'PLAYSPACE' },
   { id: 'browser', label: 'Browser', detail: 'EXPLORE THE WEB' },
   { id: 'chat', label: 'Chat', detail: 'COMMUNITY LIVE' },
   { id: 'ai', label: 'AI', detail: 'YOUR COPILOT' }

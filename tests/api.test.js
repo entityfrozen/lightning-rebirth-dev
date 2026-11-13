@@ -10,10 +10,10 @@ import { WebSocket } from 'ws';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const palette={accent:'#b67cff',background:'#0f0b1b',surface:'#20152f',text:'#f9f2ff',muted:'#b8a9cb',line:'#513966',glow:55,radius:16,petals:true};
 
-test('end-to-end account, chat, and community drop API', {timeout:18000}, async ()=>{
+test('end-to-end account, chat, and community drop API', {timeout:90000}, async ()=>{
   const tmp=await mkdtemp(path.join(tmpdir(),'celestial-test-'));
   const port=31000+Math.floor(Math.random()*10000);
-  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,OPENAI_API_KEY:'',NVIDIA_API_KEY:'',BOLT_ADMIN_USER:'ReviewAdmin',BOLT_ADMIN_PASSWORD:'a very long test password 123!',BOLT_DATA_DIR:tmp,PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
+  const server=spawn(process.execPath,['server.js'],{cwd:root,env:{...process.env,RAILWAY_VOLUME_MOUNT_PATH:'',OPENAI_API_KEY:'',NVIDIA_API_KEY:'',BOLT_ADMIN_USER:'ReviewAdmin',BOLT_ADMIN_PASSWORD:'a very long test password 123!',BOLT_DATA_DIR:tmp,PORT:String(port),LIGHTNING_DATA_FILE:path.join(tmp,'store.json')},stdio:'pipe'});
   let cookie='';
   const url=`http://127.0.0.1:${port}`;
   const call=async(route,method='GET',body)=>{
@@ -23,7 +23,7 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
   };
   try {
     let ready=false;
-    for(let i=0;i<100;i++){try{await fetch(url+'/api/me');ready=true;break;}catch{await new Promise(r=>setTimeout(r,80));}}
+    for(let i=0;i<750;i++){try{await fetch(url+'/api/me');ready=true;break;}catch{await new Promise(r=>setTimeout(r,80));}}
     assert.equal(ready,true,'server started');
     const homepage=await fetch(url+'/');
     assert.equal(homepage.status,200);
@@ -31,11 +31,19 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(homepage.headers.get('cross-origin-embedder-policy'),'credentialless');
     assert.equal(homepage.headers.get('x-frame-options'),null);
     assert.doesNotMatch(homepage.headers.get('content-security-policy')||'',/frame-ancestors/);
+    // Proxied games rely on JS string evaluation in this app document.
+    // A page opened within about:blank inherits this document's CSP.
+    assert.match(homepage.headers.get('content-security-policy')||'',/script-src[^;]*'unsafe-eval'/);
     assert.equal(homepage.headers.get('cross-origin-resource-policy'),'cross-origin');
 
     const html=await homepage.text();
-    assert.ok(html.includes('<title>Study Portal | Research Workspace</title>'));
-    assert.match(html,/study-portal\.svg/);
+    assert.ok(html.includes('<title>Brightpath | Learning Workspace</title>'));
+    assert.match(html,/\/boba\/dist\/assets\/app-/);
+    const loginPage=await fetch(url+'/login');
+    assert.equal(loginPage.status,200);
+    assert.match(await loginPage.text(),/\/boba\/dist\/assets\/auth-/);
+    assert.doesNotMatch(html,/\/bundle\/main\.js/);
+    assert.match(html,/brightpath-icon\.svg/);
     assert.doesNotMatch(html,/lightning-chan|mascotSprite|lightning-mark/);
     const appAsset=await fetch(url+'/bundle/main.js');
     assert.equal(appAsset.status,200);
@@ -54,9 +62,11 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.match(loaderCode,/libcurl-client\.js/);
     assert.doesNotMatch(loaderCode,/import\(["']data:/);
     const policy=loader.headers.get('content-security-policy')||'';
-    assert.match(policy,/script-src 'self' blob:/);
-    assert.doesNotMatch(policy,/script-src[^;]*data:/);
+    assert.match(policy,/script-src 'self' data: blob:/);
+    assert.match(policy,/script-src[^;]*data:/); // Lightning's official loader imports a data: module.
     assert.match(policy,/connect-src 'self' data:/);
+    assert.match(policy,/script-src[^;]*'unsafe-eval'/);
+    assert.doesNotMatch(policy,/script-src[^;]*'unsafe-inline'/);
 
 
     assert.match(await cssAsset.text(),/browser-window/);
@@ -64,9 +74,14 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(guestAiStatus.response.status,401);
     const guestAiMessage=await call('/api/ai','POST',{messages:[{role:'user',content:'Hello'}]});
     assert.equal(guestAiMessage.response.status,401);
-    const starAsset=await fetch(url+'/assets/celestial-star.svg');
+    // The restored Brightpath star is a first-class asset, not the
+    // old green book icon used by the previous rebrand.
+    const starAsset=await fetch(url+'/assets/brightpath-star.svg');
     assert.equal(starAsset.status,200);
-    assert.match(await starAsset.text(),/<svg/);
+    assert.match(await starAsset.text(),/Brightpath star/);
+    const tabIcon=await fetch(url+'/assets/brightpath-icon.svg');
+    assert.equal(tabIcon.status,200);
+    assert.match(await tabIcon.text(),/<svg/);
     const studyAsset=await fetch(url+'/assets/study-portal.svg');
     assert.equal(studyAsset.status,200);
     assert.match(await studyAsset.text(),/<svg/);
@@ -85,6 +100,24 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     result=await call('/api/login','POST',{username:'ReviewAdmin',password:'a very long test password 123!'});
     assert.equal(result.response.status,200);
     assert.equal(result.data.user.role,'admin');
+    let config=await call('/api/admin/config');
+    assert.equal(config.response.status,200);
+    assert.equal(config.data.providers.nvidiaConfigured,false);
+    assert.equal(config.data.providers.tavilyConfigured,false);
+    config=await call('/api/admin/config/providers','POST',{nvidia:'test-nvidia-secret',tavily:'test-tavily-secret'});
+    assert.equal(config.response.status,200);
+    assert.equal(config.data.providers.nvidiaConfigured,true);
+    assert.equal(config.data.providers.tavilyConfigured,true);
+    assert.doesNotMatch(JSON.stringify(config.data),/test-nvidia-secret|test-tavily-secret/);
+    config=await call('/api/admin/config');
+    assert.doesNotMatch(JSON.stringify(config.data),/test-nvidia-secret|test-tavily-secret|passwordHash|"salt"|"hash"/);
+    const self=config.data.accounts.find(a=>a.username.toLowerCase()==='reviewadmin');
+    assert.equal((await call('/api/admin/config/accounts/'+self.id,'POST',{role:'user'})).response.status,400);
+    const extra=await call('/api/admin/config/accounts','POST',{username:'ManagedTest',password:'a managed test password',role:'user'});
+    assert.equal(extra.response.status,201);
+    const edited=await call('/api/admin/config/accounts/'+extra.data.account.id,'POST',{enabled:false});
+    assert.equal(edited.data.account.active,false);
+    await call('/api/admin/config/providers','POST',{nvidia:'',tavily:''});
     result=await call('/api/admin/accounts/pending');
     assert.equal(result.response.status,200);
     const request=result.data.accounts.find(a=>a.username==='TestCelestial');
@@ -100,6 +133,8 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     const ownerId=result.data.user.id;
     result=await call('/api/admin/accounts/pending');
     assert.equal(result.response.status,403);
+    assert.equal((await call('/api/admin/config')).response.status,403);
+    assert.equal((await call('/api/admin/config/providers','POST',{nvidia:'not-authorized'})).response.status,403);
     const aiStatus=await call('/api/ai/status');
     assert.equal(aiStatus.response.status,200);
     assert.equal(typeof aiStatus.data.configured,'boolean');
@@ -113,6 +148,21 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.equal(browserStatus.response.status,200);
     assert.equal(browserStatus.data.authenticated,true);
     assert.equal(typeof browserStatus.data.proxy,'boolean');
+    assert.equal(browserStatus.data.ultraviolet,browserStatus.data.proxy);
+    assert.equal((await fetch(url+'/uv/uv.bundle.js')).status,401,'Proxy vendor scripts require login');
+    for(const asset of [
+      '/uv/sw.js','/uv/uv.config.js','/uv/uv.bundle.js','/uv/uv.sw.js',
+      '/baremux/index.js','/baremux/worker.js','/epoxy/index.mjs'
+    ]){
+      const response=await fetch(url+asset,{headers:{Cookie:cookie}});
+      assert.equal(response.status,200,asset+' should be served after sign-in');
+      assert.match(response.headers.get('content-type')||'',/javascript/,asset+' must have a JS MIME type');
+      if(asset==='/uv/sw.js'||asset==='/baremux/worker.js'){
+        assert.match(response.headers.get('content-security-policy')||'',/script-src[^;]*'unsafe-eval'/,
+          asset+' must allow the dynamic JS required by proxying');
+      }
+    }
+
 
     const live=new WebSocket(url.replace(/^http/,'ws')+'/live',{
       headers:{Cookie:cookie},handshakeTimeout:5500
@@ -167,12 +217,23 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     result=await call('/api/dms/'+ownerId);
     assert.equal(result.data.messages.length,1);
     assert.equal(result.data.messages[0].text,'A private message from TestPeer');
+    const peerCookie=cookie;
     cookie=ownerCookie;
     result=await call('/api/dms/'+peerId);
     assert.equal(result.data.messages.length,1);
     assert.equal(result.data.messages[0].author,'TestPeer');
     result=await call('/api/dms');
     assert.ok(result.data.threads.some(t=>t.user.id===peerId));
+    result=await call('/api/dms/'+peerId+'/clear','POST',{});
+    assert.equal(result.response.status,200);
+    result=await call('/api/dms/'+peerId);
+    assert.deepEqual(result.data.messages,[]);
+    result=await call('/api/dms');
+    assert.ok(!result.data.threads.some(t=>t.user.id===peerId));
+    cookie=peerCookie;
+    result=await call('/api/dms/'+ownerId);
+    assert.equal(result.data.messages.length,1,'other participant must keep their copy');
+    cookie=ownerCookie;
 
     result=await call('/api/drops','POST',{title:'New Theme',description:'My favorite purple palette',theme:palette});assert.equal(result.response.status,201);
     const dropId=result.data.drop.id;

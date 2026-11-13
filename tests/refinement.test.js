@@ -1,36 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {Chess} from 'chess.js';
-import {CHESS_LEVELS,chooseChessMove} from '../chess-ai.js';
+import {viewMarker} from '../public/boba/view-markers.js';
 
-test('all four bot difficulty levels return legal chess.js moves',()=>{
- assert.deepEqual(CHESS_LEVELS,['easy','normal','hard','expert']);
- for(const level of CHESS_LEVELS){
-  const position=new Chess();
-  const move=chooseChessMove(position,level);
-  assert.ok(move,`no move at difficulty ${level}`);
-  assert.ok(position.moves({verbose:true}).some(m=>m.from===move.from&&m.to===move.to),
-   `illegal move at difficulty ${level}`);
-  assert.ok(position.move(move));
+test('browser recovery controls remain with Celestial Originals',()=>{
+ const browser=readFileSync(new URL('../src/Browser.jsx',import.meta.url),'utf8');
+ for(const snippet of ['navigator.clipboard.writeText(visibleUrl)','onClick={reconnect}','onClick={closeOtherTabs}']){
+  assert.ok(browser.includes(snippet),snippet);
  }
 });
 
-test('the chess UI sends the chosen difficulty instead of a fixed value',()=>{
- const source=readFileSync(new URL('../src/Arcade.jsx',import.meta.url),'utf8');
- assert.match(source,/type:'chessBot',difficulty:level/);
- assert.match(source,/celestial-chess-level/);
- assert.match(source,/aria-pressed=\{level===item.id\}/);
- assert.match(source,/game\.difficulty/);
- assert.doesNotMatch(source,/type:'chessBot',difficulty:'normal'/);
-});
-
-test('Apps category filtering and Browser recovery tools are wired to actions',()=>{
- const apps=readFileSync(new URL('../src/Apps.jsx',import.meta.url),'utf8');
- const browser=readFileSync(new URL('../src/Browser.jsx',import.meta.url),'utf8');
- assert.match(apps,/setCategory\(item.id\)/);
- assert.match(apps,/celestial-apps-filters/);
- assert.match(browser,/navigator\.clipboard\.writeText\(visibleUrl\)/);
- assert.match(browser,/onClick=\{reconnect\}/);
- assert.match(browser,/onClick=\{closeOtherTabs\}/);
+test('native navigation separates star Home, Browser and Celestial Originals',()=>{
+ const native=readFileSync(new URL('../public/boba/native.js',import.meta.url),'utf8');
+ const template=readFileSync(new URL('../public/boba/index.template.html',import.meta.url),'utf8');
+ const shell=readFileSync(new URL('../public/boba/shell.js',import.meta.url),'utf8');
+ assert.ok(native.includes('mountArcade')&&native.includes('mountHome'));
+ assert.ok(native.includes("mountBrowser(view('browser'))"));
+ assert.ok(template.includes('id="root"'), 'minimal HTML has the app root');
+ for(const name of ['home','browser','games']){
+  assert.ok(shell.includes('data-view=')&&shell.includes(viewMarker(name)),name+' view is mounted by the bundled shell');
+ }
+ assert.ok(!/data-view=.{0,4}apps/.test(shell));
+ assert.ok(native.includes("mountChat(view('chat'),user)"));
 });

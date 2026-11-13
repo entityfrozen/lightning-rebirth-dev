@@ -1,0 +1,24 @@
+import {I,N} from './icons.js';
+export const $=(s,r=document)=>r.querySelector(s);
+export const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+export const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const aiIcon='<svg class="cel-ai-logo" viewBox="0 0 256 260" fill="currentColor" aria-hidden="true"><path d="M239.184 106.203a64.716 64.716 0 0 0-5.576-53.103C219.452 28.459 191 15.784 163.213 21.74A65.586 65.586 0 0 0 52.096 45.22a64.716 64.716 0 0 0-43.23 31.36c-14.31 24.602-11.061 55.634 8.033 76.74a64.665 64.665 0 0 0 5.525 53.102c14.174 24.65 42.644 37.324 70.446 31.36a64.72 64.72 0 0 0 48.754 21.744c28.481.025 53.714-18.361 62.414-45.481a64.767 64.767 0 0 0 43.229-31.36c14.137-24.558 10.875-55.423-8.083-76.483Zm-97.56 136.338a48.397 48.397 0 0 1-31.105-11.255l1.535-.87 51.67-29.825a8.595 8.595 0 0 0 4.247-7.367v-72.85l21.845 12.636c.218.111.37.32.409.563v60.367c-.056 26.818-21.783 48.545-48.601 48.601Zm-104.466-44.61a48.345 48.345 0 0 1-5.781-32.589l1.534.921 51.722 29.826a8.339 8.339 0 0 0 8.441 0l63.181-36.425v25.221a.87.87 0 0 1-.358.665l-52.335 30.184c-23.257 13.398-52.97 5.431-66.404-17.803ZM23.549 85.38a48.499 48.499 0 0 1 25.58-21.333v61.39a8.288 8.288 0 0 0 4.195 7.316l62.874 36.272-21.845 12.636a.819.819 0 0 1-.767 0L41.353 151.53c-23.211-13.454-31.171-43.144-17.804-66.405v.256Zm179.466 41.695-63.08-36.63L161.73 77.86a.819.819 0 0 1 .768 0l52.233 30.184a48.6 48.6 0 0 1-7.316 87.635v-61.391a8.544 8.544 0 0 0-4.4-7.213Zm21.742-32.69-1.535-.922-51.619-30.081a8.39 8.39 0 0 0-8.492 0L99.98 99.808V74.587a.716.716 0 0 1 .307-.665l52.233-30.133a48.652 48.652 0 0 1 72.236 50.391v.205ZM88.061 139.097l-21.845-12.585a.87.87 0 0 1-.41-.614V65.685a48.652 48.652 0 0 1 79.757-37.346l-1.535.87-51.67 29.825a8.595 8.595 0 0 0-4.246 7.367l-.051 72.697Zm11.868-25.58 28.138-16.217 28.188 16.218v32.434l-28.086 16.218-28.188-16.218-.052-32.434Z"/></svg>';
+export const discordIcon='<svg class="cel-discord-icon" viewBox="0 0 256 199" fill="currentColor" aria-hidden="true"><path d="M216.856 16.597A208.502 208.502 0 0 0 164.042 0c-2.275 4.113-4.933 9.645-6.766 14.046-19.692-2.961-39.203-2.961-58.533 0-1.832-4.4-4.55-9.933-6.846-14.046a207.809 207.809 0 0 0-52.855 16.638C5.618 67.147-3.443 116.4 1.087 164.956c22.169 16.555 43.653 26.612 64.775 33.193A161.094 161.094 0 0 0 79.735 175.3a136.413 136.413 0 0 1-21.846-10.632 108.636 108.636 0 0 0 5.356-4.237c42.122 19.702 87.89 19.702 129.51 0a131.66 131.66 0 0 0 5.355 4.237 136.07 136.07 0 0 1-21.886 10.653c4.006 8.02 8.638 15.67 13.873 22.848 21.142-6.58 42.646-16.637 64.815-33.213 5.316-56.288-9.08-105.09-38.056-148.36ZM85.474 135.095c-12.645 0-23.015-11.805-23.015-26.18s10.149-26.2 23.015-26.2c12.867 0 23.236 11.804 23.015 26.2.02 14.375-10.148 26.18-23.015 26.18Zm85.051 0c-12.645 0-23.014-11.805-23.014-26.18s10.148-26.2 23.014-26.2c12.867 0 23.236 11.804 23.015 26.2 0 14.375-10.148 26.18-23.015 26.18Z"/></svg>';
+export const ico=(k,cl='')=>k==='ask'?aiIcon:k==='discord'?discordIcon:'<svg class="'+cl+'" viewBox="0 0 256 256" aria-hidden="true">'+(I[k]||I.link||'')+'</svg>';
+export const lic=(k,a,b)=>'<span class="lic" style="background:linear-gradient(145deg,'+a+','+b+')">'+ico(k)+'</span>';
+export async function api(path,body){const r=await fetch(path,{credentials:'same-origin',...(body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}
+export const THEMES=[['boba','Brightpath','light'],['light','Light','light'],['dark','Dark','dark'],['strawberry','Strawberry','light'],['touhou','Touhou · Reimu','light'],['matcha','Matcha','light'],['mango','Mango','light'],['sky','Sky','light'],['taro','Taro','dark'],['midnight','Midnight','dark'],['brown','Brown','dark'],['black','Black','dark']];
+export const ACCENTS=[['#8a5631','#fff'],['#ea6b96','#fff'],['#4c9461','#fff'],['#d69c31','#fff'],['#397cc9','#fff'],['#8d62db','#fff'],['#252b39','#fff']];
+export function applyPrefs(){
+ const root=document.documentElement;
+ const v=localStorage.getItem('celestial.boba.theme')||'boba';
+ root.dataset.palette=v;
+ root.dataset.theme=THEMES.find(t=>t[0]===v)?.[2]||'light';
+ root.dataset.fx=localStorage.getItem('boba.fx')||'full';
+ const storedAccent=localStorage.getItem('boba.accent');
+ const accent=storedAccent!==null?ACCENTS[Number(storedAccent)]:null;
+ root.style.setProperty('--acc',v==='touhou'?'#bd2444':accent?.[0]||'#8A5631');
+ root.style.setProperty('--acc-ink',v==='touhou'?'#fff':accent?.[1]||'#fff');
+}
+
+export function segThumb(seg){const b=seg.querySelector('button.on');if(b){seg.querySelector('.th').style.width=b.offsetWidth+'px';seg.querySelector('.th').style.transform='translateX('+(b.offsetLeft-3)+'px)'}}
