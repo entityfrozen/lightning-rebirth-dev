@@ -14,7 +14,8 @@ test('canvas titles preserve names while wrapping complete words',()=>{
 
 test('canvas titles wrap unbroken names and Unicode without truncating',()=>{
  assert.deepEqual(wrapCanvasTitle('abcdefghijk',units,4),['abcd','efgh','ijk']);
- assert.deepEqual(wrapCanvasTitle('🪐☀️🚀',units,1),Array.from('🪐☀️🚀'));
+ const graphemes=value=>Array.from(new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(value)).length;
+ assert.deepEqual(wrapCanvasTitle('🪐☀️🚀',graphemes,1),['🪐','☀️','🚀']);
  assert.deepEqual(wrapCanvasTitle(' ',units,140),['']);
 });
 

@@ -14,7 +14,10 @@ export function wrapCanvasTitle(value,measure,maxWidth){
   if(line){lines.push(line);line=''}
   if(measure(word)<=limit){line=word;continue}
   // Very long or unspaced names must fit even on narrow mobile cards.
-  for(const char of Array.from(word)){
+  const chars=typeof Intl.Segmenter==='function'
+   ? Array.from(new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(word),part=>part.segment)
+   : Array.from(word);
+  for(const char of chars){
    if(line&&measure(line+char)>limit){lines.push(line);line=''}
    line+=char;
   }
