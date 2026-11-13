@@ -23,7 +23,8 @@ test('chat shows Arcade label without exposing the legacy games channel ID in bu
 test('Browser offers direct embedding if the Scramjet navigation fails',()=>{
  const browser=source('../public/boba/browser.js');
  assert.match(browser,/Try direct embed/);
- assert.match(browser,/t\.frame\.src=t\.url/);
+ assert.match(browser,/t\.frame\.contentWindow\?\.location\.replace\(t\.url\)/);
+ assert.doesNotMatch(browser,/t\.frame\.src=t\.url/);
  assert.match(browser,/t\.direct=true/);
 });
 
@@ -66,4 +67,16 @@ test('about:blank browser and Arcade select Ultraviolet by default without chang
  assert.match(browser,/window\.self!==window\.top\?'ultraviolet'/);
  assert.match(arcade,/if\(window\.self!==window\.top\)modeSelect\.value='ultraviolet'/);
  assert.match(wrapper,/Embedded browsing starts with Ultraviolet/);
+});
+
+test('Browser tabs and framed navigation avoid exposing search URLs as element attributes',()=>{
+ const browser=source('../public/boba/browser.js');
+ const proxy=source('../public/boba/proxy.js');
+ const adapter=source('../public/boba/frame-navigation.js');
+ assert.match(browser,/aria-label="Browser tab /);
+ assert.doesNotMatch(browser,/esc\(t\.name \|\| t\.title\)/);
+ assert.match(browser,/omni\.value = t && t\.url \? hostOf\(t\.url\)/);
+ assert.match(proxy,/navigateWithNeutralFrameSrc/);
+ assert.match(adapter,/contentWindow\.location\.replace\(destination\)/);
+ assert.doesNotMatch(adapter,/element\.removeAttribute\('src'\)/);
 });
