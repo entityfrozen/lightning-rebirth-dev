@@ -1,5 +1,5 @@
 /* Boba account presentation, backed exclusively by existing Bolt v5 session APIs. */
-(() => {
+export function mountAuth() {
   const $ = s => document.querySelector(s);
   const form = $('[data-aform]'), seg = $('[data-amode]'), sub = $('[data-asub]');
   const msg = $('[data-amsg]'), note = $('[data-anote]'), alt = $('[data-alt]');
@@ -94,4 +94,4 @@
   show('in');
   window.addEventListener('resize', thumb);
   document.fonts?.ready.then(thumb);
-})();
+}

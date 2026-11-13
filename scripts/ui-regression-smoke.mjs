@@ -74,6 +74,13 @@ try{
  await page.route('https://example.com/celestial-vault-test/**',route=>route.fulfill({
   contentType:'text/html',body:'<!doctype html><title>Vault Fixture</title><h1>Game launched</h1>'
  }));
+ // The account route should have the same root-and-bundle source structure
+ // as the signed-in Brightpath workspace. Form controls remain in the DOM.
+ const loginSource=await (await page.request.get(base+'/login')).text();
+ assert.match(loginSource,/<title>Brightpath/);
+ assert.match(loginSource,/<div id="root"><\/div>/);
+ assert.match(loginSource,/\/boba\/dist\/assets\/auth-[a-zA-Z0-9_-]+\.js/);
+ assert.doesNotMatch(loginSource,/<input|<form|data-aform|celestial-star|<section/);
  await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:30000});
  await page.locator('input[name="username"]').fill('UIAdmin');
  await page.locator('input[name="password"]').fill(password);

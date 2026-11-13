@@ -2,7 +2,7 @@ import {parseAst} from 'rollup/parseAst';
 
 // Only authored UI literals are encoded. This is obfuscation, not encryption.
 // Keep DOM selectors, class names, endpoints and third-party page data intact.
-const clientModules=/\/public\/boba\/(?:browser|games|catalog-ui|extra-games)\.js$/;
+const clientModules=/\/public\/boba\/(?:browser|games|catalog-ui|extra-games|auth-shell)\.js$/;
 const htmlTag=/<\s*\/?\s*[a-z][a-z0-9-]*(?=[\s/>])/i;
 const captions=new Set([
  'Arcade','Games','Chat','Search the arcade','No matching titles.',
