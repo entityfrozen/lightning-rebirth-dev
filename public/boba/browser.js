@@ -6,7 +6,7 @@ const $=(s,r=document)=>r.querySelector(s);
 const el=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild;};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ico=k=>'<svg viewBox="0 0 256 256" aria-hidden="true">'+(I[k]||I.link||'')+'</svg>';
-const cup=()=>'<img src="/assets/brightpath.svg" alt="Loading" style="width:54px">';
+const cup=()=>'<img src="/assets/brightpath-star.svg" alt="Loading" style="width:54px">';
 const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch{return ''}};
 const favicon=d=>'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#8a5631"/><text x="16" y="22" text-anchor="middle" font-size="18" fill="white">'+(d[0]||'•').toUpperCase().replace(/[^A-Z0-9]/g,'•')+'</text></svg>');
 const FAVS=[];
@@ -134,7 +134,7 @@ const home = {
     '<button class="cb sm gh" data-wmax aria-label="Full screen">' + ico("expand") + "</button></div>" +
     '<span class="wtip" data-tip></span>' +
     '<div class="page" data-page><div class="gload off" data-bl>' + cup() + '</div><div class="home" data-nt>' +
-    '<div class="hwm"><img alt="" src="/assets/brightpath.svg"></div><div class="hcol"><div class="clock">' +
+    '<div class="hwm"><img alt="" src="/assets/brightpath-star.svg"></div><div class="hcol"><div class="clock">' +
     '<div class="t num r"><span data-ck></span><i data-ap></i></div>' +
     '<div class="d r" style="--d:.03s" data-dt></div></div>' +
     '<label class="big-q r" style="--d:.06s">' + ico("search") + '<input data-bq placeholder="Search or enter a link" aria-label="Search or enter a link" autocomplete="off" spellcheck="false"></label>' +

@@ -78,6 +78,7 @@ try{
  // as the signed-in Brightpath workspace. Form controls remain in the DOM.
  const loginSource=await (await page.request.get(base+'/login')).text();
  assert.match(loginSource,/<title>Brightpath/);
+ assert.match(loginSource,/href="\/assets\/brightpath-icon\.svg"/);
  assert.match(loginSource,/<div id="root"><\/div>/);
  assert.match(loginSource,/\/boba\/dist\/assets\/auth-[a-zA-Z0-9_-]+\.js/);
  assert.doesNotMatch(loginSource,/<input|<form|data-aform|celestial-star|<section/);
@@ -92,6 +93,26 @@ try{
  await home.locator('h1').waitFor({timeout:10000});
  assert.match(await home.locator('h1').textContent(),/uiadmin/i);
  assert.equal(await home.locator('nav[aria-label="Quick access"] button').count(),4);
+ // Guard against a rebrand accidentally replacing the original star art.
+ const starIcon=home.locator('header img').first();
+ assert.equal(await starIcon.getAttribute('src'),'/assets/brightpath-star.svg');
+ await page.waitForFunction(()=>{
+  const img=document.querySelector('[data-view="s0"].on header img');
+  return !!img?.complete&&img.naturalWidth>0;
+ },null,{timeout:10000});
+ const dockStar=page.locator('#dock [data-section="s0"] img');
+ assert.equal(await dockStar.getAttribute('src'),'/assets/brightpath-star.svg');
+ await page.waitForFunction(()=>{
+  const img=document.querySelector('#dock [data-section="s0"] img');
+  return !!img?.complete&&img.naturalWidth>0;
+ },null,{timeout:10000});
+ const icon=await page.locator('link[rel="icon"]').getAttribute('href');
+ assert.equal(new URL(icon,base).pathname,'/assets/brightpath-icon.svg');
+ for(const asset of ['/assets/brightpath-star.svg','/assets/brightpath-icon.svg']){
+  const response=await page.request.get(base+asset);
+  assert.equal(response.status(),200,asset+' must be available');
+  assert.match(await response.text(),/<svg\s/);
+ }
  const bounds=await home.locator('main').boundingBox();
  assert.ok(bounds&&bounds.width>300&&bounds.height>100,'Home layout must be visible');
  await page.screenshot({path:path.join(screenshots,'home.png')});

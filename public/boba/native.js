@@ -61,7 +61,7 @@ async function start(){
   if(current==='ai'&&ai?.hidden)navigate('home');
  };
  window.addEventListener('celestial:dock-settings',updateDock);
- for(const [id,label,key] of items){const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=viewMarker(id);b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='home'?'<img src="/assets/brightpath.svg" alt="" class="cel-dock-star">':id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)}
+ for(const [id,label,key] of items){const b=document.createElement('button');b.type='button';b.className='dk'+(id==='account'?' native-profile':'');b.dataset.section=viewMarker(id);b.title=label;b.setAttribute('aria-label',label);b.innerHTML='<span class="t">'+(id==='home'?'<img src="/assets/brightpath-star.svg" alt="" class="cel-dock-star">':id==='ai'?ico('ask'):N[key]?'<svg viewBox="0 0 24 24" aria-hidden="true">'+N[key]+'</svg>':ico(key))+'</span>';b.onclick=()=>navigate(id);dock.append(b)}
  mountSafely('AI',view('ai'),()=>mountAsk(view('ai'),user));
  mountSafely('Chat',view('chat'),()=>mountChat(view('chat'),user));
  mountSafely('Account',view('account'),()=>mountAccount(view('account'),user));

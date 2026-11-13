@@ -18,7 +18,7 @@ export function mountHome(root,user,navigate,openBrowser){
     <main class="cel-simple-home">
       <header class="cel-simple-top">
         <div class="cel-simple-wordmark">
-          <img src="/assets/brightpath.svg" width="22" height="22" alt="">
+          <img src="/assets/brightpath-star.svg" width="22" height="22" alt="">
           <span>brightpath</span>
         </div>
         <span class="cel-simple-date"></span>

@@ -1,9 +1,9 @@
 import {openAboutBlank} from './about-blank.js';
 import {$,$$,ico,lic,THEMES,ACCENTS,applyPrefs,segThumb,api} from './common.js';
 const identityPresets={
- brightpath:['Brightpath | Learning Workspace','/assets/brightpath.svg'],
- workspace:['Workspace','/assets/brightpath.svg'],
- notes:['My Notes','/assets/brightpath.svg'],
+ brightpath:['Brightpath | Learning Workspace','/assets/brightpath-icon.svg'],
+ workspace:['Workspace','/assets/brightpath-icon.svg'],
+ notes:['My Notes','/assets/brightpath-icon.svg'],
  dcss:['DCSS Portal','https://www.google.com/s2/favicons?domain=portal.dcssga.org&sz=64'],
  classroom:['Google Classroom','https://ssl.gstatic.com/classroom/favicon.ico'],
  docs:['Google Docs','https://www.google.com/s2/favicons?domain=docs.google.com&sz=64'],
@@ -11,9 +11,9 @@ const identityPresets={
  clever:['Clever | Portal','https://clever.com/favicon.ico'],
  canvas:['Dashboard','https://canvas.instructure.com/favicon.ico'],
  wikipedia:['Wikipedia','https://www.wikipedia.org/static/favicon/wikipedia.ico'],
- custom:['','/assets/brightpath.svg']
+ custom:['','/assets/brightpath-icon.svg']
 };
-const fallbackIcon='/assets/brightpath.svg';
+const fallbackIcon='/assets/brightpath-icon.svg';
 const validIcon=value=>{try{const url=new URL(value,location.origin);return url.protocol==='https:'||url.origin===location.origin?url.href:fallbackIcon}catch{return fallbackIcon}};
 const tabIdentity=()=>{const stored=localStorage.getItem('boba.tab.preset')||'brightpath';const preset=stored==='celestial'?'brightpath':stored;const item=identityPresets[preset]||identityPresets.brightpath;const title=preset==='custom'?localStorage.getItem('boba.tab.title'):item[0];const customIcon=localStorage.getItem('boba.tab.icon');return {preset,title:String(title||'Brightpath').slice(0,70),icon:validIcon(preset==='custom'?customIcon:item[1])}};
 
