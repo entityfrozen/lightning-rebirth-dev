@@ -1,3 +1,5 @@
+import {navigateWithNeutralFrameSrc} from './frame-navigation.js';
+
 // Scramjet adapter. The page owns a same-origin loader because the upstream
 // proxy-bootstrap loader dynamically imports data: modules, blocked by our CSP.
 // Proxy assets and Wisp remain session-protected by the server.
@@ -68,5 +70,13 @@ export async function createProxyFrame(element,onNavigate,openTab){
     }catch{}
     return new URL('/',location.origin);
   }));
-  return controller.createFrame(element,{plugins});
+  const frame=controller.createFrame(element,{plugins});
+  const originalGo=frame.go;
+  frame.go=url=>{
+    frame.go=originalGo;
+    try{return navigateWithNeutralFrameSrc(frame,url)}
+    finally{frame.go=navigate}
+  };
+  const navigate=frame.go;
+  return frame;
 }

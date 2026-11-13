@@ -220,7 +220,7 @@ const home = {
         try {
           t.frame.contentWindow.location.reload();
         } catch {
-          t.frame.src = t.frame.src;
+          navigate(t.url);
         }
       });
     };
@@ -238,8 +238,8 @@ const home = {
         clearError(t);
         clearInterval(t.lt);
         t.busy=false;
-        t.direct=true;
-        if(t.frame){ctx.engine.dispose(t.frame);t.frame.src=t.url}
+        t.direct=true;t.proxyRequested=false;
+        if(t.frame){ctx.engine.dispose(t.frame);t.frame.contentWindow?.location.replace(t.url)}
         sync();
       };
       const alternative=document.createElement('button');alternative.className='btn k s';
@@ -250,7 +250,7 @@ const home = {
     const loaded=t=>{
       let d=null;
       try{d=t.frame?.contentDocument}catch{}
-      if(t.direct||!(['/~/sj/','/uv/service/'].some(prefix=>t.frame?.src.includes(prefix)))||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
+      if(t.direct||!t.proxyRequested||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
       if(ctx.engine.failed(d)){showError(t,'The proxied site returned an error.');return true}
       clearInterval(t.lt);t.busy=false;sync();clearError(t);track(t);return true;
     };
@@ -267,14 +267,14 @@ const home = {
       wv.classList.toggle("bare", !st.tabs.length);
       if (!st.tabs.length && wv.classList.contains("max")) ctx.focusWeb(false);
       tabsEl.innerHTML = st.tabs.map((t) =>
-        '<button class="wtab' + (t.id === st.active ? " on" : "") + '" data-tab="' + t.id + '" aria-label="' + esc(t.name || t.title) + '">' +
+        '<button class="wtab' + (t.id === st.active ? " on" : "") + '" data-tab="' + t.id + '" aria-label="Browser tab ' + t.id + '">' +
         (t.url ? '<img alt="" src="' + favicon(hostOf(t.url)) + '">' : '<span class="ph"></span>') +
         '<span class="x" data-close>' + ico("x") + "</span></button>").join("");
       const t = tab();
       proxySelect.value=t?.mode||defaultProxy();
       nt.style.visibility = t && t.url ? "hidden" : "";
       for(const x of st.tabs){if(x.frame)x.frame.style.display=x.id===st.active&&x.url?"block":"none"}
-      if (document.activeElement !== omni) omni.value = t && t.url ? t.url : "";
+      if (document.activeElement !== omni) omni.value = t && t.url ? hostOf(t.url) : "";
       show();
       sync();
     };
@@ -282,7 +282,7 @@ const home = {
       const t = tab();
       let u = null;
       try {
-        u = t && t.url && document.activeElement !== omni && omni.value === t.url ? new URL(t.url) : null;
+        u = t && t.url && document.activeElement !== omni && omni.value === hostOf(t.url) ? new URL(t.url) : null;
       } catch {}
       addr.classList.toggle("show", !!u);
       if(u){
@@ -328,6 +328,7 @@ const home = {
         t.frame.addEventListener("load",()=>loaded(t));
       }
       t.url=url;
+      t.proxyRequested=true;
       paint();
       try{
         await ctx.engine.openFrame(t.frame,url,real=>{
@@ -481,6 +482,7 @@ const home = {
         ctx.engine.dispose(current.frame);
         current.frame.remove();
         current.frame=null;
+        current.proxyRequested=false;
       }
       if(current.url)navigate(current.url);
       else paint();
