@@ -51,6 +51,26 @@ try{
  });
  const page=await browser.newPage({viewport:{width:1440,height:900}});
  page.on('pageerror',error=>pageErrors.push(error.message));
+ // A synthetic distributor fixture lets CI verify the encrypted-catalog
+ // launch handshake without third-party websites or a working remote proxy.
+ const sealedId='g_'+'x'.repeat(24);
+ const sampleUrl='https://example.com/celestial-vault-test/index.html';
+ let gameResolutions=0;
+ await page.route('**/api/games/catalog',route=>route.fulfill({
+  json:{games:[{id:sealedId,name:'Vault Fixture',sources:[
+   {name:'Selenite',cover:'',creator:'Fixture'}
+  ]}],total:1,unavailable:[],updatedAt:'2026-11-12T00:00:00Z'}
+ }));
+ await page.route('**/api/games/resolve?*',route=>{
+  const target=new URL(route.request().url());
+  assert.equal(target.searchParams.get('id'),sealedId);
+  assert.equal(target.searchParams.get('source'),'0');
+  gameResolutions++;
+  return route.fulfill({json:{url:sampleUrl}});
+ });
+ await page.route('https://example.com/celestial-vault-test/**',route=>route.fulfill({
+  contentType:'text/html',body:'<!doctype html><title>Vault Fixture</title><h1>Game launched</h1>'
+ }));
  await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:30000});
  await page.locator('input[name="username"]').fill('UIAdmin');
  await page.locator('input[name="password"]').fill(password);
@@ -81,6 +101,17 @@ try{
  assert.ok((await arcade.locator('.arcade-card').count())>=5,'Clearing search should restore games');
  await arcade.locator('.arcade-card').filter({has:page.getByText('2048',{exact:true})}).click();
  assert.equal(await arcade.locator('.cel-2048-tile').count(),16,'2048 must still launch');
+ await arcade.locator('[data-back]').click();
+ // The library's launch links must be absent from listing metadata and
+ // resolved on demand, while Direct embed keeps working as a fallback.
+ await arcade.locator('.cel-dist-card').filter({hasText:'Vault Fixture'}).click();
+ await arcade.locator('select[aria-label="Embedding mode"]').selectOption('direct');
+ await page.waitForFunction(target=>{
+  const section=document.querySelector('[data-view="games"].on');
+  return !!section?.querySelector('.cel-dist-player-toolbar a[href="'+target+'"]')&&
+   !!section?.querySelector('iframe.cel-dist-frame[src="'+target+'"]');
+ },sampleUrl,{timeout:12000});
+ assert.ok(gameResolutions>0,'External games should resolve opaque IDs at launch');
  await arcade.locator('[data-back]').click();
  await page.screenshot({path:path.join(screenshots,'arcade.png')});
 
