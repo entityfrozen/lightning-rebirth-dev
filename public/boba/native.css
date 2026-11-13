@@ -48,7 +48,7 @@
 .native-admin{max-width:880px}.native-admin-note{font-size:13px;color:var(--ink-2);line-height:1.55;margin:10px 0 16px}
 .native-admin .lr{flex-wrap:wrap}.native-admin .lr .fld{flex:1;min-width:180px}.native-admin .lr h3 small{display:block;color:var(--ink-3);font-weight:400;font-size:11px;margin-top:4px}
 .native-admin-account{border-top:1px solid var(--hair)}.native-admin-account summary{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;list-style:none}.native-admin-account summary::-webkit-details-marker{display:none}.native-admin-account summary small{display:block;color:var(--ink-3);font-size:12px;margin-top:3px}.native-admin-chevron{margin-left:auto;font-size:24px;color:var(--ink-3)}.native-admin-account[open] .native-admin-chevron{transform:rotate(90deg)}.native-admin-account form{padding:4px 10px 12px;background:var(--g1)}.native-admin-msg{padding:10px 18px}.native-admin-account input[type=checkbox]{appearance:auto;width:18px;height:18px;accent-color:var(--acc)}
-.dk[data-section=admin]{color:var(--ink-2)}.dk[data-section=admin].on{color:var(--acc-ink)}
+.dk[data-section=s6]{color:var(--ink-2)}.dk[data-section=s6].on{color:var(--acc-ink)}
 
 /* AI mode selector stays within Boba's original compact composer toolbar. */
 .celestial-effort{display:inline-flex;align-items:center;gap:5px;min-width:0}
@@ -320,14 +320,14 @@
 
 /* ChatGPT identity, shared by the AI dock, homepage shortcut and composer. */
 .cel-ai-logo{display:block;flex-shrink:0;width:24px;height:24px;fill:currentColor;stroke:none;overflow:visible}
-.dk[data-section="ai"] .cel-ai-logo{width:25px;height:25px;fill:currentColor;stroke:none}
+.dk[data-section="s4"] .cel-ai-logo{width:25px;height:25px;fill:currentColor;stroke:none}
 .cel-simple-link-icon .cel-ai-logo{width:23px;height:23px;fill:currentColor;stroke:none}
 .ai-t .cel-ai-logo,.celestial-effort .cel-ai-logo{width:17px;height:17px;fill:currentColor;stroke:none}
 .native-app-icon .cel-ai-logo{width:100%;height:100%;fill:currentColor;stroke:none}
 
 /* Discord chat identity: inline, unboxed SVG matching the Boba icon treatment. */
 .cel-discord-icon{display:block;width:24px;height:24px;fill:currentColor;stroke:none;flex-shrink:0}
-.dk[data-section="chat"] .cel-discord-icon{width:25px;height:22px}
+.dk[data-section="s3"] .cel-discord-icon{width:25px;height:22px}
 .cel-simple-link-icon .cel-discord-icon{width:23px;height:19px}
 
 /* Messaging v3: discreet status, richer controls, actionable announcements. */

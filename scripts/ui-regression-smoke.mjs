@@ -78,41 +78,41 @@ try{
  await page.locator('input[name="username"]').fill('UIAdmin');
  await page.locator('input[name="password"]').fill(password);
  await page.locator('form button[type="submit"]').click();
- await page.locator('#dock [data-section="home"]').waitFor({timeout:25000});
+ await page.locator('#dock [data-section="s0"]').waitFor({timeout:25000});
 
  // Home must actually render and navigate, not just exist in the DOM.
- const home=page.locator('[data-view="home"].on');
- await home.locator('.cel-simple-greeting h1').waitFor({timeout:10000});
- assert.match(await home.locator('.cel-simple-greeting h1').textContent(),/uiadmin/i);
- assert.equal(await home.locator('.cel-simple-links button').count(),4);
- const bounds=await home.locator('.cel-simple-center').boundingBox();
+ const home=page.locator('[data-view="s0"].on');
+ await home.locator('h1').waitFor({timeout:10000});
+ assert.match(await home.locator('h1').textContent(),/uiadmin/i);
+ assert.equal(await home.locator('nav[aria-label="Quick access"] button').count(),4);
+ const bounds=await home.locator('main').boundingBox();
  assert.ok(bounds&&bounds.width>300&&bounds.height>100,'Home layout must be visible');
  await page.screenshot({path:path.join(screenshots,'home.png')});
- await home.locator('[data-go="games"]').click();
- await page.locator('[data-view="games"].on .arcade-card').first().waitFor({timeout:10000});
+ await home.locator('[data-go="s2"]').click();
+ await page.locator('[data-view="s2"].on button[data-index]').first().waitFor({timeout:10000});
 
  // Test search, no-results and clearing; catalog fetch failures are unrelated.
- const arcade=page.locator('[data-view="games"].on');
- const search=arcade.getByRole('searchbox',{name:'Search the arcade'});
+ const arcade=page.locator('[data-view="s2"].on');
+ const search=arcade.getByRole('searchbox',{name:'Search the library'});
  await search.fill('snake');
- assert.equal(await arcade.locator('.arcade-card').count(),1,'Arcade search should narrow cards');
- assert.match(await arcade.locator('.arcade-card').first().textContent(),/Snake/i);
+ assert.equal(await arcade.locator('button[data-index]').count(),1,'Arcade search should narrow cards');
+ assert.match(await arcade.locator('button[data-index]').first().textContent(),/Snake/i);
  await search.fill('no-such-title-987654');
- assert.equal(await arcade.locator('.arcade-card').count(),0);
- assert.match(await arcade.locator('.arcade-grid[data-grid]').textContent(),/No matching titles/);
+ assert.equal(await arcade.locator('button[data-index]').count(),0);
+ assert.match(await arcade.locator('section[data-grid]').textContent(),/No matching titles/);
  await search.fill('');
- assert.ok((await arcade.locator('.arcade-card').count())>=5,'Clearing search should restore games');
- await arcade.locator('.arcade-card').filter({has:page.getByText('2048',{exact:true})}).click();
- assert.equal(await arcade.locator('.cel-2048-tile').count(),16,'2048 must still launch');
+ assert.ok((await arcade.locator('button[data-index]').count())>=5,'Clearing search should restore games');
+ await arcade.locator('button[data-index]').filter({has:page.getByText('2048',{exact:true})}).click();
+ assert.equal(await arcade.locator('[data-board][role="group"] [data-value]').count(),16,'2048 must still launch');
  await arcade.locator('[data-back]').click();
  // The library's launch links must be absent from listing metadata and
  // resolved on demand, while Direct embed keeps working as a fallback.
- await arcade.locator('.cel-dist-card').filter({hasText:'Vault Fixture'}).click();
+ await arcade.locator('button[data-entry-index]').filter({hasText:'Vault Fixture'}).click();
  await arcade.locator('select[aria-label="Embedding mode"]').selectOption('direct');
  await page.waitForFunction(target=>{
-  const section=document.querySelector('[data-view="games"].on');
-  return !!section?.querySelector('.cel-dist-player-toolbar a[href="'+target+'"]')&&
-   !!section?.querySelector('iframe.cel-dist-frame[src="'+target+'"]');
+  const section=document.querySelector('[data-view="s2"].on');
+  return !!section?.querySelector('[data-stage] a[href="'+target+'"]')&&
+   !!section?.querySelector('[data-stage] iframe[src="'+target+'"]');
  },sampleUrl,{timeout:12000});
  assert.ok(gameResolutions>0,'External games should resolve opaque IDs at launch');
  await arcade.locator('[data-vault-status]').filter({hasText:'AES-256-GCM · 7 assets'}).waitFor({timeout:10000});
@@ -120,16 +120,16 @@ try{
  await page.screenshot({path:path.join(screenshots,'arcade.png')});
 
  // The Home search and other quick links must still activate their sections.
- await page.locator('#dock [data-section="home"]').click();
- await home.locator('.cel-simple-search input').fill('example.com');
- await home.locator('.cel-simple-search button[type="submit"]').click();
- await page.locator('[data-view="browser"].on').waitFor({timeout:10000});
- await page.locator('#dock [data-section="home"]').click();
- await home.locator('[data-go="chat"]').click();
- await page.locator('[data-view="chat"].on .native-messenger').waitFor({timeout:10000});
- await page.locator('#dock [data-section="home"]').click();
- await home.locator('[data-go="ai"]').click();
- await page.locator('[data-view="ai"].on').waitFor({timeout:10000});
+ await page.locator('#dock [data-section="s0"]').click();
+ await home.locator('form[role="search"] input').fill('example.com');
+ await home.locator('form[role="search"] button[type="submit"]').click();
+ await page.locator('[data-view="s1"].on').waitFor({timeout:10000});
+ await page.locator('#dock [data-section="s0"]').click();
+ await home.locator('[data-go="s3"]').click();
+ await page.locator('[data-view="s3"].on .native-messenger').waitFor({timeout:10000});
+ await page.locator('#dock [data-section="s0"]').click();
+ await home.locator('[data-go="s4"]').click();
+ await page.locator('[data-view="s4"].on').waitFor({timeout:10000});
 
  assert.equal(await page.locator('.native-start-error').count(),0,'No section may crash on startup');
  assert.deepEqual(pageErrors,[],'The main UI must not throw uncaught exceptions');

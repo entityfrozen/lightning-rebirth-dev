@@ -164,7 +164,7 @@ svg.i{width:20px;height:20px;fill:currentColor;flex:0 0 auto}
 .mini{position:fixed;top:calc(var(--ft) + 12px);right:calc(var(--fr) + 12px);z-index:45;display:flex;align-items:center;gap:10px;padding:6px 6px 6px 6px;border-radius:999px;
   max-width:min(340px,70vw);transition:transform .6s var(--spring),opacity .3s}
 .mini[hidden]{display:none}
-:root:has([data-view="home"].on [data-wv]:not(.bare)) .mini{top:auto;bottom:calc(var(--fb) + 12px)}
+:root:has([data-view="s0"].on [data-wv]:not(.bare)) .mini{top:auto;bottom:calc(var(--fb) + 12px)}
 .mini img{width:34px;height:34px;border-radius:50%;object-fit:cover}
 .mini .mt{min-width:0;font-size:13px;font-weight:600;line-height:1.2;cursor:pointer}
 .mini .mt span{display:block;font-weight:500;color:var(--ink-3);font-size:12px}

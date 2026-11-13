@@ -20,7 +20,7 @@ export function buildOpaqueClassMap(style){
 export function replaceOpaqueClasses(source,map){
  const names=[...map.keys()].sort((a,b)=>b.length-a.length);
  if(!names.length)return source;
- const token=new RegExp('(?<![\\\\w-])(?:'+names.map(escaped).join('|')+')(?![\\\\w-])','g');
+ const token=new RegExp('(?<![A-Za-z0-9_-])(?:'+names.map(escaped).join('|')+')(?![A-Za-z0-9_-])','g');
  return source.replace(token,match=>map.get(match));
 }
 

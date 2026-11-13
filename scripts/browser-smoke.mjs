@@ -114,54 +114,54 @@ try{
   await boba.locator('form button[type="submit"]').click();
   await boba.locator('nav#dock .dk').first().waitFor({timeout:25000});
   assert.equal(await boba.locator('#dock .dk').count(),8);
-  await boba.locator('[data-section="admin"]').click();
-  await boba.locator('[data-view="admin"].on [data-nvidia]').filter({hasText:'Not set'}).waitFor({timeout:10000});
-  await boba.locator('[data-view="admin"] input[name="nvidia"]').fill('test-nvidia-not-a-real-key');
+  await boba.locator('[data-section="s6"]').click();
+  await boba.locator('[data-view="s6"].on [data-nvidia]').filter({hasText:'Not set'}).waitFor({timeout:10000});
+  await boba.locator('[data-view="s6"] input[name="nvidia"]').fill('test-nvidia-not-a-real-key');
   await boba.locator('[data-provider-form] button[type="submit"]').click();
   await boba.locator('[data-nvidia]').filter({hasText:'Configured'}).waitFor({timeout:10000});
   assert.equal(await boba.locator('[data-provider-form] input[name="nvidia"]').inputValue(),'');
   assert.ok(!(await boba.evaluate(async()=>JSON.stringify(await (await fetch('/api/admin/config')).json()))).includes('test-nvidia-not-a-real-key'));
-  await boba.locator('[data-section="ai"]').click();
-  await boba.locator('[data-view="ai"].on .ai-hi .sugs button').first().waitFor({timeout:10000});
+  await boba.locator('[data-section="s4"]').click();
+  await boba.locator('[data-view="s4"].on .ai-hi .sugs button').first().waitFor({timeout:10000});
   assert.equal(await boba.locator('#celestialWorkspace,iframe.boba-app-host,script[src="/bundle/main.js"]').count(),0);
   assert.ok(await boba.locator('body').evaluate(()=>[...document.styleSheets].some(s=>s.href?.includes('/boba/dist/assets/'))));
   assert.equal(await boba.locator('script[src="/boba/native.js"],link[href="/boba/original.css"]').count(),0);
   assert.equal(await boba.locator('script[src*="/boba/dist/assets/app-"]').count(),1);
   assert.equal(await boba.locator('[data-section="apps"]').count(),0);
-  assert.equal(await boba.locator('[data-section="games"]').count(),1);
-  await boba.locator('[data-section="home"]').click();
-  await boba.locator('[data-view="home"].on .cel-simple-wordmark').waitFor({timeout:10000});
-  assert.equal(await boba.locator('[data-view="browser"].on').count(),0,'Home must not be Browser');
-  await boba.locator('[data-section="games"]').click();
-  await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'2048'})}).click();
-  assert.equal(await boba.locator('.cel-2048-tile').count(),16);
+  assert.equal(await boba.locator('[data-section="s2"]').count(),1);
+  await boba.locator('[data-section="s0"]').click();
+  await boba.locator('[data-view="s0"].on main header img').waitFor({timeout:10000});
+  assert.equal(await boba.locator('[data-view="s1"].on').count(),0,'Home must not be Browser');
+  await boba.locator('[data-section="s2"]').click();
+  await boba.locator('button[data-index]').filter({has:boba.locator('strong', {hasText:'2048'})}).click();
+  assert.equal(await boba.locator('[data-board][role="group"] [data-value]').count(),16);
   await boba.keyboard.press('ArrowLeft');
   await boba.locator('[data-back]').click();
-  await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'Tic Tac Toe'})}).click();
-  assert.equal(await boba.locator('.cel-ttt-cell').count(),9);
+  await boba.locator('button[data-index]').filter({has:boba.locator('strong', {hasText:'Tic Tac Toe'})}).click();
+  assert.equal(await boba.locator('[data-board] [data-pos]').count(),9);
   await boba.locator('[data-back]').click();
-  await boba.locator('.arcade-card').filter({has:boba.locator('strong', {hasText:'Rock Paper Scissors'})}).click();
-  assert.equal(await boba.locator('.cel-rps-choices [data-pick]').count(),3);
+  await boba.locator('button[data-index]').filter({has:boba.locator('strong', {hasText:'Rock Paper Scissors'})}).click();
+  assert.equal(await boba.locator('[data-stage] [data-pick]').count(),3);
   await boba.locator('[data-back]').click();
   // Verify Arcade's Scramjet mode uses the actual service worker, not a direct iframe.
-  await boba.locator('[data-view="games"] .cel-dist-card').first().waitFor({timeout:20000});
-  await boba.locator('[data-view="games"] .cel-dist-card').first().click();
-  const arcadeMode=boba.locator('[data-view="games"] select[aria-label="Embedding mode"]');
+  await boba.locator('[data-view="s2"] button[data-entry-index]').first().waitFor({timeout:20000});
+  await boba.locator('[data-view="s2"] button[data-entry-index]').first().click();
+  const arcadeMode=boba.locator('[data-view="s2"] select[aria-label="Embedding mode"]');
   await arcadeMode.waitFor({timeout:10000});
   assert.equal(await arcadeMode.inputValue(),'proxy','Arcade should default to Scramjet');
   await boba.waitForFunction(()=>{
-    const frame=document.querySelector('[data-view="games"] .cel-dist-frame');
+    const frame=document.querySelector('[data-view="s2"] iframe[title]');
     return !!frame?.src?.includes('/~/sj/');
   },null,{timeout:45000}).catch(async error=>{
     const state=await boba.evaluate(async()=>{
-      const arcade=document.querySelector('[data-view="games"]');
-      const frame=arcade?.querySelector('.cel-dist-frame');
+      const arcade=document.querySelector('[data-view="s2"]');
+      const frame=arcade?.querySelector('iframe[title]');
       const registrations=await navigator.serviceWorker.getRegistrations();
       return {
         mode:arcade?.querySelector('select[aria-label="Embedding mode"]')?.value,
         source:arcade?.querySelector('select[aria-label="Choose source"]')?.value,
         iframeSrc:frame?.src||null,
-        messages:[...(arcade?.querySelectorAll('.arcade-help')||[])].map(el=>el.textContent),
+        messages:[...(arcade?.querySelectorAll('[role="status"]')||[])].map(el=>el.textContent),
         workers:registrations.map(r=>({scope:r.scope,active:r.active?.scriptURL||null})),
         controlled:!!navigator.serviceWorker.controller
       };
@@ -170,17 +170,17 @@ try{
   });
   await arcadeMode.selectOption('ultraviolet');
   await boba.waitForFunction(()=>{
-    const frame=document.querySelector('[data-view="games"] .cel-dist-frame');
+    const frame=document.querySelector('[data-view="s2"] iframe[title]');
     return !!frame?.src?.includes('/uv/service/');
   },null,{timeout:45000});
-  await boba.locator('[data-view="games"] [data-back]').click();
-  await boba.locator('[data-section="ai"]').click();
+  await boba.locator('[data-view="s2"] [data-back]').click();
+  await boba.locator('[data-section="s4"]').click();
   assert.equal(await boba.locator('[data-effort]').inputValue(),'instant');
   assert.equal(new URL(boba.url()).pathname,'/','Signed-in Celestial should use the root URL');
-  await boba.locator('[data-section="browser"]').click();
+  await boba.locator('[data-section="s1"]').click();
   assert.equal(new URL(boba.url()).pathname,'/','Switching sections must not expose internal routes');
   assert.equal(await boba.locator('[data-direct]').count(),1);
-  await boba.locator('[data-section="settings"]').click();
+  await boba.locator('[data-section="s5"]').click();
   await boba.locator('[data-tab-blank]').waitFor({timeout:10000});
   const [cloakedPopup]=await Promise.all([
     boba.waitForEvent('popup',{timeout:10000}),
@@ -199,12 +199,12 @@ try{
     'Scramjet must have a top-level cross-origin isolated document');
   await cloakedPopup.close();
 
-  await boba.locator('[data-view="settings"].on [data-v="matcha"]').click();
+  await boba.locator('[data-view="s5"].on [data-v="matcha"]').click();
   assert.equal(await boba.locator('html').getAttribute('data-palette'),'matcha');
-  await boba.locator('[data-section="account"]').click();
-  await boba.locator('[data-view="account"].on [data-admin]:not([hidden])').waitFor({timeout:10000});
-  await boba.locator('[data-section="chat"]').click();
-  await boba.locator('[data-view="chat"].on [data-status]').filter({hasText:'Live'}).waitFor({timeout:10000});
+  await boba.locator('[data-section="s7"]').click();
+  await boba.locator('[data-view="s7"].on [data-admin]:not([hidden])').waitFor({timeout:10000});
+  await boba.locator('[data-section="s3"]').click();
+  await boba.locator('[data-view="s3"].on [data-status]').filter({hasText:'Live'}).waitFor({timeout:10000});
   await boba.locator('.native-compose textarea[aria-label="Message"]').fill('Native Boba smoke message');
   await boba.locator('.native-compose button').click();
   await boba.locator('.native-feed').getByText('Native Boba smoke message',{exact:true}).waitFor({timeout:10000});
@@ -219,7 +219,7 @@ try{
   await boba.locator('.native-feed').getByText('Native Boba smoke message',{exact:true}).waitFor({state:'detached',timeout:10000});
 
   // Administrator can clear the entire active public channel.
-  await boba.locator('[data-section="chat"]').click();
+  await boba.locator('[data-section="s3"]').click();
   await boba.locator('.native-compose textarea[aria-label="Message"]').fill('Clear channel smoke test');
   await boba.locator('.native-compose button').click();
   await boba.locator('.native-feed').getByText('Clear channel smoke test',{exact:true}).waitFor({timeout:10000});
@@ -227,7 +227,7 @@ try{
   await pause(250);
   await boba.locator('[data-clear-chat]').click();
   await boba.locator('.native-feed').getByText('Clear channel smoke test',{exact:true}).waitFor({state:'detached',timeout:10000});
-  await boba.locator('[data-section="browser"]').click();
+  await boba.locator('[data-section="s1"]').click();
   await boba.locator('[data-omni]').fill('https://example.com/');
   await boba.locator('[data-omni]').press('Enter');
   const [directPopup]=await Promise.all([
