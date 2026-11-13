@@ -127,7 +127,12 @@ try{
  await arcade.locator('[data-back]').click();
  // The library's launch links must be absent from listing metadata and
  // resolved on demand, while Direct embed keeps working as a fallback.
- await arcade.locator('button[data-entry-index]').filter({hasText:'Vault Fixture'}).click();
+ // The visible card title supplies its accessible name. Do not repeat
+ // catalog titles in an aria-label or in an otherwise-hidden cover fallback.
+ const catalogCard=arcade.getByRole('button',{name:/Vault Fixture/});
+ assert.equal(await catalogCard.count(),1,'Cards must be keyboard/screen-reader identifiable by their visible title');
+ assert.equal(await catalogCard.getAttribute('aria-label'),null,'Avoid duplicating catalog titles in markup attributes');
+ await catalogCard.click();
  await arcade.locator('select[aria-label="Embedding mode"]').selectOption('direct');
  await page.waitForFunction(target=>{
   const section=document.querySelector('[data-view="s2"].on');
