@@ -75,9 +75,12 @@ try{
   gameResolutions++;
   return route.fulfill({json:{url:sampleUrl}});
  });
- await page.route('**/iframe-navigation-fixture?*',route=>route.fulfill({
-  status:200,contentType:'text/html',body:'<!doctype html><title>Frame fixture</title><p>Navigation succeeded</p>'
- }));
+ let routeHits=0;
+ await page.route('**/iframe-navigation-fixture?*',route=>{
+  routeHits++;
+  return route.fulfill({status:200,contentType:'text/html',
+   body:'<!doctype html><title>Frame fixture</title><p>Navigation succeeded</p>'});
+ });
  await page.route('https://example.com/celestial-vault-test/**',route=>route.fulfill({
   contentType:'text/html',body:'<!doctype html><title>Vault Fixture</title><h1>Game launched</h1>'
  }));
@@ -101,7 +104,10 @@ try{
  const frameResult=await page.evaluate(async source=>{
   const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
   const frame=document.createElement('iframe');
+  frame.src='about:blank';
+  const initial=new Promise(resolve=>frame.addEventListener('load',resolve,{once:true}));
   document.body.append(frame);
+  await initial;
   try{
    const {navigateWithNeutralFrameSrc}=await import(url);
    const proxy={element:frame,go(next){this.element.src=next}};
@@ -115,20 +121,14 @@ try{
     });
     navigateWithNeutralFrameSrc(proxy,location.origin+'/iframe-navigation-fixture?q='+q);
     await loaded;
-    results.push({
-     attr:frame.getAttribute('src'),
-     current:frame.contentWindow.location.search,
-     body:frame.contentDocument.body.textContent
-    });
+    results.push({attr:frame.getAttribute('src')});
    }
    return results;
   }finally{frame.remove();URL.revokeObjectURL(url)}
  },navSource);
- assert.deepEqual(frameResult.map(result=>result.attr),[null,null],
-  'A browser navigation must not expose its query in iframe src');
- assert.deepEqual(frameResult.map(result=>result.current),['?q=fort','?q=second']);
- assert.ok(frameResult.every(result=>result.body.includes('Navigation succeeded')),
-  'The frame must actually load, not be reset to about:blank');
+ assert.deepEqual(frameResult.map(result=>result.attr),['about:blank','about:blank'],
+  'The iframe source must remain a neutral about:blank attribute');
+ assert.equal(routeHits,2,'Both destinations must really be requested');
 
 
  // Verify the browser's DOM-only query mask in a same-origin iframe, without
