@@ -55,7 +55,8 @@ export function mountDistributorLibrary(root,{launch}){
     status.textContent=unavailable.length?'Some catalogs are unavailable: '+unavailable.join(', ')+'.':'';
     grid.innerHTML=results.slice(0,limit).map(game=>{
       const art=game.sources.find(s=>s.name===filter&&s.cover)||game.sources.find(s=>s.cover)||game.sources[0];
-      return '<button class="cel-dist-card" type="button" data-entry-index="'+entries.indexOf(game)+'" aria-label="'+esc(game.name)+'">'+
+      const index=entries.indexOf(game);
+      return '<button class="cel-dist-card" type="button" data-entry-index="'+index+'" aria-label="Open library item '+(index+1)+'">'+
         '<span class="cel-dist-art"><span class="cel-dist-fallback" aria-hidden="true">✦</span>'+
         (art.cover?'<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(art.cover)+'" alt="">':'')+
         '</span><canvas class="cel-dist-name" data-paint="0" aria-hidden="true"></canvas>'+

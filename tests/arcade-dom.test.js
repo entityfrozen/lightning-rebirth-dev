@@ -42,3 +42,10 @@ test('Arcade startup calls the mount function exported by the game module',()=>{
  assert.match(entry,/mountSafely\('Library',view\('games'\),\(\)=>mountArcade\(view\('games'\)\)\)/);
  assert.doesNotMatch(entry,/\bmountGames\s*\(/);
 });
+
+test('Distributor Canvas cards retain neutral accessible names even when titles contain game',()=>{
+ const catalog=read('../public/boba/catalog-ui.js');
+ assert.match(catalog,/aria-label="Open library item /);
+ assert.doesNotMatch(catalog,/aria-label="'\+esc\(game\.name\)/);
+ assert.match(catalog,/<canvas class=\\?"cel-dist-name/);
+});
