@@ -1,4 +1,5 @@
 import {esc} from './common.js';
+import {watchCanvasTitles} from './canvas-titles.js';
 import {createProxyFrame,disposeProxyFrame} from './proxy.js';
 import {createUltravioletFrame} from './uv-proxy.js';
 
@@ -40,6 +41,7 @@ export function mountDistributorLibrary(root,{launch}){
   const more=section.querySelector('[data-more]');
   const filters=section.querySelector('[data-filters]');
   let entries=[],filter='All',query='',limit=PAGE_SIZE,unavailable=[];
+  const titlePainter=watchCanvasTitles(grid,index=>entries[index]?.name);
   filters.innerHTML=DISTRIBUTORS.map(([id,label])=>'<button type="button" data-filter="'+esc(id)+'">'+esc(label)+'</button>').join('');
   function paint(){
     const needle=query.toLocaleLowerCase();
@@ -50,14 +52,15 @@ export function mountDistributorLibrary(root,{launch}){
     status.textContent=unavailable.length?'Some catalogs are unavailable: '+unavailable.join(', ')+'.':'';
     grid.innerHTML=results.slice(0,limit).map(game=>{
       const art=game.sources.find(s=>s.name===filter&&s.cover)||game.sources.find(s=>s.cover)||game.sources[0];
-      return '<button class="cel-dist-card" type="button" data-entry-index="'+entries.indexOf(game)+'">'+
+      return '<button class="cel-dist-card" type="button" data-entry-index="'+entries.indexOf(game)+'" aria-label="'+esc(game.name)+'">'+
         '<span class="cel-dist-art"><span class="cel-dist-fallback" aria-hidden="true">✦</span>'+
         (art.cover?'<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(art.cover)+'" alt="">':'')+
-        '</span><span class="cel-dist-name">'+esc(game.name)+'</span>'+
-        '<small>'+esc(game.sources.map(s=>s.name).join(' · '))+'</small></button>';
+        '</span><canvas class="cel-dist-name" aria-hidden="true"></canvas>'+
+        '<small aria-hidden="true">'+esc(game.sources.map(s=>s.name).join(' · '))+'</small></button>';
     }).join('')||(entries.length?'<p class="cel-dist-empty">No entries match this search.</p>':'');
     for(const img of grid.querySelectorAll('img'))img.addEventListener('error',()=>img.remove(),{once:true});
     more.hidden=results.length<=limit;
+    titlePainter.redraw();
     for(const btn of filters.querySelectorAll('[data-filter]')){
       btn.setAttribute('aria-pressed',String(btn.dataset.filter===filter));
     }
@@ -93,7 +96,8 @@ export function mountDistributorLibrary(root,{launch}){
     section,
     setQuery(value){query=String(value||'').trim();limit=PAGE_SIZE;paint()},
     hide(){section.hidden=true},
-    show(){section.hidden=false}
+    show(){section.hidden=false;titlePainter.redraw()},
+    dispose(){titlePainter.dispose()}
   };
 }
 

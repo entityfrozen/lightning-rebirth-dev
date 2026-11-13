@@ -155,11 +155,30 @@ try{
  await arcade.locator('[data-back]').click();
  // The library's launch links must be absent from listing metadata and
  // resolved on demand, while Direct embed keeps working as a fallback.
- // The visible card title supplies its accessible name. Do not repeat
- // catalog titles in an aria-label or in an otherwise-hidden cover fallback.
- const catalogCard=arcade.getByRole('button',{name:/Vault Fixture/});
- assert.equal(await catalogCard.count(),1,'Cards must be keyboard/screen-reader identifiable by their visible title');
- assert.equal(await catalogCard.getAttribute('aria-label'),null,'Avoid duplicating catalog titles in markup attributes');
+ // Canvas owns the visible title pixels; the parent button retains a
+ // meaningful accessible name for keyboard and screen-reader users.
+ const catalogCard=arcade.getByRole('button',{name:'Vault Fixture'});
+ assert.equal(await catalogCard.count(),1,'Canvas cards must remain accessible');
+ assert.equal(await catalogCard.getAttribute('aria-label'),'Vault Fixture');
+ assert.equal(await catalogCard.locator('span').filter({hasText:'Vault Fixture'}).count(),0,
+  'Catalog titles should not be duplicated as HTML text nodes');
+ const titleCanvas=catalogCard.locator('canvas');
+ await titleCanvas.waitFor({timeout:10000});
+ await page.waitForFunction(()=>{
+  const canvas=document.querySelector('[data-view="s2"] button[data-entry-index] canvas');
+  if(!canvas||canvas.width===0||canvas.height===0)return false;
+  const c=canvas.getContext('2d',{willReadFrequently:true});
+  const pixels=c?.getImageData(0,0,canvas.width,canvas.height).data;
+  for(let i=3;pixels&&i<pixels.length;i+=4)if(pixels[i]>0)return true;
+  return false;
+ },null,{timeout:10000});
+ const beforeWidth=await titleCanvas.evaluate(el=>el.width);
+ await page.setViewportSize({width:520,height:860});
+ await page.waitForFunction(previous=>{
+  const el=document.querySelector('[data-view="s2"] button[data-entry-index] canvas');
+  return !!el&&el.width!==previous&&el.width>0;
+ },beforeWidth,{timeout:10000});
+ await page.setViewportSize({width:1440,height:900});
  await catalogCard.click();
  await arcade.locator('select[aria-label="Embedding mode"]').selectOption('direct');
  await page.waitForFunction(target=>{
