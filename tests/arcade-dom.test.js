@@ -23,7 +23,7 @@ test('Arcade markup and styles use matching class names without legacy cel-games
 
 test('Arcade card buttons use stable numeric indices rather than exposing internal game IDs',()=>{
  const markup=read('../public/boba/games.js');
- assert.match(markup,/data-arcade-index/);
+ assert.match(markup,/data-index/);
  assert.match(markup,/arcadeItems\.indexOf\(g\)/);
  assert.match(markup,/arcadeItems\[index\]/);
  assert.doesNotMatch(markup,/data-game="'+g\.id/);
@@ -35,6 +35,6 @@ test('Arcade startup calls the mount function exported by the game module',()=>{
  const games=read('../public/boba/games.js');
  assert.match(entry,/import\s*\{\s*mountArcade\s*\}\s*from\s*['"]\.\/games\.js['"]/);
  assert.match(games,/export function mountArcade\s*\(/);
- assert.match(entry,/mountSafely\('Arcade',view\('games'\),\(\)=>mountArcade\(view\('games'\)\)\)/);
+ assert.match(entry,/mountSafely\('Library',view\('games'\),\(\)=>mountArcade\(view\('games'\)\)\)/);
  assert.doesNotMatch(entry,/\bmountGames\s*\(/);
 });

@@ -1,8 +1,9 @@
 import {esc,ico} from './common.js';
+import {viewMarker,originalView} from './view-markers.js';
 
 const links=[
   ['browser','Browser','web'],
-  ['games','Arcade','play'],
+  ['games','Library','play'],
   ['chat','Community','discord'],
   ['ai','AI','ask']
 ];
@@ -17,8 +18,8 @@ export function mountHome(root,user,navigate,openBrowser){
     <main class="cel-simple-home">
       <header class="cel-simple-top">
         <div class="cel-simple-wordmark">
-          <img src="/assets/celestial-star.svg" width="22" height="22" alt="">
-          <span>celestial</span>
+          <img src="/assets/brightpath.svg" width="22" height="22" alt="">
+          <span>brightpath</span>
         </div>
         <span class="cel-simple-date"></span>
       </header>
@@ -34,7 +35,7 @@ export function mountHome(root,user,navigate,openBrowser){
           <button type="submit" aria-label="Search">↗</button>
         </form>
         <nav class="cel-simple-links" aria-label="Quick access">
-          ${links.map(([id,name,icon])=>`<button type="button" data-go="${id}"><span class="cel-simple-link-icon">${ico(icon)}</span><span>${name}</span></button>`).join('')}
+          ${links.map(([id,name,icon])=>`<button type="button" data-go="${viewMarker(id)}"><span class="cel-simple-link-icon">${ico(icon)}</span><span>${name}</span></button>`).join('')}
         </nav>
       </div>
     </main>`;
@@ -57,6 +58,6 @@ export function mountHome(root,user,navigate,openBrowser){
   });
   root.querySelector('.cel-simple-links').addEventListener('click',event=>{
     const button=event.target.closest('[data-go]');
-    if(button)navigate(button.dataset.go);
+    if(button)navigate(originalView(button.dataset.go));
   });
 }

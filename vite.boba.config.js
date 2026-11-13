@@ -1,13 +1,14 @@
 import {defineConfig} from 'vite';
 import {resolve} from 'node:path';
 import {encodeClientMarkup} from './scripts/encode-client-markup.mjs';
+import {opaqueDomClasses} from './scripts/opaque-dom.mjs';
 
 // Ship standards-compliant, minified ES modules. Previous post-build
 // JavaScript obfuscation rewrote call sites and broke runtime navigation.
 // Do not reintroduce a post-bundle code transform without a browser smoke test.
 export default defineConfig({
  publicDir:false,
- plugins:[encodeClientMarkup()],
+ plugins:[opaqueDomClasses(),encodeClientMarkup()],
  base:'/boba/dist/',
  build:{
   target:'es2022',

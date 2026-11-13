@@ -15,11 +15,11 @@ export function mountDistributorLibrary(root,{launch}){
   section.className='cel-dist-section';
   section.innerHTML=`
     <header class="cel-dist-header">
-      <div><span class="cel-home-kicker">ARCADE LIBRARY</span><h2>Discover more.</h2>
+      <div><span class="cel-home-kicker">BRIGHTPATH LIBRARY</span><h2>Discover more.</h2>
       <p>Titles from Selenite, WASM.rip and GN-Math, in one library.</p></div>
       <span class="cel-dist-count" data-count>Loading library…</span>
     </header>
-    <div class="cel-dist-filters" data-filters role="group" aria-label="Arcade sources"></div>
+    <div class="cel-dist-filters" data-filters role="group" aria-label="Library sources"></div>
     <p class="cel-dist-status" data-status role="status">Loading distributor entries…</p>
     <div class="cel-dist-grid" data-grid></div>
     <button class="btn s cel-dist-more" type="button" data-more hidden>Show more entries</button>
@@ -83,7 +83,7 @@ export function mountDistributorLibrary(root,{launch}){
       entries=data.games;unavailable=Array.isArray(data.unavailable)?data.unavailable:[];
       paint();
     }catch{
-      status.innerHTML='arcade library unavailable. <button type="button" class="btn s" data-retry>Retry</button>';
+      status.innerHTML='Library unavailable. <button type="button" class="btn s" data-retry>Retry</button>';
       status.querySelector('[data-retry]').onclick=reload;
       count.textContent='Unavailable';
     }
