@@ -75,6 +75,9 @@ try{
   gameResolutions++;
   return route.fulfill({json:{url:sampleUrl}});
  });
+ await page.route('**/iframe-navigation-fixture?*',route=>route.fulfill({
+  status:200,contentType:'text/html',body:'<!doctype html><title>Frame fixture</title><p>Navigation succeeded</p>'
+ }));
  await page.route('https://example.com/celestial-vault-test/**',route=>route.fulfill({
   contentType:'text/html',body:'<!doctype html><title>Vault Fixture</title><h1>Game launched</h1>'
  }));
@@ -91,6 +94,42 @@ try{
  await page.locator('input[name="password"]').fill(password);
  await page.locator('form button[type="submit"]').click();
  await page.locator('#dock [data-section="s0"]').waitFor({timeout:25000});
+ // The real iframe must navigate without writing the search term into its
+ // src attribute. A mock Frame.go simulates the upstream setter, and Chromium
+ // verifies that both initial and subsequent window navigations still work.
+ const navSource=await readFile(path.join(root,'public/boba/frame-navigation.js'),'utf8');
+ const frameResult=await page.evaluate(async source=>{
+  const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
+  const frame=document.createElement('iframe');
+  document.body.append(frame);
+  try{
+   const {navigateWithNeutralFrameSrc}=await import(url);
+   const proxy={element:frame,go(next){this.element.src=next}};
+   const results=[];
+   for(const q of ['fort','second']){
+    const loaded=new Promise((resolve,reject)=>{
+     const timer=setTimeout(()=>reject(Error('Frame did not navigate')),5000);
+     frame.addEventListener('load',()=>{
+      clearTimeout(timer);resolve();
+     },{once:true});
+    });
+    navigateWithNeutralFrameSrc(proxy,location.origin+'/iframe-navigation-fixture?q='+q);
+    await loaded;
+    results.push({
+     attr:frame.getAttribute('src'),
+     current:frame.contentWindow.location.search,
+     body:frame.contentDocument.body.textContent
+    });
+   }
+   return results;
+  }finally{frame.remove();URL.revokeObjectURL(url)}
+ },navSource);
+ assert.deepEqual(frameResult.map(result=>result.attr),[null,null],
+  'A browser navigation must not expose its query in iframe src');
+ assert.deepEqual(frameResult.map(result=>result.current),['?q=fort','?q=second']);
+ assert.ok(frameResult.every(result=>result.body.includes('Navigation succeeded')),
+  'The frame must actually load, not be reset to about:blank');
+
 
  // Verify the browser's DOM-only query mask in a same-origin iframe, without
  // relying on external Google navigation in CI.
