@@ -41,7 +41,10 @@ export function mountDistributorLibrary(root,{launch}){
   const more=section.querySelector('[data-more]');
   const filters=section.querySelector('[data-filters]');
   let entries=[],filter='All',query='',limit=PAGE_SIZE,unavailable=[];
-  const titlePainter=watchCanvasTitles(grid,index=>entries[index]?.name);
+  const titlePainter=watchCanvasTitles(grid,index=>{
+    const game=entries[index];
+    return game?{title:game.name,source:game.sources.map(source=>source.name).join(' · ')}:null;
+  });
   filters.innerHTML=DISTRIBUTORS.map(([id,label])=>'<button type="button" data-filter="'+esc(id)+'">'+esc(label)+'</button>').join('');
   function paint(){
     const needle=query.toLocaleLowerCase();
@@ -55,8 +58,8 @@ export function mountDistributorLibrary(root,{launch}){
       return '<button class="cel-dist-card" type="button" data-entry-index="'+entries.indexOf(game)+'" aria-label="'+esc(game.name)+'">'+
         '<span class="cel-dist-art"><span class="cel-dist-fallback" aria-hidden="true">✦</span>'+
         (art.cover?'<img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="'+esc(art.cover)+'" alt="">':'')+
-        '</span><canvas class="cel-dist-name" aria-hidden="true"></canvas>'+
-        '<small aria-hidden="true">'+esc(game.sources.map(s=>s.name).join(' · '))+'</small></button>';
+        '</span><canvas class="cel-dist-name" data-paint="0" aria-hidden="true"></canvas>'+
+        '<canvas class="cel-dist-source" data-paint="1" aria-hidden="true"></canvas></button>';
     }).join('')||(entries.length?'<p class="cel-dist-empty">No entries match this search.</p>':'');
     for(const img of grid.querySelectorAll('img'))img.addEventListener('error',()=>img.remove(),{once:true});
     more.hidden=results.length<=limit;

@@ -10,6 +10,7 @@ import {importBoltData,bootstrapAdministrator,backupBoltData} from './legacy-dat
 import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
 import { getGameCatalog } from './game-catalog.js';
 import {createGameVault} from './game-vault.js';
+import {loadCover} from './cover-proxy.js';
 import { generateImage } from './image-provider.js';
 import { ROLE_OPTIONS, isValidRole } from './staff-roles.js';
 import { readFile, writeFile, mkdir, rename, stat, readdir, unlink } from 'node:fs/promises';
@@ -249,6 +250,27 @@ async function handleAPI(req,res,url) {
     const catalog=await getGameCatalog({vault:gameVault});
     // Do not broadcast every original game URL in a single browser response.
     return respond(res,200,gameVault.publicCatalog(catalog),{'Cache-Control':'private, no-store'});
+  }
+  if(req.method==='GET'&&pathname==='/api/brightpath/d'){
+    if(!user)return fail(res,401,'Sign in required');
+    const gameId=url.searchParams.get('id')||'';
+    const source=url.searchParams.get('source')||'';
+    if(!/^g_[a-zA-Z0-9_-]{24}$/.test(gameId)||!/^(0|[1-9][0-9]{0,2})$/.test(source))
+      return fail(res,400,'Invalid item or artwork index');
+    const catalog=await getGameCatalog({vault:gameVault});
+    const artwork=gameVault.coverUrl(catalog,gameId,Number(source));
+    if(!artwork)return fail(res,404,'Artwork unavailable');
+    try{
+      const result=await loadCover(artwork);
+      res.writeHead(200,{
+        'Content-Type':result.contentType,'Content-Length':result.content.length,
+        'Cache-Control':'private, max-age=3600','X-Content-Type-Options':'nosniff',
+        'Cross-Origin-Resource-Policy':'same-origin','Referrer-Policy':'no-referrer'
+      });
+      return res.end(result.content);
+    }catch{
+      return fail(res,502,'Artwork unavailable');
+    }
   }
   if(req.method==='GET'&&(pathname==='/api/games/resolve'||pathname==='/api/brightpath/b')){
     if(!user)return fail(res,401,'Sign in required');

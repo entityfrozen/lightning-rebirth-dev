@@ -62,18 +62,22 @@ export function drawCanvasTitle(canvas,title){
  return true;
 }
 
-export function watchCanvasTitles(grid,titleAtIndex){
+export function watchCanvasTitles(grid,detailsAtIndex){
  let task=0,previousWidth=0,disposed=false;
  function paint(){
   task=0;
   if(disposed||!grid.isConnected)return;
   for(const button of grid.querySelectorAll('button[data-entry-index]')){
-   const canvas=button.querySelector('canvas');
    const index=Number(button.dataset.entryIndex);
-   if(canvas&&Number.isInteger(index)){
-    const title=titleAtIndex(index);
-    if(typeof title==='string')drawCanvasTitle(canvas,title);
-   }
+   if(!Number.isInteger(index))continue;
+   const details=detailsAtIndex(index);
+   if(!details)continue;
+   const titleCanvas=button.querySelector('canvas[data-paint="0"]');
+   const sourceCanvas=button.querySelector('canvas[data-paint="1"]');
+   if(titleCanvas&&typeof details.title==='string')
+    drawCanvasTitle(titleCanvas,details.title);
+   if(sourceCanvas&&typeof details.source==='string')
+    drawCanvasTitle(sourceCanvas,details.source);
   }
  }
  function schedule(){

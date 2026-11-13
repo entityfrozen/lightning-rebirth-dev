@@ -88,13 +88,17 @@ export async function createGameVault({directory,keyHex=process.env.CELESTIAL_GA
   }
   publicView={
    ...catalog,
-   games:catalog.games.map(game=>({
-    id:'g_'+createHmac('sha256',key).update('catalog-game:v1:').update(game.id).digest('base64url').slice(0,24),
-    name:game.name,
-    sources:game.sources.map(source=>({
-     name:source.name,cover:source.cover,creator:source.creator
-    }))
-   }))
+   games:catalog.games.map(game=>{
+    const handle='g_'+createHmac('sha256',key).update('catalog-game:v1:').update(game.id).digest('base64url').slice(0,24);
+    return {
+     id:handle,name:game.name,
+     sources:game.sources.map((source,sourceIndex)=>({
+      name:source.name,
+      cover:source.cover?'/api/brightpath/d?id='+handle+'&source='+sourceIndex:'',
+      creator:source.creator
+     }))
+    };
+   })
   };
  }
  return {
@@ -113,6 +117,13 @@ export async function createGameVault({directory,keyHex=process.env.CELESTIAL_GA
       !Number.isInteger(sourceIndex)||sourceIndex<0)return null;
    index(catalog);
    const url=lookup.get(gameId)?.sources[sourceIndex]?.url;
+   return typeof url==='string'&&url.startsWith('https://')?url:null;
+  },
+  coverUrl(catalog,gameId,sourceIndex){
+   if(typeof gameId!=='string'||!/^g_[a-zA-Z0-9_-]{24}$/.test(gameId)||
+      !Number.isInteger(sourceIndex)||sourceIndex<0)return null;
+   index(catalog);
+   const url=lookup.get(gameId)?.sources[sourceIndex]?.cover;
    return typeof url==='string'&&url.startsWith('https://')?url:null;
   },
   async captureLaunch(catalog,gameId,sourceIndex){

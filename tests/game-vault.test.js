@@ -40,6 +40,10 @@ test('vault persists ciphertext, hides source URLs until authenticated resolutio
   const view=b.publicCatalog(example.catalog);
   assert.match(view.games[0].id,/^g_[\w-]{24}$/);
   assert.equal(view.games[0].sources[0].url,undefined);
+  assert.equal(view.games[0].sources[0].cover,'/api/brightpath/d?id='+view.games[0].id+'&source=0');
+  assert.equal(JSON.stringify(view).includes('https://selenite.cc/cover.webp'),false);
+  assert.equal(b.coverUrl(example.catalog,view.games[0].id,0),example.catalog.games[0].sources[0].cover);
+  assert.equal(b.coverUrl(example.catalog,view.games[0].id,1),null);
   assert.equal(JSON.stringify(view).includes('selenite.cc/resources/semag'),false);
   assert.equal(b.launchUrl(example.catalog,view.games[0].id,0),example.catalog.games[0].sources[0].url);
   assert.equal(b.launchUrl(example.catalog,'geometrydash',0),null);

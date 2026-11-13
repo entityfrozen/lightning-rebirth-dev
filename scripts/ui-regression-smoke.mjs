@@ -58,8 +58,12 @@ try{
  let gameResolutions=0;
  await page.route('**/api/brightpath/a',route=>route.fulfill({
   json:{games:[{id:sealedId,name:'Vault Fixture',sources:[
-   {name:'Selenite',cover:'',creator:'Fixture'}
+   {name:'Selenite',cover:'/api/brightpath/d?id='+sealedId+'&source=0',creator:'Fixture'}
   ]}],total:1,unavailable:[],updatedAt:'2026-11-12T00:00:00Z'}
+ }));
+ const demoCover=Buffer.from('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==','base64');
+ await page.route('**/api/brightpath/d?*',route=>route.fulfill({
+  status:200,contentType:'image/gif',body:demoCover
  }));
  await page.route('**/api/brightpath/c?*',route=>route.fulfill({
   json:{encrypted:true,cached:true,files:7,bytes:1127,partial:false}
@@ -162,8 +166,17 @@ try{
  assert.equal(await catalogCard.getAttribute('aria-label'),'Vault Fixture');
  assert.equal(await catalogCard.locator('span').filter({hasText:'Vault Fixture'}).count(),0,
   'Catalog titles should not be duplicated as HTML text nodes');
- const titleCanvas=catalogCard.locator('canvas');
+ const titleCanvas=catalogCard.locator('canvas[data-paint="0"]');
+ const sourceCanvas=catalogCard.locator('canvas[data-paint="1"]');
  await titleCanvas.waitFor({timeout:10000});
+ await sourceCanvas.waitFor({timeout:10000});
+ assert.equal(await catalogCard.locator('small').count(),0,'Distributor captions render as pixels');
+ const cover= catalogCard.locator('img');
+ assert.match(await cover.getAttribute('src'),/^\/api\/brightpath\/d\?id=g_/);
+ assert.equal(await cover.evaluate(img=>img.complete&&img.naturalWidth>0),true,
+  'First-party artwork should still load');
+ assert.equal(await sourceCanvas.evaluate(el=>el.width>0&&el.height>0),true,
+  'Distributor caption should be painted on canvas');
  await page.waitForFunction(()=>{
   const canvas=document.querySelector('[data-view="s2"] button[data-entry-index] canvas');
   if(!canvas||canvas.width===0||canvas.height===0)return false;
