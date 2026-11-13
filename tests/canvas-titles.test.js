@@ -20,5 +20,5 @@ test('canvas titles wrap unbroken names and Unicode without truncating',()=>{
 
 test('canvas title layout uses the measured font width rather than characters',()=>{
  const measure=value=>Array.from(value).reduce((width,glyph)=>width+(glyph==='W'?4:1),0);
- assert.deepEqual(wrapCanvasTitle('WWW WIN',measure,9),['WW','W WIN']);
+ assert.deepEqual(wrapCanvasTitle('WWW WIN',measure,11),['WW','W WIN']);
 });
