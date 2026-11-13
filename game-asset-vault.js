@@ -22,6 +22,7 @@ const FAILURE_RETRY_MS=10*60*1000;
 const MAX_REDIRECTS=3;
 const MAX_HOST_URL=2048;
 const MAX_ARCHIVES=128;
+const MAX_PARALLEL_CAPTURES=2;
 const MAX_VAULT_BYTES=512*1024*1024;
 
 const knownTypes=new Set([
@@ -176,6 +177,7 @@ export async function createEncryptedGameAssetCache({
  if(!directory)throw Error('Encrypted asset cache directory is required');
  await mkdir(directory,{recursive:true,mode:0o700});
  const running=new Map(),attempts=new Map();
+ let activeCaptures=0;
  const location=(handle,index)=>path.join(directory,cacheId(handle,index)+'.enc');
  async function load(handle,index){
   return openAssetArchive(await readFile(location(handle,index)),key);
@@ -217,8 +219,12 @@ export async function createEncryptedGameAssetCache({
   const start=safeGameAssetUrl(url,sourceName);
   if(!start)throw Error('External game host is not approved for caching');
   if(running.has(id))return running.get(id);
+  // Ignore surplus snapshot work instead of allowing logins to spawn an
+  // unbounded fleet of third-party downloads. Live game play is unaffected.
+  if(activeCaptures>=MAX_PARALLEL_CAPTURES)return status(handle,index);
   const lastTry=attempts.get(id)||0;
   if(now()-lastTry<FAILURE_RETRY_MS)return status(handle,index);
+  activeCaptures++;
   const job=(async()=>{
    try{
     const existing=await load(handle,index).catch(()=>null);
@@ -256,7 +262,7 @@ export async function createEncryptedGameAssetCache({
     }catch(error){await unlink(temp).catch(()=>{});throw error}
     await prune().catch(error=>console.warn('Asset vault pruning failed:',error.message));
     return status(handle,index);
-   }finally{running.delete(id)}
+   }finally{running.delete(id);activeCaptures--}
   })();
   running.set(id,job);
   return job;
