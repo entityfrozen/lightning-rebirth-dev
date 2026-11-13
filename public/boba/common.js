@@ -7,7 +7,7 @@ export const discordIcon='<svg class="cel-discord-icon" viewBox="0 0 256 199" fi
 export const ico=(k,cl='')=>k==='ask'?aiIcon:k==='discord'?discordIcon:'<svg class="'+cl+'" viewBox="0 0 256 256" aria-hidden="true">'+(I[k]||I.link||'')+'</svg>';
 export const lic=(k,a,b)=>'<span class="lic" style="background:linear-gradient(145deg,'+a+','+b+')">'+ico(k)+'</span>';
 export async function api(path,body){const r=await fetch(path,{credentials:'same-origin',...(body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})});const d=await r.json();if(!r.ok)throw Error(d.error||'Request failed');return d}
-export const THEMES=[['boba','Celestial','light'],['light','Light','light'],['dark','Dark','dark'],['strawberry','Strawberry','light'],['touhou','Touhou · Reimu','light'],['matcha','Matcha','light'],['mango','Mango','light'],['sky','Sky','light'],['taro','Taro','dark'],['midnight','Midnight','dark'],['brown','Brown','dark'],['black','Black','dark']];
+export const THEMES=[['boba','Brightpath','light'],['light','Light','light'],['dark','Dark','dark'],['strawberry','Strawberry','light'],['touhou','Touhou · Reimu','light'],['matcha','Matcha','light'],['mango','Mango','light'],['sky','Sky','light'],['taro','Taro','dark'],['midnight','Midnight','dark'],['brown','Brown','dark'],['black','Black','dark']];
 export const ACCENTS=[['#8a5631','#fff'],['#ea6b96','#fff'],['#4c9461','#fff'],['#d69c31','#fff'],['#397cc9','#fff'],['#8d62db','#fff'],['#252b39','#fff']];
 export function applyPrefs(){
  const root=document.documentElement;
