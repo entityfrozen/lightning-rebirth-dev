@@ -128,16 +128,46 @@ export function openDistributorGame(stage,game){
  const sourceLink=document.createElement('a');sourceLink.className='btn s';sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';sourceLink.textContent='Open original';
  const fullscreen=document.createElement('button');fullscreen.className='btn s';fullscreen.textContent='Fullscreen';
  const notice=document.createElement('p');notice.className='arcade-help';notice.setAttribute('role','status');
+ const vaultLabel=document.createElement('span');vaultLabel.className='cel-dist-vault-status';
+ vaultLabel.dataset.vaultStatus='';
+ vaultLabel.textContent='Encrypted asset cache: checking…';
+ vaultLabel.title='Cached game assets use AES-256-GCM on the server. Live running code remains inspectable in DevTools.';
  let frame=document.createElement('iframe');frame.className='cel-dist-frame';frame.title=game.name;
  frame.referrerPolicy='no-referrer';
  frame.allow='fullscreen; gamepad; autoplay; clipboard-write; encrypted-media';
  frame.setAttribute('allowfullscreen','');
  const attribution=document.createElement('p');attribution.className='cel-dist-attribution';
- let proxyFrame=null,uvFrame=null,epoch=0,disposed=false;
+ let proxyFrame=null,uvFrame=null,epoch=0,disposed=false,vaultTimer=null;
+ async function readVaultStatus(run,sourceIndex,attempt=0){
+  if(!/^g_[a-zA-Z0-9_-]{24}$/.test(game.id||'')){
+   vaultLabel.textContent='External source (not cached)';
+   return;
+  }
+  try{
+   const endpoint='/api/games/vault/status?id='+encodeURIComponent(game.id)+'&source='+sourceIndex;
+   const response=await fetch(endpoint,{credentials:'same-origin',cache:'no-store'});
+   if(disposed||run!==epoch)return;
+   if(!response.ok)throw Error('Vault status unavailable');
+   const data=await response.json();
+   if(disposed||run!==epoch)return;
+   if(data.cached){
+    vaultLabel.textContent='AES-256-GCM · '+data.files+' assets'+(data.partial?' · partial snapshot':'');
+   }else if(attempt<5){
+    vaultLabel.textContent='Encrypting cached assets…';
+    vaultTimer=setTimeout(()=>readVaultStatus(run,sourceIndex,attempt+1),2500);
+   }else{
+    vaultLabel.textContent='Asset cache unavailable for this source';
+   }
+  }catch{
+   if(!disposed&&run===epoch)vaultLabel.textContent='Asset cache status unavailable';
+  }
+ }
  async function switchSource(){
   const item=game.sources[Number(sourceSelect.value)];
   if(!item)return;
   const run=++epoch;
+  clearTimeout(vaultTimer);
+  vaultLabel.textContent='Encrypted asset cache: checking…';
   if(proxyFrame){disposeProxyFrame(proxyFrame);proxyFrame=null}
   if(uvFrame){uvFrame.dispose();uvFrame=null}
   const replacement=document.createElement('iframe');
@@ -159,6 +189,7 @@ export function openDistributorGame(stage,game){
    return;
   }
   sourceLink.href=target;
+  void readVaultStatus(run,Number(sourceSelect.value));
   if(modeSelect.value==='direct'){
    notice.textContent='Direct embed enabled. Some websites block iframe embedding; use Scramjet or Open original if this stays blank.';
    frame.src=target;
@@ -199,8 +230,8 @@ export function openDistributorGame(stage,game){
  sourceSelect.onchange=switchSource;
  modeSelect.onchange=switchSource;
  fullscreen.onclick=()=>frame.requestFullscreen?.();
- bar.append(sourceSelect,modeSelect,sourceLink,fullscreen);
+ bar.append(sourceSelect,modeSelect,sourceLink,fullscreen,vaultLabel);
  stage.append(bar,frame,notice,attribution);
  switchSource();
- return()=>{disposed=true;epoch++;disposeProxyFrame(proxyFrame);proxyFrame=null;uvFrame?.dispose();uvFrame=null;frame.removeAttribute('src')};
+ return()=>{disposed=true;epoch++;clearTimeout(vaultTimer);disposeProxyFrame(proxyFrame);proxyFrame=null;uvFrame?.dispose();uvFrame=null;frame.removeAttribute('src')};
 }

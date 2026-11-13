@@ -176,6 +176,7 @@
 .cel-dist-credits a{color:var(--acc);text-decoration:underline;text-underline-offset:3px}
 .cel-dist-player-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .cel-dist-player-toolbar select{padding:9px 12px;border:1px solid var(--hair);border-radius:12px;background:var(--g2);color:var(--ink);max-width:210px}
+.cel-dist-vault-status{font-size:11px;letter-spacing:.02em;color:var(--ink-3);padding:6px 0;margin-left:auto;max-width:100%}
 .cel-dist-frame{width:100%;height:min(70vh,750px);min-height:420px;border:0;border-radius:14px;background:#0c1019}
 .cel-dist-attribution{margin-top:12px;font-size:12px;line-height:1.6;color:var(--ink-3)}
 .cel-dist-empty{font-size:13px;color:var(--ink-3);padding:12px 0}

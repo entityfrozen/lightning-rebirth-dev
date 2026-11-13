@@ -61,6 +61,9 @@ try{
    {name:'Selenite',cover:'',creator:'Fixture'}
   ]}],total:1,unavailable:[],updatedAt:'2026-11-12T00:00:00Z'}
  }));
+ await page.route('**/api/games/vault/status?*',route=>route.fulfill({
+  json:{encrypted:true,cached:true,files:7,bytes:1127,partial:false}
+ }));
  await page.route('**/api/games/resolve?*',route=>{
   const target=new URL(route.request().url());
   assert.equal(target.searchParams.get('id'),sealedId);
@@ -112,6 +115,7 @@ try{
    !!section?.querySelector('iframe.cel-dist-frame[src="'+target+'"]');
  },sampleUrl,{timeout:12000});
  assert.ok(gameResolutions>0,'External games should resolve opaque IDs at launch');
+ await arcade.locator('[data-vault-status]').filter({hasText:'AES-256-GCM · 7 assets'}).waitFor({timeout:10000});
  await arcade.locator('[data-back]').click();
  await page.screenshot({path:path.join(screenshots,'arcade.png')});
 
