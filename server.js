@@ -9,6 +9,7 @@ import { attachLightningLive } from './live.js';
 import {importBoltData,bootstrapAdministrator,backupBoltData} from './legacy-data.js';
 import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
 import { getGameCatalog } from './game-catalog.js';
+import {createGameVault} from './game-vault.js';
 import { generateImage } from './image-provider.js';
 import { ROLE_OPTIONS, isValidRole } from './staff-roles.js';
 import { readFile, writeFile, mkdir, rename, stat, readdir, unlink } from 'node:fs/promises';
@@ -33,6 +34,8 @@ if(process.env.RAILWAY_VOLUME_MOUNT_PATH){
   }
 }
 mkdirSync(DATA_DIR,{recursive:true});
+// Production uses the CELESTIAL_GAME_VAULT_KEY service secret; no key is sent to clients.
+const gameVault=await createGameVault({directory:path.join(DATA_DIR,'game-vault')});
 // The Bolt-era backend provides real browser proxying and multiplayer.
 // Missing proxy downloads must never block the rest of the platform.
 let proxyBackend=null;
@@ -243,8 +246,20 @@ async function handleAPI(req,res,url) {
   }
   if(req.method==='GET'&&pathname==='/api/games/catalog'){
     if(!user)return fail(res,401,'Sign in required');
-    const catalog=await getGameCatalog();
-    return respond(res,200,catalog,{'Cache-Control':'private, max-age=1800'});
+    const catalog=await getGameCatalog({vault:gameVault});
+    // Do not broadcast every original game URL in a single browser response.
+    return respond(res,200,gameVault.publicCatalog(catalog),{'Cache-Control':'private, no-store'});
+  }
+  if(req.method==='GET'&&pathname==='/api/games/resolve'){
+    if(!user)return fail(res,401,'Sign in required');
+    const gameId=url.searchParams.get('id')||'';
+    const source=url.searchParams.get('source')||'';
+    if(!/^g_[a-zA-Z0-9_-]{24}$/.test(gameId)||!/^(0|[1-9][0-9]{0,2})$/.test(source))
+      return fail(res,400,'Invalid game or source');
+    const catalog=await getGameCatalog({vault:gameVault});
+    const target=gameVault.launchUrl(catalog,gameId,Number(source));
+    if(!target)return fail(res,404,'Game source not found');
+    return respond(res,200,{url:target},{'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'});
   }
   if(req.method==='GET'&&pathname==='/api/account/workspace'){
     if(!user)return fail(res,401,'Sign in required');

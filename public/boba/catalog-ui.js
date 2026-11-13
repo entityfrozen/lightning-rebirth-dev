@@ -97,6 +97,20 @@ export function mountDistributorLibrary(root,{launch}){
   };
 }
 
+async function resolveExternalGameUrl(game,source,sourceIndex){
+ // Built-in specials can supply a URL directly. Distributor entries carry
+ // only opaque IDs: request the original source when the player launches it.
+ if(source.url)return source.url;
+ if(!/^g_[a-zA-Z0-9_-]{24}$/.test(game.id||''))throw Error('Game source is unavailable');
+ const endpoint='/api/games/resolve?id='+encodeURIComponent(game.id)+'&source='+sourceIndex;
+ const response=await fetch(endpoint,{credentials:'same-origin',cache:'no-store'});
+ if(!response.ok)throw Error('Unable to resolve game (HTTP '+response.status+')');
+ const payload=await response.json();
+ if(typeof payload.url!=='string'||!payload.url.startsWith('https://'))
+  throw Error('The game source URL is invalid');
+ return payload.url;
+}
+
 export function openDistributorGame(stage,game){
  stage.replaceChildren();
  const bar=document.createElement('div');bar.className='cel-dist-player-toolbar';
@@ -132,17 +146,28 @@ export function openDistributorGame(stage,game){
   replacement.allow='fullscreen; gamepad; autoplay; clipboard-write; encrypted-media';
   replacement.setAttribute('allowfullscreen','');
   frame.replaceWith(replacement);frame=replacement;
-  sourceLink.href=item.url;
+  sourceLink.removeAttribute('href');
   attribution.textContent='Source: '+item.name+(item.creator?' · Credit: '+item.creator:'')+' · Artwork and rights belong to their respective creators.';
+  notice.textContent='Preparing game source…';
+  let target;
+  try{
+   target=await resolveExternalGameUrl(game,item,Number(sourceSelect.value));
+   if(disposed||run!==epoch)return;
+  }catch(error){
+   if(disposed||run!==epoch)return;
+   notice.textContent='Unable to open this game: '+String(error.message||'Source not found')+'. Try another source.';
+   return;
+  }
+  sourceLink.href=target;
   if(modeSelect.value==='direct'){
    notice.textContent='Direct embed enabled. Some websites block iframe embedding; use Scramjet or Open original if this stays blank.';
-   frame.src=item.url;
+   frame.src=target;
    return;
   }
   if(modeSelect.value==='ultraviolet'){
    notice.textContent='Starting Ultraviolet…';
    try{
-    const connection=await createUltravioletFrame(frame,item.url);
+    const connection=await createUltravioletFrame(frame,target);
     if(disposed||run!==epoch){connection.dispose();return}
     uvFrame=connection;
     notice.textContent='Ultraviolet is loading. If this page stays blank, try Scramjet or Open original.';
@@ -162,13 +187,13 @@ export function openDistributorGame(stage,game){
    const controllerFrame=await createProxyFrame(frame);
    if(disposed||run!==epoch){disposeProxyFrame(controllerFrame);return}
    proxyFrame=controllerFrame;
-   controllerFrame.go(item.url);
+   controllerFrame.go(target);
    notice.textContent='Scramjet is loading this page. If it stays blank, try Direct embed or Open original.';
   }catch(error){
    if(disposed||run!==epoch)return;
    notice.textContent='Scramjet failed: '+String(error.message||'Unavailable')+'. Switching to direct embed.';
    modeSelect.value='direct';
-   frame.src=item.url;
+   frame.src=target;
   }
  }
  sourceSelect.onchange=switchSource;

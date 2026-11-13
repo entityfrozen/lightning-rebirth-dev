@@ -65,10 +65,24 @@ export function mergeCatalogs(catalogs){
   return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name));
 }
 
-export async function getGameCatalog({fetcher=fetch,refresh=false}={}){
+export async function getGameCatalog({fetcher=fetch,refresh=false,vault=null}={}){
   if(!refresh&&cache&&Date.now()<cacheExpires)return cache;
   if(!refresh&&pending)return pending;
   const work=(async()=>{
+    // Reuse the authenticated, encrypted catalog when the server restarts.
+    // An expired snapshot remains available as a fallback on distributor outages.
+    if(!refresh&&vault){
+      try{
+        const stored=await vault.load();
+        if(stored?.catalog&&Array.isArray(stored.catalog.games)&&Number.isFinite(stored.expiresAt)){
+          cache=stored.catalog;
+          cacheExpires=stored.expiresAt;
+          if(Date.now()<cacheExpires)return cache;
+        }
+      }catch(error){
+        if(error.code!=='ENOENT')console.warn('Encrypted game catalog cache could not be opened:',error.message);
+      }
+    }
     const failures=[];
     const results=await Promise.all(SOURCES.map(async ([name,url])=>{
       try{
@@ -86,7 +100,12 @@ export async function getGameCatalog({fetcher=fetch,refresh=false}={}){
     // A temporary distributor outage must not erase a good cache.
     if(!games.length&&cache)return {...cache,stale:true,unavailable:failures};
     const response={games,total:games.length,unavailable:failures,updatedAt:new Date().toISOString()};
-    if(games.length){cache=response;cacheExpires=Date.now()+CACHE_MS;}
+    if(games.length){
+      cache=response;
+      cacheExpires=Date.now()+CACHE_MS;
+      if(vault)try{await vault.save({catalog:response,expiresAt:cacheExpires})}
+      catch(error){console.warn('Encrypted game catalog cache could not be saved:',error.message)}
+    }
     return response;
   })();
   pending=work;
