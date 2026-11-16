@@ -115,7 +115,9 @@ export function mountOrbitScene(canvas) {
   const resizeObserver=new ResizeObserver(()=>{resize();if(motion.matches)start();});
   intersection.observe(canvas);
   resizeObserver.observe(canvas);
-  canvas.parentElement?.addEventListener('pointermove',onPointer,{passive:true});
+  // The graphics layer ignores pointer events; listen on its interactive parent.
+  const pointerSurface=canvas.parentElement?.parentElement||canvas.parentElement;
+  pointerSurface?.addEventListener('pointermove',onPointer,{passive:true});
   document.addEventListener('visibilitychange',onVisibility);
   motion.addEventListener('change',onMotion);
   canvas.addEventListener('webglcontextlost',onContextLost);
@@ -123,7 +125,7 @@ export function mountOrbitScene(canvas) {
   start();
   return ()=>{
     disposed=true;stop();intersection.disconnect();resizeObserver.disconnect();
-    canvas.parentElement?.removeEventListener('pointermove',onPointer);
+    pointerSurface?.removeEventListener('pointermove',onPointer);
     document.removeEventListener('visibilitychange',onVisibility);
     motion.removeEventListener('change',onMotion);
     canvas.removeEventListener('webglcontextlost',onContextLost);
