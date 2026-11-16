@@ -25,7 +25,8 @@ const defaultProxy=()=>window.self!==window.top?'ultraviolet':
   store.get('browserEngine','reflux')==='scramjet'?'scramjet':'ultraviolet';
 const engine={
  normalise(input){const q=String(input||'').trim();if(!q)return '';try{const u=new URL(q);if(['http:','https:'].includes(u.protocol))return u.href}catch{}if(/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/:?#]|$)/i.test(q))return 'https://'+q;return 'https://www.google.com/search?q='+encodeURIComponent(q)},
- boot:getProxyController,recover:getProxyController,
+ boot(){return defaultProxy()==='ultraviolet'?getUltravioletEngine():getProxyController()},
+ recover(){return defaultProxy()==='ultraviolet'?getUltravioletEngine():getProxyController()},
  decode(url){try{const src=new URL(url,location.origin);if(src.pathname.startsWith('/uv/service/')){
      const decodeUv=window.__uv$config?.decodeUrl;
      return typeof decodeUv==='function'?decodeUv(src.pathname.slice('/uv/service/'.length)):'';
