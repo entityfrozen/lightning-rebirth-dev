@@ -21,7 +21,7 @@ test('numeric encoding preserves markup, Unicode, selectors and captions',()=>{
   'DOM selectors must remain unchanged');
 });
 
-test('static HTML templates encode; dynamic templates retain interpolations',()=>{
+test('static and dynamic HTML templates encode without changing interpolations',()=>{
  const tick=String.fromCharCode(96);
  const original=[
   'const template='+tick+'<section class="cel-dist-grid">Discover more</section>'+tick+';',
@@ -32,7 +32,9 @@ test('static HTML templates encode; dynamic templates retain interpolations',()=
  const changed=encodeMarkupSource(original,parseAst);
  assert.ok(changed?.count>=1);
  assert.doesNotMatch(changed.code,/<section class="cel-dist-grid">/);
- assert.match(changed.code,/<button>\$\{name\}<\/button>/);
+ assert.doesNotMatch(changed.code,/<button>\$\{name\}<\/button>/);
+ assert.ok(changed.code.includes('String((name))'));
+
  assert.equal(runInNewContext(changed.code),runInNewContext(original));
 });
 
@@ -43,4 +45,28 @@ test('encoding never changes API paths or other modules',()=>{
  const plugin=encodeClientMarkup();
  assert.equal(plugin.apply,'build');
  assert.equal(plugin.transform("const markup='<div>Safe</div>';",'/some/other/source.js'),null);
+});
+
+test('interpolated markup preserves Unicode, conditional content and evaluation order',()=>{
+ const tick=String.fromCharCode(96);
+ const original=[
+  "let calls=0;",
+  "const next=()=>{calls++;return '✓ 🎮'};",
+  "const value=2;",
+  "const html="+tick+"<main><h1>Welcome ♥ 🎮</h1><p>$"+"{next()} — $"+"{value*4}</p></main>"+tick+";",
+  "JSON.stringify({html,calls})"
+ ].join('\n');
+ const encoded=encodeMarkupSource(original,parseAst);
+ assert.ok(encoded?.code);
+ assert.doesNotMatch(encoded.code,/Welcome ♥/);
+ assert.ok(encoded.code.includes('String((next()))'));
+ assert.equal(runInNewContext(encoded.code),runInNewContext(original));
+});
+
+test('tagged HTML templates retain native tagged-template semantics',()=>{
+ const tick=String.fromCharCode(96);
+ const original="const tag=(parts,...values)=>JSON.stringify({raw:parts.raw[0],values}); "+
+  "const value='x'; tag"+tick+"<div>\\n$"+"{value}</div>"+tick+";";
+ const transformed=encodeMarkupSource(original,parseAst);
+ assert.equal(transformed,null,'Tagged template identity and .raw must not be changed');
 });

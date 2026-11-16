@@ -688,12 +688,18 @@ async function staticFile(req,res,url) {
   if(PROXY_VENDOR_ASSETS.some(([prefix])=>filename.startsWith(prefix))&&!liveIdentity(req.headers))return fail(res,401,'Sign in to use the browser proxy.');
   // Unknown asset/route requests are not Celestial homepage navigation.
   if(!path.extname(filename)&&!filename.startsWith('/assets/'))return fail(res,404,'Page not found');
-  // Only expose compiled native assets; the source modules and HTML templates
-  // remain in the repository for maintenance, not on the production network.
-  if(/^\/boba\/[^/]+\.js$/.test(filename) ||
-     /^\/boba\/(?:original|native|auth)\.css$/.test(filename) ||
-     /^\/boba\/(?:index|auth)\.template\.html$/.test(filename) ||
-     filename==='/boba/dist/.vite/manifest.json')return fail(res,404,'File not found');
+  // Ship only the compiled UI assets. Authored modules, source maps and
+  // build metadata are development artifacts, not production endpoints.
+  // This reduces casual source exposure; it does not hide client behavior.
+  if(filename.endsWith('.map')||filename.includes('/.vite/'))return fail(res,404,'File not found');
+  if(filename.startsWith('/boba/')){
+    const compiled=/^\/boba\/dist\/assets\/[a-zA-Z0-9._-]+\.(?:js|css)$/.test(filename);
+    const installerStyle=filename==='/boba/launcher-install.css';
+    if(filename.endsWith('.template.html') ||
+       (/\.(?:js|mjs|css|json)$/.test(filename)&&!compiled&&!installerStyle)){
+      return fail(res,404,'File not found');
+    }
+  }
   const vendor=PROXY_VENDOR_ASSETS.find(([prefix])=>filename.startsWith(prefix));
   // UV's custom worker/config take precedence over its vendor dist files.
   const customUv=filename==='/uv/sw.js'||filename==='/uv/uv.config.js';
