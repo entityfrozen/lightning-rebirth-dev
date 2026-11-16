@@ -80,3 +80,13 @@ test('Browser tabs and framed navigation avoid exposing search URLs as element a
  assert.match(adapter,/contentWindow\.location\.replace\(destination\)/);
  assert.doesNotMatch(adapter,/element\.removeAttribute\('src'\)/);
 });
+
+test('Browser recovers from a failed Scramjet load without a fallback loop',()=>{
+ const browser=source('../public/boba/browser.js');
+ assert.match(browser,/t\.mode==='scramjet'&&!t\.autoFallbackAttempted/);
+ assert.match(browser,/t\.autoFallbackAttempted=true/);
+ assert.match(browser,/t\.mode='ultraviolet'/);
+ assert.match(browser,/void navigate\(t\.url\)/);
+ assert.match(browser,/if\(url!==t\.url\)t\.autoFallbackAttempted=false/);
+ assert.match(browser,/current\.autoFallbackAttempted=false/);
+});
