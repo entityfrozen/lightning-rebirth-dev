@@ -36,6 +36,8 @@ async function begin() {
     await waitForWorkspace();
     app.removeAttribute('aria-busy');
     document.title = 'Celestial';
+    const favicon = document.querySelector('link[rel="icon"]');
+    if (favicon) favicon.href = '/assets/celestial-star.svg';
     document.documentElement.classList.add('academy-finished');
     campus.setAttribute('aria-hidden', 'true');
     setTimeout(() => {
