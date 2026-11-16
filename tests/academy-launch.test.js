@@ -28,13 +28,13 @@ test('the launch module defers the workspace until the three-second intro comple
 
 test('published engine selector class is opaque instead of exposing an implementation label',()=>{
   const plugin=opaqueDomClasses({stylesheet:'.cel-simple-home{display:block}'});
-  const input='<select class="wproxy" data-engine-mode><option>Reflux</option></select>';
+  const input='<select class="engine-switch" data-engine-mode><option>Reflux</option></select>';
   const app=plugin.transform('const html='+JSON.stringify(input),'/app/public/boba/browser.js')?.code;
-  const stylesheet=plugin.transform('.wproxy{padding:8px}', '/app/public/boba/original.css')?.code;
+  const stylesheet=plugin.transform('.engine-switch{padding:8px}', '/app/public/boba/original.css')?.code;
   assert.ok(app);
   assert.ok(stylesheet);
-  assert.doesNotMatch(app,/wproxy/);
-  assert.doesNotMatch(stylesheet,/wproxy/);
+  assert.doesNotMatch(app,/engine-switch|wproxy/);
+  assert.doesNotMatch(stylesheet,/engine-switch|wproxy/);
   assert.match(app,/_bp[a-f0-9]{10}/);
   assert.match(stylesheet,/_bp[a-f0-9]{10}/);
   assert.match(app,/data-engine-mode/);
