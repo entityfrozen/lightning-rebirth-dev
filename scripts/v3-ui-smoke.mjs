@@ -48,6 +48,11 @@ try{
   const page=await browser.newPage({viewport:{width:1440,height:900}});
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:30000});
+  await page.locator('.v3-auth-layout').waitFor({timeout:15000});
+  await page.screenshot({path:path.join(screenshots,'sign-in.png')});
+  await page.getByRole('button',{name:'Create account',exact:true}).first().click();
+  await page.locator('input[name="confirmPassword"]:enabled').waitFor({timeout:5000});
+  await page.getByRole('button',{name:'Sign in',exact:true}).first().click();
   await page.locator('input[name="username"]').fill('V3Admin');
   await page.locator('input[name="password"]').fill(password);
   await page.locator('form button[type="submit"]').click();
