@@ -3,7 +3,6 @@ import {viewMarker,originalView} from './view-markers.js';
 
 const links=[
   ['browser','Browser','web'],
-  ['games','Library','play'],
   ['chat','Community','discord'],
   ['ai','AI','ask']
 ];
