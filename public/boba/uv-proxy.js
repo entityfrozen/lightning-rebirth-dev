@@ -1,5 +1,6 @@
-// Ultraviolet 3.x uses its own service worker and BareMux transport.
-// It must not reuse Scramjet's Controller or its newer transport generation.
+// Reflux adds request/response middleware to the Ultraviolet browser engine.
+// The underlying network connection is Epoxy over Celestial's own Wisp server.
+// BareMux must be initialized BEFORE registering the Ultraviolet worker.
 const loaded=new Map();
 let enginePromise=null;
 const ROOT='/uv/service/';
@@ -14,52 +15,61 @@ function loadScript(url){
   const script=document.createElement('script');
   script.src=url;script.async=false;
   script.onload=resolve;
-  script.onerror=()=>reject(Error('Could not load '+url));
+  script.onerror=()=>{script.remove();reject(Error('Could not load '+url))};
   document.head.append(script);
  }).catch(error=>{loaded.delete(url);throw error});
  loaded.set(url,task);
  return task;
 }
+async function startWorker(){
+ const registration=await withTimeout(navigator.serviceWorker.register('/uv/sw.js',{
+  scope:ROOT,updateViaCache:'none'
+ }),'Installing the browser worker');
+ if(registration.active)return;
+ const worker=registration.installing||registration.waiting;
+ if(!worker)throw Error('The browser worker could not start.');
+ await withTimeout(new Promise((resolve,reject)=>{
+  const changed=()=>{
+   if(worker.state==='activated'){worker.removeEventListener('statechange',changed);resolve()}
+   if(worker.state==='redundant'){worker.removeEventListener('statechange',changed);reject(Error('Browser worker became redundant'))}
+  };
+  worker.addEventListener('statechange',changed);changed();
+ }),'Activating the browser worker');
+}
 export async function getUltravioletEngine(){
  if(!enginePromise)enginePromise=(async()=>{
-  if(!window.isSecureContext||!navigator.serviceWorker)throw Error('Ultraviolet requires HTTPS and service workers.');
+  if(!window.isSecureContext||!navigator.serviceWorker)throw Error('Secure browsing requires HTTPS and service workers.');
   const response=await fetch('/api/browser/status',{credentials:'same-origin'});
   if(!response.ok)throw Error('Unable to check browser availability');
   const status=await response.json();
-  if(!status.authenticated)throw Error('Sign in to use Ultraviolet.');
-  if(!status.proxy)throw Error('The Wisp transport is unavailable.');
+  if(!status.authenticated)throw Error('Sign in to use the browser.');
+  if(!status.proxy)throw Error('The browser network connection is unavailable.');
   await loadScript('/baremux/index.js');
   await loadScript('/uv/uv.bundle.js');
   await loadScript('/uv/uv.config.js');
-  if(!window.BareMux?.BareMuxConnection||!window.__uv$config?.encodeUrl)throw Error('Ultraviolet scripts did not initialize.');
-  const registration=await withTimeout(navigator.serviceWorker.register('/uv/sw.js',{
-   scope:ROOT,updateViaCache:'none'
-  }),'Installing Ultraviolet service worker');
-  if(!registration.active){
-   const installing=registration.installing||registration.waiting;
-   if(!installing)throw Error('Ultraviolet worker could not start.');
-   await withTimeout(new Promise((resolve,reject)=>{
-    function changed(){
-     if(installing.state==='activated'){installing.removeEventListener('statechange',changed);resolve();}
-     if(installing.state==='redundant'){installing.removeEventListener('statechange',changed);reject(Error('Ultraviolet worker became redundant.'));}
-    }
-    installing.addEventListener('statechange',changed);changed();
-   }),'Activating Ultraviolet worker');
+  if(!window.BareMux?.BareMuxConnection||!window.__uv$config?.encodeUrl){
+   throw Error('The browser engine did not initialize.');
   }
   const connection=new BareMux.BareMuxConnection('/baremux/worker.js');
   const wisp=(location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/wisp/';
-  // Reflux wraps the Epoxy BareMux transport, adding plugin middleware.
-  // Keep Epoxy as a fallback: one broken middleware module should not
-  // prevent people from opening games or using the browser.
+  // Reflux 2.2.0 is a transport wrapper, not a replacement page rewriter.
+  // An automatic Epoxy fallback preserves browsing when the optional layer
+  // can't initialize. Both share the same Wisp endpoint and BareMux worker.
+  let transport='reflux';
   try{
-   await withTimeout(connection.setTransport('/reflux/index.mjs',[{base:'/epoxy/index.mjs',wisp}]),
-    'Connecting Ultraviolet through Reflux',15000);
+   await withTimeout(connection.setTransport('/reflux/index.mjs',[{
+    base:'/epoxy/index.mjs',wisp
+   }]),'Starting Reflux',18000);
   }catch(error){
-   console.warn('Reflux unavailable; using Epoxy directly:',error);
+   console.warn('Reflux unavailable; connecting directly:',error);
+   transport='epoxy';
    await withTimeout(connection.setTransport('/epoxy/index.mjs',[{wisp}]),
-    'Connecting Ultraviolet transport',25000);
+    'Starting browser connection',18000);
   }
+  // Ordering matters: set the BareMux transport before the SW is usable.
+  await startWorker();
   return {
+   transport,
    encode(url){
     const parsed=new URL(url);
     if(!['http:','https:'].includes(parsed.protocol))throw Error('Only HTTP(S) links are supported');
