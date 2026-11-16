@@ -8,7 +8,7 @@ Celestial now opens on an original, fictional Asterfield Academy student-hub pag
 - `src/boba-launch.js` delays `import('./boba-client.js')` until after the introduction.
 - `src/boba-launch.css` keeps the campus page readable and isolated while the full Boba styles are still unloaded.
 - `vite.boba.config.js` emits a separate, hashed `launch` entry; `scripts/inject-native-assets.mjs` uses that manifest entry for the HTML.
-- `scripts/opaque-dom.mjs` now rewrites the old `.wproxy` selector in compiled CSS and JS to an opaque class, preserving the visible Reflux/Scramjet engine menu.
+- `scripts/opaque-dom.mjs` now hashes the renamed `.engine-switch` selector in compiled CSS and JS, preserving the visible Reflux/Scramjet engine menu.
 - The source HTML stays standards-compliant and accessible. Motion is disabled for users who prefer reduced motion.
 
 ## Verification
