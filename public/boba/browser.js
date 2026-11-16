@@ -131,7 +131,7 @@ const home = {
     '<button class="cb sm gh" data-wb="reload" aria-label="Reload">' + ico("reload") + "</button>" +
     '<label class="addr">' + ico("lock") + '<input data-omni placeholder="Search or enter a link" aria-label="Address" autocomplete="off" spellcheck="false">' +
     '<span class="disp" data-disp></span><div class="sugg gl g3" data-sugg></div></label>' +
-    '<select class="wproxy" data-engine-mode aria-label="Browsing engine"><option value="ultraviolet">Reflux</option><option value="scramjet">Scramjet</option></select>' +
+    '<select class="engine-switch" data-engine-mode aria-label="Browsing engine"><option value="ultraviolet">Reflux</option><option value="scramjet">Scramjet</option></select>' +
     '<span class="wsep"></span><div class="wtabs" data-tabs></div>' +
     '<button class="cb sm gh" data-wnew aria-label="New tab">' + ico("plus") + "</button>" +
     '<button class="cb sm gh" data-direct title="Open direct in about:blank" aria-label="Open Direct">' + ico("link") + '</button>' +
