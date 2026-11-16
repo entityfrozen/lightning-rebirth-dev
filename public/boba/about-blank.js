@@ -14,8 +14,21 @@ export function openAboutBlank(target,appearance={}){
   doc.body.replaceChildren();
   doc.documentElement.style.cssText='width:100%;height:100%;margin:0';
   doc.body.style.cssText='width:100%;height:100%;margin:0;overflow:hidden;background:#111621';
-  const favicon=doc.createElement('link');favicon.rel='icon';
-  favicon.href=appearance.icon||'/assets/celestial-star.svg';doc.head.append(favicon);
+  // about:blank has no stable URL base; use an absolute favicon reference.
+  const favicon=doc.createElement('link');favicon.rel='icon';favicon.type='image/svg+xml';
+  const defaultIcon=new URL('/assets/celestial-star.svg',location.origin).href;
+  try{
+   const supplied=new URL(appearance.icon||defaultIcon,location.origin);
+   favicon.href=supplied.protocol==='https:'||supplied.origin===location.origin?supplied.href:defaultIcon;
+  }catch{favicon.href=defaultIcon}
+  doc.head.append(favicon);
+  // Native beforeunload prompts are optional at the browser's discretion.
+  // They cannot forcibly prevent closing a tab.
+  const guardEnabled=appearance.preventClose!==false&&
+    localStorage.getItem('boba.preventClose')!=='false';
+  if(guardEnabled)popup.addEventListener('beforeunload',event=>{
+   event.preventDefault();event.returnValue='';
+  });
   const frame=doc.createElement('iframe');
   frame.title='Website';
   frame.src=destination.href;
