@@ -20,7 +20,9 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
-const PROXY_VENDOR_ASSETS=[['/uv/',path.resolve(uvPath)],['/baremux/',path.resolve(baremuxPath)],['/epoxy/',path.resolve(epoxyPath)]];
+const PROXY_VENDOR_ASSETS=[['/uv/',path.resolve(uvPath)],['/baremux/',path.resolve(baremuxPath)],['/epoxy/',path.resolve(epoxyPath)],
+  // Reflux is a BareMux middleware transport for Ultraviolet (not Scramjet 2).
+  ['/reflux/',path.dirname(fileURLToPath(import.meta.resolve('@nightnetwork/reflux/transport')))]];
 const DATA_DIR=path.resolve(ROOT,process.env.BOLT_DATA_DIR||
   process.env.RAILWAY_VOLUME_MOUNT_PATH||
   (process.env.LIGHTNING_DATA_FILE?path.dirname(process.env.LIGHTNING_DATA_FILE):path.join(ROOT,'data')));
