@@ -39,10 +39,11 @@ const engine={
    // page. Treat that as a transport failure rather than a successful page.
    try{
      const location=new URL(d.URL);
-     if(!location.pathname.startsWith('/~/sj/'))return false;
+     const browserPath=location.pathname.startsWith('/~/sj/')||location.pathname.startsWith('/uv/service/');
+     if(!browserPath)return false;
      if(d.querySelector('meta[http-equiv="refresh"][content*="/boba/index.html"]'))return true;
      const text=(d.body?.textContent||'').slice(0,300);
-     return /Proxy worker did not intercept|The proxy engine is unavailable|Proxy transport failed/i.test(text);
+     return /(?:Browser engine|Ultraviolet worker|Scramjet worker|Proxy worker) did not intercept|The (?:proxy|browser) engine is unavailable|(?:Proxy|Browser) transport failed|could not open this navigation/i.test(text);
    }catch{return false}
  },
  async openFrame(el,url,onNavigate,onPopup,mode='scramjet'){
