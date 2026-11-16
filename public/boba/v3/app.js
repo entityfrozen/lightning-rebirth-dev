@@ -125,6 +125,8 @@ export async function bootV3(){
     if(!ui.command.hidden)return;
     focusBeforeDialog=document.activeElement;
     ui.command.hidden=false;
+    ui.root.querySelector('.v3-sidebar').inert=true;
+    ui.root.querySelector('.v3-main').inert=true;
     commandIndex=0;
     const input=ui.command.querySelector('input');
     input.value='';renderCommand();
@@ -133,8 +135,23 @@ export async function bootV3(){
   function closeCommand(){
     if(ui.command.hidden)return;
     ui.command.hidden=true;
+    ui.root.querySelector('.v3-sidebar').inert=false;
+    ui.root.querySelector('.v3-main').inert=false;
     focusBeforeDialog?.focus?.();
   }
+  // Keep keyboard focus inside the switcher while it is open.
+  ui.command.addEventListener('keydown',event=>{
+    if(event.key!=='Tab')return;
+    const controls=[...ui.command.querySelectorAll('input, button:not([disabled])')]
+      .filter(element=>element.getClientRects().length>0);
+    if(!controls.length)return;
+    const first=controls[0],last=controls[controls.length-1];
+    if(event.shiftKey&&document.activeElement===first){
+      event.preventDefault();last.focus();
+    }else if(!event.shiftKey&&document.activeElement===last){
+      event.preventDefault();first.focus();
+    }
+  });
   ui.root.addEventListener('click',event=>{
     if(event.target.closest('[data-v3-command]'))return openCommand();
     if(event.target.closest('[data-v3-command-close]'))return closeCommand();
