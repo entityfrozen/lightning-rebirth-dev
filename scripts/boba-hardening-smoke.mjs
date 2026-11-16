@@ -85,7 +85,7 @@ try{
  // Reopen each tool through the actual dock. Bundled labels still render.
  await page.locator('#dock [data-section="s1"]').click();
  await page.locator('[data-view="s1"].on [data-omni]').waitFor({timeout:15000});
- assert.equal(await page.locator('[data-proxy-mode]').count(),1);
+ assert.equal(await page.locator('[data-engine-mode]').count(),1);
  await page.screenshot({path:path.join(shots,'boba-browser.png')});
  await page.locator('#dock [data-section="s3"]').click();
  const chat=page.locator('[data-view="s3"].on');
