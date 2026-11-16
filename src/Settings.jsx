@@ -156,7 +156,7 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
                 checked={browser.saveHistory} onChange={v=>preference({saveHistory:v})}/>
               <Toggle title="Compact tabs" description="Fit more tabs across a smaller toolbar."
                 checked={browser.compactTabs} onChange={v=>preference({compactTabs:v})}/>
-              <Toggle title="Open site links in new tabs" description="When the proxy opens a new window, make a Celestial tab."
+              <Toggle title="Open site links in new tabs" description="When a webpage opens a new window, make a Celestial tab."
                 checked={browser.openLinksInTabs} onChange={v=>preference({openLinksInTabs:v})}/>
             </div>
             <div className="celestial-settings-group"><h3>KEYBOARD SHORTCUTS</h3>
