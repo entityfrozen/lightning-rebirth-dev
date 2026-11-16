@@ -226,7 +226,19 @@ const home = {
     };
     const clearError=t=>{t.errorEl?.remove();t.errorEl=null;};
     const showError=(t,message)=>{
-      clearInterval(t.lt);t.busy=false;sync();clearError(t);
+      clearInterval(t.lt);
+      // Aether uses selectable Scramjet transports. Celestial uses two
+      // independent engines, so recover a failed Scramjet page through UV.
+      // Try only once per navigation; never loop or change the user's default.
+      if(t.mode==='scramjet'&&!t.autoFallbackAttempted&&!t.direct&&t.url){
+        t.autoFallbackAttempted=true;
+        t.unmaskLinks?.();t.unmaskLinks=null;t.doc=null;
+        if(t.frame)ctx.engine.dispose(t.frame);
+        t.mode='ultraviolet';
+        void navigate(t.url);
+        return;
+      }
+      t.busy=false;sync();clearError(t);
       const panel=document.createElement('div');panel.className='native-browser-error';
       const heading=document.createElement('h2');heading.textContent="This page couldn't be opened";
       const detail=document.createElement('p');detail.textContent=message||'The selected proxy could not load this site.';
@@ -316,6 +328,7 @@ const home = {
       const url = ctx.engine.normalise(input);
       if (!url) return;
       const t = fresh || !tab() ? newTab() : tab();
+      if(url!==t.url)t.autoFallbackAttempted=false;
       t.title = hostOf(url) || "Page";
       t.mode ||= defaultProxy();
       t.direct=false;
@@ -477,6 +490,7 @@ const home = {
       if(!current)return;
       if(current.mode===selected)return;
       current.mode=selected;
+      current.autoFallbackAttempted=false;
       if(current.frame){
         current.unmaskLinks?.();current.unmaskLinks=null;current.doc=null;
         ctx.engine.dispose(current.frame);
