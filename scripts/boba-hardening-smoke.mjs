@@ -68,11 +68,12 @@ try{
  assert.ok(appAsset,'View Source should load a compiled hashed app entry');
  assert.equal((await page.request.get(origin+appAsset)).status(),200);
  await page.goto(origin+'/',{waitUntil:'domcontentloaded',timeout:30000});
- assert.match(await page.title(),/Celestial/,'HTML entity encoding must not change rendered title');
+ // Page bootstrap may redirect to sign-in asynchronously; verify the title after it settles.
  await page.locator('input[name="username"]').fill('BobaAdmin');
  await page.locator('input[name="password"]').fill(password);
  await page.locator('form button[type="submit"]').click();
  await page.locator('#dock [data-section="s0"]').waitFor({timeout:25000});
+ assert.match(await page.title(),/Celestial/,'The signed-in workspace should use Celestial branding');
  assert.equal(await page.locator('#dock .dk').count(),7);
  assert.equal(await page.locator('#dock [data-section="s2"]').count(),0);
  const home=page.locator('[data-view="s0"].on');
