@@ -63,6 +63,19 @@ export function mountArcade(root){
  let search='',active=null,dispose=null;
  root.innerHTML='<div class="arcade-shell"><header class="arcade-head"><div><span class="cel-home-kicker">BRIGHTPATH ORIGINALS</span><h1 data-heading></h1><p>A quick break, right where you are.</p></div><label class="arcade-search">'+ico('search')+'<input type="search" placeholder="Search the library" aria-label="Search the library"></label></header><section class="arcade-grid" data-grid></section><section class="arcade-stage" data-stage hidden><header><button class="btn s" type="button" data-back>← Library</button><h2 data-item-title aria-label="Selected library item"><canvas class="cel-stage-title" data-stage-title aria-hidden="true"></canvas></h2></header><div data-canvas></div></section></div>';
  root.querySelector('[data-heading]').textContent=libraryHeading;
+ // Provider launchers are deliberately external. Neither service exposes
+ // an unrestricted public API to create or share gaming accounts.
+ // Nothing here claims Celestial owns a stream or a user's subscription.
+ const cloud=document.createElement('section');
+ cloud.className='cel-cloud-launchers';
+ cloud.setAttribute('aria-label','Cloud streaming');
+ cloud.innerHTML='<div class="cel-cloud-heading"><div><span class="cel-home-kicker">CLOUD ACCESS</span><h2>Play from anywhere.</h2><p>Choose a streaming service. CloudMoon opens first; GeForce NOW is the alternative.</p></div></div>'+
+  '<div class="cel-cloud-options">'+
+  '<a class="cel-cloud-option" href="https://web.cloudmoonapp.com/" target="_blank" rel="noopener noreferrer"><span class="cel-cloud-chip">PRIMARY</span><strong>CloudMoon</strong><span>Mobile titles in your browser</span><em>Open CloudMoon ↗</em></a>'+
+  '<a class="cel-cloud-option" href="https://play.geforcenow.com/" target="_blank" rel="noopener noreferrer"><span class="cel-cloud-chip">ALTERNATIVE</span><strong>GeForce NOW</strong><span>Supported PC titles</span><em>Open GeForce NOW ↗</em></a>'+
+  '</div><p class="cel-cloud-note">Streaming is provided by each service, subject to its own sign-in, availability, subscriptions and game access. Celestial does not create or share provider accounts.</p>';
+ root.querySelector('.arcade-head').after(cloud);
+
  const grid=root.querySelector('[data-grid]'),stage=root.querySelector('[data-stage]'),area=root.querySelector('[data-canvas]');
  const titleCanvas=root.querySelector('[data-stage-title]');
  let stageTitle='';
