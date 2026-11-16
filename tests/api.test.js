@@ -37,8 +37,22 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.equal(homepage.headers.get('cross-origin-resource-policy'),'cross-origin');
 
     const html=await homepage.text();
-    assert.ok(html.includes('<title>Brightpath | Learning Workspace</title>'));
+    const decodedTitle=html.match(/<title>([^<]+)<\/title>/)?.[1]
+      .replace(/&#(\d+);/g,(_,number)=>String.fromCodePoint(Number(number)));
+    assert.equal(decodedTitle,'Brightpath | Learning Workspace');
+    assert.doesNotMatch(html,/Brightpath \| Learning Workspace/,'Production View Source should not include raw title copy');
     assert.match(html,/\/boba\/dist\/assets\/app-/);
+    for(const privateAsset of [
+      '/boba/browser.js','/boba/shell.js','/boba/auth-shell.js',
+      '/boba/uv-proxy.js','/boba/index.template.html',
+      '/boba/dist/.vite/manifest.json','/boba/dist/assets/development.js.map'
+    ]){
+      const response=await fetch(url+privateAsset);
+      assert.equal(response.status,404,privateAsset+' must not expose source code');
+    }
+    const shippedApp=html.match(/src="(\/boba\/dist\/assets\/app-[^"]+\.js)"/)?.[1];
+    assert.ok(shippedApp,'The compiled application entry must be present');
+    assert.equal((await fetch(url+shippedApp)).status,200,'Compiled assets remain public');
     const loginPage=await fetch(url+'/login');
     assert.equal(loginPage.status,200);
     assert.match(await loginPage.text(),/\/boba\/dist\/assets\/auth-/);
