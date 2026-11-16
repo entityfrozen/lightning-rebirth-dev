@@ -216,3 +216,17 @@ body:has([data-celestial-v3]){background:#080c14;overflow:hidden}
  .v3-shell *, .v3-shell *::before, .v3-shell *::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
  .v3-orbit-canvas{opacity:.55}
 }
+
+
+/* V3 screenshot QA: make section switches atomic so inactive tools do not
+   ghost through the current page while their long-lived DOM is preserved. */
+.v3-shell .v3-view:not(.on){opacity:0;visibility:hidden;pointer-events:none;transition:none}
+.v3-shell .v3-view.on{opacity:1;visibility:visible}
+@media(max-width:780px){
+  /* The phone dock is a horizontal five-item toolbar, not stacked flex rows. */
+  .v3-shell .v3-sidebar{flex-direction:row;align-items:center;gap:3px}
+  .v3-shell .dock.v3-dock{flex:1 1 auto;min-width:0;min-height:52px;align-self:center}
+  .v3-shell .v3-sidebar-bottom{flex:0 0 19%;min-width:0;height:52px;margin:0;display:flex;align-items:stretch}
+  .v3-shell .v3-personal-nav{display:flex;align-items:stretch;width:100%}
+  .v3-shell .v3-personal-nav .v3-nav[data-v3-go="settings"]{width:100%;height:52px;display:flex!important}
+}
