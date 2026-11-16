@@ -28,7 +28,8 @@
     "chess.js": "^1.4.0",
     "@titaniumnetwork-dev/ultraviolet": "3.2.10",
     "@mercuryworkshop/bare-mux": "2.1.9",
-    "@mercuryworkshop/epoxy-transport": "2.1.29"
+    "@mercuryworkshop/epoxy-transport": "2.1.29",
+    "@nightnetwork/reflux": "2.2.0"
   },
   "engines": {
     "node": ">=20.19.0"
