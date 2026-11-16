@@ -79,6 +79,6 @@ async function start(){
 start().catch(err=>{
  console.error('Celestial critical startup failure:',err);
  const p=document.createElement('p');p.className='native-start-error';
- p.textContent='Unable to load Brightpath: '+err.message;
+ p.textContent='Unable to load Celestial: '+err.message;
  document.body.append(p);
 });
