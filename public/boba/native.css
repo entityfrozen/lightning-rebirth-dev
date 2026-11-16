@@ -543,3 +543,14 @@
 .cel-cloud-option em{font-style:normal;font-weight:650;margin-top:6px}
 .cel-cloud-note{margin:15px 0 0;font-size:.8rem;line-height:1.5;color:var(--muted,#a3a3b5)}
 @media(max-width:650px){.cel-cloud-launchers{padding:16px}.cel-cloud-options{grid-template-columns:1fr}}
+
+
+/* Review queue: account requests should be actionable without opening a profile. */
+.native-pending-request{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.native-pending-request strong{display:block;font-weight:730}
+.native-pending-request small{display:block;margin-top:4px;opacity:.68;font-size:12px}
+.native-pending-actions{display:flex;gap:8px;align-items:center}
+.native-pending-actions button{min-width:90px}
+.native-pending-section [data-pending-list]{display:grid;gap:7px}
+.native-pending-section [data-pending-list]>.native-pending-request{padding:12px 14px;border:1px solid var(--rim-a,rgba(100,100,100,.16));border-radius:13px}
+@media(max-width:580px){.native-pending-request{align-items:flex-start}.native-pending-actions{width:100%}.native-pending-actions button{flex:1}}
