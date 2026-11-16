@@ -96,6 +96,16 @@ try{
   }));
   assert.ok(overflow.pageWidth<=overflow.viewport+2,'Mobile shell must not overflow horizontally');
   assert.equal(overflow.navVisible,true);
+  const mobileTabs=await page.locator('#dock .v3-nav, .v3-personal-nav .v3-nav[data-v3-go="settings"]')
+    .evaluateAll(buttons=>buttons.map(button=>{
+      const r=button.getBoundingClientRect();
+      return {name:button.getAttribute('aria-label'),left:r.left,top:r.top,width:r.width,right:r.right,bottom:r.bottom};
+    }));
+  assert.equal(mobileTabs.length,5,'Home, Browser, Chat, AI and Settings stay reachable on phones');
+  for(const item of mobileTabs){
+    assert.ok(item.width>34&&item.left>=0&&item.right<=392&&item.top>=0&&item.bottom<=844,
+      'Mobile tab must fit onscreen: '+JSON.stringify(item));
+  }
   await page.screenshot({path:path.join(screenshots,'mobile-home.png')});
   assert.deepEqual(errors,[],'No uncaught runtime errors allowed');
   console.log('Celestial V3 desktop, feature routes, command palette, and mobile smoke passed.');
