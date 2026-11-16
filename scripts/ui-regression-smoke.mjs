@@ -90,7 +90,7 @@ try{
  const loginTitle=loginSource.match(/<title>([^<]+)<\/title>/)?.[1]
    .replace(/&#(\d+);/g,(_,number)=>String.fromCodePoint(Number(number)));
  assert.match(loginTitle,/Celestial/,'Encoded source must preserve its browser title');
- assert.match(loginSource,/href="\/assets\/brightpath-icon\.svg"/);
+ assert.ok(loginSource.includes('href="/assets/celestial-star.svg"'));
  assert.match(loginSource,/<div id="root"><\/div>/);
  assert.match(loginSource,/\/boba\/dist\/assets\/auth-[a-zA-Z0-9_-]+\.js/);
  assert.doesNotMatch(loginSource,/<input|<form|data-aform|celestial-star|<section/);
