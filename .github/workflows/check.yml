@@ -2,7 +2,7 @@ name: Celestial checks
 
 on:
   push:
-    branches: [main, 'feature/**']
+    branches: [main, celestial-v3, 'feature/**']
   pull_request:
 
 jobs:
