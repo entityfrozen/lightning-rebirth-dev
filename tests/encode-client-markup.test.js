@@ -55,11 +55,11 @@ test('interpolated markup preserves Unicode, conditional content and evaluation 
   "const value=2;",
   "const html="+tick+"<main><h1>Welcome ♥ 🎮</h1><p>$"+"{next()} — $"+"{value*4}</p></main>"+tick+";",
   "JSON.stringify({html,calls})"
- ].join('\\n');
+ ].join('\n');
  const encoded=encodeMarkupSource(original,parseAst);
  assert.ok(encoded?.code);
  assert.doesNotMatch(encoded.code,/Welcome ♥/);
- assert.match(encoded.code,/String\\(\\(next\\(\\)\\)\\)/);
+ assert.ok(encoded.code.includes('String((next()))'));
  assert.equal(runInNewContext(encoded.code),runInNewContext(original));
 });
 
