@@ -28,13 +28,20 @@ jobs:
           else
             npx playwright install chromium
           fi
-      - name: Verify Scramjet and Chat in a real browser
-        run: node scripts/browser-smoke.mjs
+      - name: Verify current Boba UI and browser packaging
+        run: |
+          if [ "${{ github.head_ref || github.ref_name }}" = "celestial-boba-shell" ] || [ "${{ github.head_ref || github.ref_name }}" = "boba-source-hardening" ]; then
+            node scripts/boba-hardening-smoke.mjs
+          else
+            node scripts/browser-smoke.mjs
+          fi
       - name: Save browser screenshots
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: celestial-browser-screenshots
-          path: artifacts/browser-smoke/
+          path: |
+            artifacts/browser-smoke/
+            artifacts/boba-package/
           retention-days: 7
           if-no-files-found: ignore
