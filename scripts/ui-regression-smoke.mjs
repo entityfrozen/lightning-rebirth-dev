@@ -87,7 +87,9 @@ try{
  // The account route should have the same root-and-bundle source structure
  // as the signed-in Brightpath workspace. Form controls remain in the DOM.
  const loginSource=await (await page.request.get(base+'/login')).text();
- assert.match(loginSource,/<title>Brightpath/);
+ const loginTitle=loginSource.match(/<title>([^<]+)<\/title>/)?.[1]
+   .replace(/&#(\d+);/g,(_,number)=>String.fromCodePoint(Number(number)));
+ assert.match(loginTitle,/Brightpath/,'Encoded source must preserve its browser title');
  assert.match(loginSource,/href="\/assets\/brightpath-icon\.svg"/);
  assert.match(loginSource,/<div id="root"><\/div>/);
  assert.match(loginSource,/\/boba\/dist\/assets\/auth-[a-zA-Z0-9_-]+\.js/);
