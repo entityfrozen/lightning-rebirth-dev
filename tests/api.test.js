@@ -39,9 +39,9 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     const html=await homepage.text();
     const decodedTitle=html.match(/<title>([^<]+)<\/title>/)?.[1]
       .replace(/&#(\d+);/g,(_,number)=>String.fromCodePoint(Number(number)));
-    assert.equal(decodedTitle,'Celestial | Your space');
+    assert.equal(decodedTitle,'Asterfield Academy | Student Hub');
     assert.doesNotMatch(html,/Brightpath \| Learning Workspace/,'Production View Source should not include raw title copy');
-    assert.match(html,/\/boba\/dist\/assets\/app-/);
+    assert.match(html,/\/boba\/dist\/assets\/launch-/);
     for(const privateAsset of [
       '/boba/browser.js','/boba/shell.js','/boba/auth-shell.js',
       '/boba/uv-proxy.js','/boba/index.template.html',
@@ -50,14 +50,14 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
       const response=await fetch(url+privateAsset);
       assert.equal(response.status,404,privateAsset+' must not expose source code');
     }
-    const shippedApp=html.match(/src="(\/boba\/dist\/assets\/app-[^"]+\.js)"/)?.[1];
+    const shippedApp=html.match(/src="(\/boba\/dist\/assets\/launch-[^"]+\.js)"/)?.[1];
     assert.ok(shippedApp,'The compiled application entry must be present');
     assert.equal((await fetch(url+shippedApp)).status,200,'Compiled assets remain public');
     const loginPage=await fetch(url+'/login');
     assert.equal(loginPage.status,200);
     assert.match(await loginPage.text(),/\/boba\/dist\/assets\/auth-/);
     assert.doesNotMatch(html,/\/bundle\/main\.js/);
-    assert.match(html,/celestial-star\.svg/);
+    assert.match(html,/study-portal\.svg/);
     assert.doesNotMatch(html,/lightning-chan|mascotSprite|lightning-mark/);
     const appAsset=await fetch(url+'/bundle/main.js');
     assert.equal(appAsset.status,200);
