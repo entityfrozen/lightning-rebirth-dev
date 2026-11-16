@@ -4,7 +4,7 @@ import {resolve} from 'node:path';
 
 // Original class names remain in authoring code, not in the shipped bundle.
 // This is presentation obfuscation, not a security boundary.
-const selected=/\.(arcade-[A-Za-z0-9_-]+|cel-[A-Za-z0-9_-]+|celestial-[A-Za-z0-9_-]+)/g;
+const selected=/\.(wproxy|arcade-[A-Za-z0-9_-]+|cel-[A-Za-z0-9_-]+|celestial-[A-Za-z0-9_-]+)/g;
 const filePattern=/\/public\/boba\/(?:[^/]+\.js|(?:native|original)\.css)$/;
 const escaped=s=>s.replace(/[|\\{}()[\]^$+*?.]/g,'\\$&');
 
