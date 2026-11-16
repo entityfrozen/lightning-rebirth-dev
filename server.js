@@ -683,9 +683,9 @@ async function staticFile(req,res,url) {
   else if(filename==='/login')filename='/boba/auth.html';
   // A missed Scramjet service-worker interception must fail clearly rather
   // than silently serving index.html inside the browser iframe.
-  if(filename.startsWith('/~/sj/'))return fail(res,502,'Proxy worker did not intercept this navigation; reload the browser.');
+  if(filename.startsWith('/~/sj/'))return fail(res,502,'Browser engine could not open this navigation; reload and try again.');
   if(filename.startsWith('/uv/service/'))return fail(res,502,'Ultraviolet worker did not intercept this navigation; reload the browser.');
-  if(PROXY_VENDOR_ASSETS.some(([prefix])=>filename.startsWith(prefix))&&!liveIdentity(req.headers))return fail(res,401,'Sign in to use the browser proxy.');
+  if(PROXY_VENDOR_ASSETS.some(([prefix])=>filename.startsWith(prefix))&&!liveIdentity(req.headers))return fail(res,401,'Sign in to use the browser.');
   // Unknown asset/route requests are not Celestial homepage navigation.
   if(!path.extname(filename)&&!filename.startsWith('/assets/'))return fail(res,404,'Page not found');
   // Ship only the compiled UI assets. Authored modules, source maps and
