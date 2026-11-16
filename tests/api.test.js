@@ -57,7 +57,7 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.equal(loginPage.status,200);
     assert.match(await loginPage.text(),/\/boba\/dist\/assets\/auth-/);
     assert.doesNotMatch(html,/\/bundle\/main\.js/);
-    assert.match(html,/celestial-star\\.svg/);
+    assert.match(html,/celestial-star\.svg/);
     assert.doesNotMatch(html,/lightning-chan|mascotSprite|lightning-mark/);
     const appAsset=await fetch(url+'/bundle/main.js');
     assert.equal(appAsset.status,200);
