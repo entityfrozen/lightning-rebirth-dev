@@ -6,7 +6,7 @@ import {compactPageHTML} from './compact-boba-html.mjs';
 // Resolve filenames from Vite's manifest, not by guessing its content hashes.
 const root=resolve('public/boba');
 const manifest=JSON.parse(await readFile(resolve(root,'dist/.vite/manifest.json'),'utf8'));
-for(const [name,source] of [['index','src/boba-client.js'],['auth','src/boba-login.js']]){
+for(const [name,source] of [['index','src/boba-launch.js'],['auth','src/boba-login.js']]){
  const entry=manifest[source];
  if(!entry?.isEntry||!entry.file||!Array.isArray(entry.css)||!entry.css.length){
   throw Error('Missing Boba entry or stylesheet in Vite manifest: '+source);

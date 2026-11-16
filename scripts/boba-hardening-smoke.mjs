@@ -64,10 +64,13 @@ try{
  ])await expectPrivate(page.request,privatePath);
  const appSource=await (await page.request.get(origin+'/')).text();
  assert.doesNotMatch(appSource,/Brightpath \| Learning Workspace/);
- const appAsset=appSource.match(/src="(\/boba\/dist\/assets\/app-[a-zA-Z0-9_-]+\.js)"/)?.[1];
+ const appAsset=appSource.match(/src="(\/boba\/dist\/assets\/launch-[a-zA-Z0-9_-]+\.js)"/)?.[1];
  assert.ok(appAsset,'View Source should load a compiled hashed app entry');
  assert.equal((await page.request.get(origin+appAsset)).status(),200);
  await page.goto(origin+'/',{waitUntil:'domcontentloaded',timeout:30000});
+ assert.equal(await page.locator('#academyLanding').count(),1,'The academy is the first rendered screen');
+ assert.equal(await page.locator('#root[aria-busy="true"]').count(),1,'Workspace waits behind the introduction');
+ await page.locator('#academyLanding').waitFor({state:'detached',timeout:25000});
  // Page bootstrap may redirect to sign-in asynchronously; verify the title after it settles.
  await page.locator('input[name="username"]').fill('BobaAdmin');
  await page.locator('input[name="password"]').fill(password);
