@@ -28,7 +28,11 @@ export async function bootV3(){
     },
     chat:async root=>{
       const {mountChat}=await import('../chat.js');
-      return mountChat(root,user);
+      const result=mountChat(root,user);
+      // Retain the proven chat backend; remove the retired UI identity.
+      const heading=root.querySelector('.cel-chat-brand strong');
+      if(heading)heading.textContent='Celestial';
+      return result;
     },
     ai:async root=>{
       const {mountAsk}=await import('../native-views.js');
