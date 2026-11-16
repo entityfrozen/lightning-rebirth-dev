@@ -36,12 +36,19 @@ test('Arcade card buttons use stable numeric indices rather than exposing intern
  assert.doesNotMatch(markup,/b\.dataset\.game/);
 });
 
-test('Arcade startup calls the mount function exported by the game module',()=>{
+test('Arcade code and distributor fetch wait until someone opens Games',()=>{
  const entry=read('../public/boba/native.js');
  const games=read('../public/boba/games.js');
- assert.match(entry,/import\s*\{\s*mountArcade\s*\}\s*from\s*['"]\.\/games\.js['"]/);
+ const catalog=read('../public/boba/catalog-ui.js');
+ assert.doesNotMatch(entry,/^import\s*\{\s*mountArcade\s*\}\s*from\s*['"]\.\/games\.js['"]/m);
+ assert.match(entry,/import\(['"]\.\/games\.js['"]\)/);
+ assert.match(entry,/if\(id==='games'\)loadLibrary\(\)/);
+ assert.match(entry,/libraryLoaded=true/);
  assert.match(games,/export function mountArcade\s*\(/);
- assert.match(entry,/mountSafely\('Library',view\('games'\),\(\)=>mountArcade\(view\('games'\)\)\)/);
+ assert.match(entry,/mountArcade\(root\)/);
+ assert.match(games,/mountDistributorLibrary\(root/);
+ assert.match(catalog,/async function reload\(\)/);
+ assert.match(catalog,/reload\(\);/);
  assert.doesNotMatch(entry,/\bmountGames\s*\(/);
 });
 
