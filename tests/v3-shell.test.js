@@ -61,3 +61,13 @@ test('V3 auth visual redesign keeps all expected account form hooks',()=>{
   }
   assert.match(shell,/role="status"/);
 });
+
+test('V3 visual regression guards: premultiplied WebGL opacity, atomic section switches and horizontal phone dock',()=>{
+ const orbit=read('../public/boba/v3/orbit.js');
+ const css=read('../public/boba/v3/style.css');
+ const auth=read('../public/boba/v3/auth.css');
+ assert.match(orbit,/color\*1\.4\*alpha/,'WebGL output must premultiply RGB by alpha');
+ assert.match(css,/\.v3-view:not\(\.on\)\{opacity:0;visibility:hidden/);
+ assert.match(css,/\.v3-shell \.v3-sidebar\{flex-direction:row/);
+ assert.match(auth,/\.v3-auth-switch button\{\s*appearance:none!important/);
+});
