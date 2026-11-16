@@ -7,7 +7,7 @@ const main=read('src/main.jsx');
 const browser=read('src/Browser.jsx');
 const css=read('src/flare-shell.css');
 const cloak=read('src/Cloak.js');
-const html=read('public/index.html');
+const html=read('public/legacy.html');
 
 test('new-tab screen uses centered Search while retaining a working browser',()=>{
   assert.match(browser,/homeMode\?submitHome:submit/);

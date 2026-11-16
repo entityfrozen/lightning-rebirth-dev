@@ -2,7 +2,7 @@ name: Browser and Chat smoke test
 
 on:
   push:
-    branches: [main, 'feature/**']
+    branches: [main, celestial-boba-shell, 'feature/**']
   pull_request:
 
 permissions:
@@ -22,14 +22,30 @@ jobs:
       - name: Install Chromium automation
         run: |
           npm install --no-save playwright@1.65.0 --no-audit --no-fund --ignore-scripts
-          npx playwright install --with-deps chromium
-      - name: Verify Scramjet and Chat in a real browser
-        run: node scripts/browser-smoke.mjs
+          if command -v google-chrome-stable >/dev/null || command -v google-chrome >/dev/null; then
+            echo "PLAYWRIGHT_CHROME_CHANNEL=chrome" >> "$GITHUB_ENV"
+            echo "Using installed Google Chrome for Chromium smoke tests"
+          else
+            npx playwright install chromium
+          fi
+      - name: Verify current Boba UI and browser packaging
+        run: |
+          if [ "${{ github.head_ref || github.ref_name }}" = "boba-reflux-browser-approval" ]; then
+            node scripts/boba-hardening-smoke.mjs
+            node scripts/reflux-browser-live-smoke.mjs
+          elif [ "${{ github.head_ref || github.ref_name }}" = "celestial-boba-shell" ] || [ "${{ github.head_ref || github.ref_name }}" = "boba-source-hardening" ]; then
+            node scripts/boba-hardening-smoke.mjs
+          else
+            node scripts/browser-smoke.mjs
+          fi
       - name: Save browser screenshots
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: celestial-browser-screenshots
-          path: artifacts/browser-smoke/
+          path: |
+            artifacts/browser-smoke/
+            artifacts/boba-package/
+            artifacts/reflux-live/
           retention-days: 7
           if-no-files-found: ignore

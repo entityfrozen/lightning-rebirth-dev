@@ -1,0 +1,39 @@
+name: Home and Arcade UI smoke test
+
+on:
+  push:
+    branches: [main, celestial-boba-shell, 'feature/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build Celestial and run unit tests
+        run: npm install --no-audit --no-fund
+      - name: Install browser automation
+        run: |
+          npm install --no-save playwright@1.65.0 --no-audit --no-fund --ignore-scripts
+          if command -v google-chrome-stable >/dev/null || command -v google-chrome >/dev/null; then
+            echo "PLAYWRIGHT_CHROME_CHANNEL=chrome" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Verify Home, navigation and Arcade search
+        run: node scripts/ui-regression-smoke.mjs
+      - name: Save UI screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: celestial-ui-screenshots
+          path: artifacts/ui-regression/
+          retention-days: 7
+          if-no-files-found: ignore

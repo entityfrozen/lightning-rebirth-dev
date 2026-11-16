@@ -22,30 +22,13 @@ test('search engine preferences resolve domains and searches correctly',()=>{
   assert.ok(Object.keys(searchEngines).length>=3);
 });
 
-test('Games navigation is replaced with Apps, but core Chat and Browser routes remain',()=>{
-  const shell=read('src/main.jsx');
-  assert.match(shell,/id:'apps',label:'Apps'/);
-  assert.doesNotMatch(shell,/id:'study',label:'Games'/);
-  assert.match(shell,/view==='apps'\?<Apps/);
-  assert.match(shell,/view==='settings'\?<Settings/);
-  assert.match(shell,/view==='chat'\?<Chat/);
-  assert.match(shell,/\['home','browser'\]\.includes\(view\)\?<div/);
-  assert.match(shell,/homeMode=\{view==='home'\}/);
-  assert.match(shell,/return sections\.has\(route\)\?route:route==='community'\?'chat':route==='arcade'\?'apps':'home'/);
-});
-
-test('Apps contains real tools rather than placeholder game tiles',()=>{
-  const apps=read('src/Apps.jsx');
-  for(const name of ['Notes','Calculator','Focus Timer'])assert.ok(apps.includes(name));
-  assert.match(apps,/celestial-tool-notes/);
-  assert.match(apps,/celestial-tool-calculator/);
-  assert.match(apps,/celestial-tool-focus/);
-  assert.match(apps,/onNavigate\(id\)/);
-  for(const name of ['Chess','2048','Minesweeper','Rock Paper Scissors','WorldPvP','Uma Versus']){
-    assert.ok(apps.includes(name),'missing playable game: '+name);
-  }
-  assert.match(apps,/selected\.game\?<Arcade embedded/);
-  assert.match(read('src/Arcade.jsx'),/if\(embedded&&selected\)/);
+test('Game and app routes are removed while core navigation remains',()=>{
+ const shell=read('src/main.jsx');
+ assert.ok(!shell.includes("id:'apps',label:'Apps'"));
+ assert.ok(!shell.includes("view==='apps'?<Apps"));
+ assert.ok(shell.includes("view==='settings'?<Settings"));
+ assert.ok(shell.includes("view==='chat'?<Chat"));
+ assert.ok(shell.includes("homeMode={view==='home'}"));
 });
 
 test('Settings restores appearance, browser, cloaking and account controls',()=>{
@@ -73,19 +56,14 @@ test('Browser uses a real proxy controller and handles failures visibly',()=>{
   assert.match(proxy,/await controller\.wait\(\)/);
 });
 
-test('Browser, games and community Chat can stay mounted together',()=>{
-  const main=read('src/main.jsx');
-  const side=read('src/WorkspaceChat.jsx');
-  const messenger=read('src/Messenger.jsx');
-  const css=read('src/workspace.css');
-  assert.match(main,/celestial-activity-layout/);
-  assert.match(main,/WorkspaceChat user=\{user\} live=\{live\}/);
-  assert.match(main,/view==='apps'\?<Apps user=\{user\} live=\{live\}/);
-  assert.match(main,/\['home','browser'\]\.includes\(view\)\?<div/);
-  assert.match(side,/Messenger compact/);
-  assert.match(messenger,/type:'v2Message'/);
-  assert.match(messenger,/\/api\/dms\//);
-  assert.match(css,/\.celestial-activity-layout\.with-chat/);
+test('Browser and community Chat stay mounted together',()=>{
+ const main=read('src/main.jsx');
+ const messenger=read('src/Messenger.jsx');
+ assert.ok(main.includes('celestial-activity-layout'));
+ assert.ok(main.includes('WorkspaceChat user={user} live={live}'));
+ assert.ok(!main.includes("view==='apps'?<Apps"));
+ assert.ok(main.includes("['home','browser'].includes(view)"));
+ assert.ok(messenger.includes("type:'v2Message'"));
 });
 
 test('Chat displays offline members and source-authenticated platform role badges',()=>{

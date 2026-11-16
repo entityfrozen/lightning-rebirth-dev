@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { navigation, safeUrl, channels } from '../src/constants.js';
 
-test('Celestial keeps exactly four primary applications', () => {
-  assert.deepEqual(navigation.map(item => item.label), ['Arcade','Browser','Chat','AI']);
-  assert.deepEqual(navigation.map(item => item.id), ['arcade','browser','chat','ai']);
+test('Celestial navigation no longer advertises removed games or apps', () => {
+  assert.deepEqual(navigation.map(item => item.label), ['Browser','Chat','AI']);
+  assert.deepEqual(navigation.map(item => item.id), ['browser','chat','ai']);
 });
 
 test('browser address processing accepts only HTTP(S)', () => {

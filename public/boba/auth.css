@@ -1,0 +1,11 @@
+/* Only the Bolt account compatibility additions; original.css supplies the design. */
+.auth-page{position:relative;z-index:1;height:100dvh;overflow:auto;padding:20px}
+.auth-page .auth{flex-shrink:0}
+.auth-logo{width:64px;object-fit:contain}
+.auth .reveal{font-size:12px;color:var(--ink-3);font-weight:600}
+.auth .reveal:hover{color:var(--ink)}
+.auth .note{font-size:12px}
+.auth .seg button{white-space:nowrap}
+.auth [hidden]{display:none!important}
+.auth .msg{overflow-wrap:anywhere}
+@media(max-height:540px){.auth-page .auth{margin:12px auto}}

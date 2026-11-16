@@ -1,0 +1,48 @@
+
+/* Celestial-specific extensions to Boba's original stylesheet, not a replacement. */
+:root { --acc:#8a5631;--acc-ink:#fff }
+body {font-family:Inter,system-ui,sans-serif}
+#views {background:rgba(255,255,255,.28)}
+#celestialWorkspace{width:100%;height:100%;display:block;border:0;background:transparent}
+.dock{justify-content:flex-start}
+.dk{border:0;cursor:pointer;background:transparent;font-family:inherit}
+.dk svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round}
+.dk.on svg{stroke:var(--acc-ink)}
+.dk .t{display:grid;place-items:center}
+.dk .tip{position:absolute;right:calc(100% + 10px);top:50%;transform:translate(7px,-50%);opacity:0;pointer-events:none;
+ padding:8px 12px;border-radius:11px;background:var(--ink);color:var(--base);font-size:11px;font-weight:650;white-space:nowrap;
+ box-shadow:var(--sh);transition:opacity .18s,transform .22s var(--spring)}
+.dk:hover .tip,.dk:focus-visible .tip{opacity:1;transform:translate(0,-50%)}
+.dk.is-profile{margin-top:auto}
+.dk.is-profile .t{background:linear-gradient(135deg,#b0c8ff,#b8a1e0);color:#fff;font-weight:800}
+.dk.is-profile.on .t{background:var(--acc)}
+.cel-tagline{display:inline-flex;gap:7px;font-size:10px;letter-spacing:.2em;color:var(--ink-3);font-weight:800;margin-bottom:30px}
+.cel-headline{font-size:clamp(25px,3.1vw,46px);line-height:1.15;letter-spacing:-.052em;font-weight:750;margin:37px 0 10px}
+.cel-headline em{font-family:Georgia,serif;font-weight:400;color:var(--acc)}
+.cel-subtitle{font-size:14px;color:var(--ink-2);line-height:1.6;margin:0 0 26px}
+.cel-search{max-width:610px;width:100%;border-radius:20px;padding:8px 10px 8px 17px;display:flex;align-items:center;gap:12px}
+.cel-search-icon{font-size:28px;font-weight:400;color:var(--ink-3)}
+.cel-search input{flex:1;min-width:0;border:0;background:none;color:var(--ink);font:500 14px Inter,system-ui;outline:none}
+.cel-search input::placeholder{color:var(--ink-3)}
+.cel-search button{border:0;display:grid;place-items:center;width:41px;height:41px;border-radius:14px;background:var(--acc);color:var(--acc-ink);font-size:22px;cursor:pointer;transition:transform .35s var(--spring)}
+.cel-search button:hover{transform:scale(1.06)}
+.cel-quick{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+.cel-quick button{cursor:pointer;display:flex;align-items:center;gap:18px;padding:10px 14px;border:1px solid var(--hair-2);
+ border-radius:100px;background:var(--g1);color:var(--ink-2);font:600 11px Inter,system-ui;transition:background .2s,transform .4s var(--spring)}
+.cel-quick button:hover{background:var(--g2);transform:translateY(-3px);color:var(--ink)}
+.cel-quick span{color:var(--acc);font-size:15px}
+.cel-home-foot{position:relative;font-weight:650;font-size:10px;letter-spacing:.14em;color:var(--ink-3);padding:0 0 1px 28px}
+.cel-home-foot span{margin:0 8px;color:var(--acc)}
+.cel-home-foot{margin-top:auto}
+.cel-workspace-caption{font-size:12px}
+@media(max-width:560px){
+ .dk .tip{display:none}
+ .dk.is-profile{margin-left:auto;margin-top:0}
+ .dk{flex:0 0 44px}
+ .hcol{margin:auto 0 40px 8px;max-width:calc(100% - 12px)}
+ .cel-headline{margin-top:30px}
+ .cel-home-foot{font-size:8px;padding-left:9px}
+ .cel-search{border-radius:15px}
+ .cel-quick button{padding:9px 11px}
+}
+@media(prefers-reduced-motion:reduce){.dk .tip,.cel-search button,.cel-quick button{transition:none}}

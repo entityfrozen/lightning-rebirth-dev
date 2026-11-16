@@ -1,14 +1,14 @@
+import {openAboutBlank} from '../public/boba/about-blank.js';
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {Icon} from './icons.jsx';
 import {
-  Grid20Filled,MusicNote220Filled,Cloud20Filled,Settings20Filled,Globe20Filled,Chat20Filled
+  MusicNote220Filled,Cloud20Filled,Settings20Filled,Globe20Filled,Chat20Filled
 } from '@fluentui/react-icons';
 import {api,readLocal,saveLocal} from './constants.js';
 import {browserAddress,browserPreferences} from './Preferences.js';
 import {createProxyFrame,disposeProxyFrame} from './BoltProxy.js';
 
 const shortcuts=[
-  {id:'apps',name:'apps',icon:Grid20Filled},
   {id:'browser',name:'browser',icon:Globe20Filled},
   {id:'music',name:'music',icon:MusicNote220Filled},
   {id:'cloud',name:'AI',icon:Cloud20Filled},
@@ -16,7 +16,6 @@ const shortcuts=[
 ];
 const homeDestinations=[
   {id:'browser',label:'Browser',detail:'Search & open tabs',icon:Globe20Filled},
-  {id:'apps',label:'Apps',detail:'Games and tools',icon:Grid20Filled},
   {id:'chat',label:'Chat',detail:'Talk to members',icon:Chat20Filled},
   {id:'cloud',label:'AI',detail:'Ask something',icon:Cloud20Filled}
 ];
@@ -69,9 +68,8 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
       try{
         if(!user)throw Error('Sign in to browse in Celestial.');
         if(!window.isSecureContext)throw Error('The browser needs a secure HTTPS connection.');
-        if(!window.crossOriginIsolated)throw Error(window.self!==window.top
-          ? 'Scramjet needs its own isolated browser tab. Chat and Apps work here, but websites must open in standalone Celestial.'
-          : 'Browser isolation is not enabled. Reload Celestial once; if this persists, the server needs a configuration update.');
+        // Probe the real Scramjet controller instead of rejecting an embedded
+        // page solely because crossOriginIsolated is false.
         const status=await api('/api/browser/status');
         if(!status.authenticated)throw Error('Sign in to browse in Celestial.');
         if(!status.proxy)throw Error('The browser engine is unavailable on this server.');
@@ -131,7 +129,8 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
       <div><button onClick={()=>register(tab.id,{retry:true})}>Try again</button>
       {window.self!==window.top&&!window.crossOriginIsolated&&
         <a href={location.origin+'/#browser'} target="_blank" rel="noopener noreferrer">Open full Celestial browser ↗</a>}
-      <a href={tab.url} target="_blank" rel="noopener noreferrer">Open site directly ↗</a></div>
+      <a href={tab.url} target="_blank" rel="noopener noreferrer"
+        onClick={event=>{event.preventDefault();const result=openAboutBlank(tab.url,{title:'Website'});if(!result.ok)alert(result.message);}}>Open site directly ↗</a></div>
     </div>}
   </div>;
 }
@@ -357,7 +356,8 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null,onOpe
           aria-expanded={showBookmarks} title="Bookmarks">▤</button>
         <button onClick={()=>setMenuOpen(open=>!open)} aria-label="Browser menu"
           aria-expanded={menuOpen} title="Browser tools">⋯</button>
-        {visibleUrl&&<a href={visibleUrl} target="_blank" rel="noopener noreferrer" title="Open directly" aria-label="Open directly"><Icon name="external" size={16}/></a>}
+        {visibleUrl&&<a href={visibleUrl} target="_blank" rel="noopener noreferrer" title="Open Direct in about:blank" aria-label="Open directly"
+        onClick={event=>{event.preventDefault();const result=openAboutBlank(visibleUrl,{title:'Website'});if(!result.ok)alert(result.message);}}><Icon name="external" size={16}/></a>}
       </div>
       {showBookmarks&&<div className="celestial-browser-bookmark-tray">
         <strong>Saved sites</strong>

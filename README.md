@@ -2,9 +2,9 @@
 
 Celestial opens into a **split homepage** after sign-in: the original main
 page and browser search stay on the left, with an optional Celestial AI sidebar.
-**Community Chat can now open beside your browser or any game** without
+**Community Chat can now open beside your browser** without
 reloading the activity you are using. On smaller screens, Chat becomes an
-overlay you can close. The separate Browser, Apps, Chat and AI routes remain.
+overlay you can close. The Browser, Chat, AI and Settings sections remain.
 A Celestial account is required before the workspace can be opened.
 
 The interface mirrors the supplied Xylora shell rather than a card dashboard:
@@ -14,7 +14,7 @@ assistant lives in its own glass side panel, not over the scenery. The default
 backdrop is a pine forest under violet-blue northern lights,
 with icy teal glass controls.
 
-The dock opens Home, Apps, Browser, AI, Music and Chat, with Settings at the bottom.
+The native dock opens Home, Browser, Chat and AI, with Settings, Account and administrator tools where permitted.
 The bottom Credits/Community pills are removed; the account control remains.
 
 The project was rebuilt using **Celestial v8** as a base, with substantial
@@ -61,17 +61,22 @@ capabilities; some websites still require a direct tab. The proxy is an
 advanced integration, not a full Chromium process. All proxy access requires a
 valid Celestial account session.
 
-### Apps
+### Browser and tab appearance
 
-The dedicated Games navigation and oversized card gallery were replaced with
-a focused App Library. It has functioning launchers for Browser, Chat, AI and
-Music, plus Notes, Calculator and Focus Timer.
+The native Browser uses Scramjet with Wisp and a signed-in Celestial account.
+Use **Open Direct** in the browser toolbar to try the current site in an
+`about:blank` tab wrapper; browsers may prohibit popups or refuse to frame
+particular websites. **Open standalone browser** opens a regular Celestial tab,
+which supports the cross-origin isolation Scramjet requires.
 
-**All six games are still playable inside Apps:** Chess, 2048, Minesweeper,
-Rock Paper Scissors, WorldPvP and Uma Versus. Each opens inside the clean
-Apps play surface while a compact live Chat panel can remain alongside it.
-The original game engines and saved multiplayer records were not removed.
-The focus timer runs only while Celestial is open.
+In Settings → Tab appearance, select a title/favicon and choose
+**Open cloaked tab** to open Celestial in an `about:blank` wrapper.
+Tab appearance does not alter the site's actual URL, browser history or network
+activity. An embedded wrapper is not guaranteed to support Scramjet.
+
+The Games/Apps frontend and game-specific backend engines, rankings, catalogs
+and source integrations have been removed. Historical messages and accounts
+remain preserved on the attached data volume.
 
 ### Chat
 
@@ -81,10 +86,9 @@ role badges, DM threads, replies, reactions and editing. The styling uses
 quiet graphite panels, a restrained icy accent, compact typography, and
 reliable hierarchy rather than oversized glass cards.
 
-- **Multitasking panel:** use the Chat button on the Browser/Home/Apps page to
-  keep channels, private messages and community members visible while you
-  browse or play. It uses the same authenticated WebSocket as full Chat.
-- Hide the panel without interrupting an open website or local game; the
+- **Multitasking panel:** use the Chat button beside Home/Browser to
+  keep channels, private messages and community members visible while browsing. It uses the same authenticated WebSocket as full Chat.
+- Hide the panel without interrupting an open website; the
   toggle is remembered locally.
 - Authenticated live WebSocket connection with reconnect
 - Community servers and multiple text channels
@@ -164,9 +168,6 @@ when entering or leaving.
 control in the header. Messages, members, role badges, DMs and channels use
 the existing authenticated community services.
 
-**Apps:** fullscreen control for playable games and the built-in utilities.
-Existing game state remains mounted during the transition.
-
 **Settings & Administration:** separate settings categories, discoverable
 shortcuts, palette previews, browser preferences, account data and a
 dedicated administration tab for staff. Account requests are searchable,
@@ -178,9 +179,9 @@ existing server database or conversation history.
 ## Visual direction
 
 The QOL workspace is intentionally calmer than the old glass-card UI:
-lightweight browser tabs, an uncluttered site canvas, a focused playable game
-surface and a narrow dark Chat rail. The photo/aurora background remains on
-the homepage, while active websites and games get legible, neutral surfaces.
+lightweight browser tabs, an uncluttered site canvas, and a narrow dark Chat rail.
+The photo/aurora background remains on the homepage while active websites get
+legible, neutral surfaces.
 
 Visual screenshots and real-world website compatibility still require a
 browser-based smoke test. Scramjet is experimental and some sites may not work,
@@ -202,7 +203,7 @@ device.
 ## Manual account approval and legacy data
 
 Registration now submits a **pending request**. A new user receives no session
-and cannot use Browser, Games, Chat or AI until an authorized administrator
+and cannot use Browser, Chat or AI until an authorized administrator
 approves that request. Rejected requests remain disabled. Existing approved
 Celestial or Bolt members are not forced to reapply. Existing Bolt accounts
 that were already pending or disabled stay that way.
@@ -274,9 +275,8 @@ iframe fallback, as many modern sites reject embedding.
   floating card. It overrides the older forest stylesheet without replacing
   the functional app-specific styles.
 - `src/main.jsx`: navigation, the optional AI home sidebar, account and workspace
-- `src/Apps.jsx`: functional app library and built-in tools
 - `src/Settings.jsx`: full settings experience including tab cloaking
-- `src/qol.css`: Apps, Settings, Browser and Chat styling
+- `src/qol.css`: Settings, Browser and Chat styling
 - `src/Browser.jsx`: centered search, five shortcut pills and browser tabs.
 - `src/ForestParticles.jsx`: optional low-power WebGL fireflies. Motion can
   be reduced under Settings.
@@ -299,15 +299,14 @@ user data or live sessions.
 - `src/main.jsx`: login gate, split homepage, dock, settings and account
 - `src/xylora.css`: Celestial palette, background and faithful edge dock
 - `src/home-split.css`: responsive main page + glass AI sidebar
-- `src/forest.css`: forest design, game/gallery and responsive layouts
+- `src/forest.css`: forest design and responsive layouts
 - `src/AccountReview.jsx`: account approval and rejection interface
 - `legacy-data.js`: original Bolt account and chat importer with backup
 - `src/Browser.jsx`, `src/BoltProxy.js`: browser UI and proxy adapter
-- `src/Arcade.jsx`: six playable games
 - `src/Chat.jsx`, `src/useBoltLive.js`: community UI and WebSocket state
 - `src/AI.jsx`: compact AI sidebar, full chat history and authenticated requests
 - `server.js`: Celestial accounts, API, proxy, AI and real-time hooks
-- `live.js`, `community-v2.js`, `chess-ai.js`: Bolt-origin game/social engine
+- `live.js`, `community-v2.js`: authenticated community messaging and moderation
 - `ai-provider.js`, `ai-stream.js`: Bolt-origin NVIDIA completion engine
 
 ## Deploying

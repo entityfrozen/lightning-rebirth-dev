@@ -46,7 +46,7 @@ test('old Bolt accounts and chat servers remain accessible after upgrading', {ti
     await writeFile(path.join(dir,'bolt.json'),oldState);
     await writeFile(path.join(dir,'lightning-v2-communities.json'),oldCommunities);
     server=spawn(process.execPath,['server.js'],{cwd:root,env:{
-      ...process.env,DISABLE_WEB_PROXY:'1',BOLT_DATA_DIR:dir,LIGHTNING_DATA_FILE:'',
+      ...process.env,RAILWAY_VOLUME_MOUNT_PATH:'',DISABLE_WEB_PROXY:'1',BOLT_DATA_DIR:dir,LIGHTNING_DATA_FILE:'',
       BOLT_ADMIN_USER:'',BOLT_ADMIN_PASSWORD:'',PORT:String(port),
       OPENAI_API_KEY:'',NVIDIA_API_KEY:''
     },stdio:'pipe'});
