@@ -36,20 +36,15 @@ test('Arcade card buttons use stable numeric indices rather than exposing intern
  assert.doesNotMatch(markup,/b\.dataset\.game/);
 });
 
-test('Arcade code and distributor fetch wait until someone opens Games',()=>{
+test('Retired Library code remains available but is not loaded or mounted',()=>{
  const entry=read('../public/boba/native.js');
  const games=read('../public/boba/games.js');
- const catalog=read('../public/boba/catalog-ui.js');
- assert.doesNotMatch(entry,/^import\s*\{\s*mountArcade\s*\}\s*from\s*['"]\.\/games\.js['"]/m);
- assert.match(entry,/import\(['"]\.\/games\.js['"]\)/);
- assert.match(entry,/if\(id==='games'\)loadLibrary\(\)/);
- assert.match(entry,/libraryLoaded=true/);
- assert.match(games,/export function mountArcade\s*\(/);
- assert.match(entry,/mountArcade\(root\)/);
- assert.match(games,/mountDistributorLibrary\(root/);
- assert.match(catalog,/async function reload\(\)/);
- assert.match(catalog,/reload\(\);/);
- assert.doesNotMatch(entry,/\bmountGames\s*\(/);
+ const home=read('../public/boba/home.js');
+ assert.doesNotMatch(entry,/import\\(['"]\\.\\/games\\.js['"]\\)/);
+ assert.doesNotMatch(entry,/mountArcade\\(/);
+ assert.doesNotMatch(entry,/\\['games','Library'/);
+ assert.doesNotMatch(home,/\\['games','Library'/);
+ assert.match(games,/export function mountArcade\\s*\\(/);
 });
 
 test('Distributor Canvas cards retain neutral accessible names even when titles contain game',()=>{
