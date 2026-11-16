@@ -39,30 +39,6 @@ async function start(){
  const browser=mountSafely('Browser',view('browser'),()=>mountBrowser(view('browser')))||{tabs:[],navigate(){},available:false};
  const open=url=>{navigate('browser');browser.navigate(url,true)};
  mountSafely('Home',view('home'),()=>mountHome(view('home'),user,navigate,open));
- // Library is a separate Vite chunk. Its JS, distributor catalog request,
- // and game images do not load until someone actually opens the Games tab.
- let libraryLoaded=false,libraryTask=null;
- const loadLibrary=()=>{
-  if(libraryLoaded||libraryTask)return libraryTask;
-  const root=view('games');
-  root.innerHTML='<div class="native-start-error" role="status">Loading library…</div>';
-  libraryTask=import('./games.js').then(({mountArcade})=>{
-   mountSafely('Library',root,()=>mountArcade(root));
-   libraryLoaded=true;
-  }).catch(error=>{
-   console.error('Library download failed:',error);
-   root.replaceChildren();
-   const retry=document.createElement('button');
-   retry.type='button';retry.className='btn s';
-   retry.textContent='Retry loading library';
-   retry.onclick=()=>{libraryTask=null;loadLibrary()};
-   const message=document.createElement('p');
-   message.className='native-start-error';
-   message.textContent='Could not load the game library.';
-   root.append(message,retry);
-  });
-  return libraryTask;
- };
  function navigate(id){
   if(!items.some(x=>x[0]===id))id='home';
   current=id;
@@ -71,7 +47,6 @@ async function start(){
   for(const el of views.querySelectorAll('.view')){const on=el.dataset.view===viewMarker(active);el.classList.toggle('on',on);el.setAttribute('aria-hidden',String(!on));el.inert=!on}
   for(const el of dock.querySelectorAll('.dk')){const on=el.dataset.section===viewMarker(id);el.classList.toggle('on',on);el.setAttribute('aria-current',on?'page':'false')}
   if(id==='browser'&&browser.available!==false&&!browser.tabs.length) $('[data-wnew]')?.click();
-  if(id==='games')loadLibrary();
   if(id==='settings')paintSettings();
   if(id==='admin')loadAdmin();
   // Short public URL: page selection stays in memory rather than the address bar.
