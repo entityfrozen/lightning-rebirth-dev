@@ -56,7 +56,7 @@ test('Both proxy engines use separate service workers and transports',()=>{
  assert.ok(uv.includes('new BareMux.BareMuxConnection'));
  assert.ok(uv.includes("setTransport('/epoxy/index.mjs'"));
  assert.ok(sj.includes('/bootstrap-init.js'));
- assert.ok(browser.includes('data-proxy-mode'));
+ assert.ok(browser.includes('data-engine-mode'));
  assert.ok(browser.includes('createUltravioletFrame'));
 });
 
