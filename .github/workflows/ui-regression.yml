@@ -2,7 +2,7 @@ name: Home and Arcade UI smoke test
 
 on:
   push:
-    branches: [main, celestial-boba-shell, 'feature/**']
+    branches: [main, celestial-boba-shell, celestial-v3, 'feature/**']
   pull_request:
 
 permissions:
@@ -28,7 +28,12 @@ jobs:
             npx playwright install chromium
           fi
       - name: Verify Home, navigation and Arcade search
-        run: node scripts/ui-regression-smoke.mjs
+        run: |
+          if [ "${{ github.head_ref || github.ref_name }}" = "celestial-v3" ]; then
+            node scripts/v3-ui-smoke.mjs
+          else
+            node scripts/ui-regression-smoke.mjs
+          fi
       - name: Save UI screenshots
         uses: actions/upload-artifact@v4
         if: always()
