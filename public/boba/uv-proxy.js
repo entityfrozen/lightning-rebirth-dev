@@ -48,7 +48,17 @@ export async function getUltravioletEngine(){
   }
   const connection=new BareMux.BareMuxConnection('/baremux/worker.js');
   const wisp=(location.protocol==='https:'?'wss:':'ws:')+'//'+location.host+'/wisp/';
-  await withTimeout(connection.setTransport('/epoxy/index.mjs',[{wisp}]),'Connecting Ultraviolet transport',25000);
+  // Reflux wraps the Epoxy BareMux transport, adding plugin middleware.
+  // Keep Epoxy as a fallback: one broken middleware module should not
+  // prevent people from opening games or using the browser.
+  try{
+   await withTimeout(connection.setTransport('/reflux/index.mjs',[{base:'/epoxy/index.mjs',wisp}]),
+    'Connecting Ultraviolet through Reflux',15000);
+  }catch(error){
+   console.warn('Reflux unavailable; using Epoxy directly:',error);
+   await withTimeout(connection.setTransport('/epoxy/index.mjs',[{wisp}]),
+    'Connecting Ultraviolet transport',25000);
+  }
   return {
    encode(url){
     const parsed=new URL(url);
