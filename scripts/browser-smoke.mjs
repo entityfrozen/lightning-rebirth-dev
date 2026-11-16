@@ -113,7 +113,7 @@ try{
   await boba.locator('input[name="password"]').fill(password);
   await boba.locator('form button[type="submit"]').click();
   await boba.locator('nav#dock .dk').first().waitFor({timeout:25000});
-  assert.equal(await boba.locator('#dock .dk').count(),8);
+  assert.equal(await boba.locator('#dock .dk').count(),7);
   await boba.locator('[data-section="s6"]').click();
   await boba.locator('[data-view="s6"].on [data-nvidia]').filter({hasText:'Not set'}).waitFor({timeout:10000});
   await boba.locator('[data-view="s6"] input[name="nvidia"]').fill('test-nvidia-not-a-real-key');
@@ -128,52 +128,12 @@ try{
   assert.equal(await boba.locator('script[src="/boba/native.js"],link[href="/boba/original.css"]').count(),0);
   assert.equal(await boba.locator('script[src*="/boba/dist/assets/app-"]').count(),1);
   assert.equal(await boba.locator('[data-section="apps"]').count(),0);
-  assert.equal(await boba.locator('[data-section="s2"]').count(),1);
+  assert.equal(await boba.locator('[data-section="s2"]').count(),0);
   await boba.locator('[data-section="s0"]').click();
   await boba.locator('[data-view="s0"].on main header img').waitFor({timeout:10000});
   assert.equal(await boba.locator('[data-view="s1"].on').count(),0,'Home must not be Browser');
-  await boba.locator('[data-section="s2"]').click();
-  await boba.locator('button[data-index]').filter({has:boba.locator('strong', {hasText:'2048'})}).click();
-  assert.equal(await boba.locator('[data-board][role="group"] [data-value]').count(),16);
-  await boba.keyboard.press('ArrowLeft');
-  await boba.locator('[data-back]').click();
-  await boba.locator('button[data-index]').filter({has:boba.locator('strong', {hasText:'Tic Tac Toe'})}).click();
-  assert.equal(await boba.locator('[data-board] [data-pos]').count(),9);
-  await boba.locator('[data-back]').click();
-  await boba.locator('button[data-index]').filter({has:boba.locator('strong', {hasText:'Rock Paper Scissors'})}).click();
-  assert.equal(await boba.locator('[data-stage] [data-pick]').count(),3);
-  await boba.locator('[data-back]').click();
-  // Verify Arcade's Scramjet mode uses the actual service worker, not a direct iframe.
-  await boba.locator('[data-view="s2"] button[data-entry-index]').first().waitFor({timeout:20000});
-  await boba.locator('[data-view="s2"] button[data-entry-index]').first().click();
-  const arcadeMode=boba.locator('[data-view="s2"] select[aria-label="Embedding mode"]');
-  await arcadeMode.waitFor({timeout:10000});
-  assert.equal(await arcadeMode.inputValue(),'proxy','Arcade should default to Scramjet');
-  await boba.waitForFunction(()=>{
-    const frame=document.querySelector('[data-view="s2"] iframe[title]');
-    return !!frame?.src?.includes('/~/sj/');
-  },null,{timeout:45000}).catch(async error=>{
-    const state=await boba.evaluate(async()=>{
-      const arcade=document.querySelector('[data-view="s2"]');
-      const frame=arcade?.querySelector('iframe[title]');
-      const registrations=await navigator.serviceWorker.getRegistrations();
-      return {
-        mode:arcade?.querySelector('select[aria-label="Embedding mode"]')?.value,
-        source:arcade?.querySelector('select[aria-label="Choose source"]')?.value,
-        iframeSrc:frame?.src||null,
-        messages:[...(arcade?.querySelectorAll('[role="status"]')||[])].map(el=>el.textContent),
-        workers:registrations.map(r=>({scope:r.scope,active:r.active?.scriptURL||null})),
-        controlled:!!navigator.serviceWorker.controller
-      };
-    });
-    throw Error('Arcade Scramjet iframe did not initialize: '+JSON.stringify(state)+'; '+error.message);
-  });
-  await arcadeMode.selectOption('ultraviolet');
-  await boba.waitForFunction(()=>{
-    const frame=document.querySelector('[data-view="s2"] iframe[title]');
-    return !!frame?.src?.includes('/uv/service/');
-  },null,{timeout:45000});
-  await boba.locator('[data-view="s2"] [data-back]').click();
+  // The retired Games/Library tab no longer belongs in the Boba dock.
+  assert.equal(await boba.locator('[data-section="s2"],[data-view="s2"]').count(),0);
   await boba.locator('[data-section="s4"]').click();
   assert.equal(await boba.locator('[data-effort]').inputValue(),'instant');
   assert.equal(new URL(boba.url()).pathname,'/','Signed-in Celestial should use the root URL');
