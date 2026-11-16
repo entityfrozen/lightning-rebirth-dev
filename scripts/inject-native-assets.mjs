@@ -1,18 +1,7 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 
-// Production HTML remains semantic and accessible, but exposes no inline UI
-// templates or human-readable page copy in View Source. The browser decodes
-// character references before constructing the document tree.
-export const entityEncode=value=>[...value].map(char=>'&#'+char.codePointAt(0)+';').join('');
-export function compactPageHTML(html){
- return html
-  .replace(/<title>([^<>]*)<\/title>/g,(_,text)=>'<title>'+entityEncode(text)+'</title>')
-  .replace(/(<meta\b[^>]*\b(?:name="description"|property="og:(?:title|description)")[^>]*\bcontent=")([^"]*)(")/g,
-   (_,before,value,after)=>before+entityEncode(value)+after)
-  .replace(/>\s+</g,'><')
-  .trim()+'\n';
-}
+import {compactPageHTML} from './compact-boba-html.mjs';
 
 // Resolve filenames from Vite's manifest, not by guessing its content hashes.
 const root=resolve('public/boba');
