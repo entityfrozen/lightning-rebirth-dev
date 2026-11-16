@@ -20,6 +20,7 @@ export default defineConfig({
   emptyOutDir:true,
   rollupOptions:{
    input:{
+    launch:resolve('src/boba-launch.js'),
     app:resolve('src/boba-client.js'),
     auth:resolve('src/boba-login.js')
    },
