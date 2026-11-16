@@ -85,15 +85,15 @@ try{
   contentType:'text/html',body:'<!doctype html><title>Vault Fixture</title><h1>Game launched</h1>'
  }));
  // The account route should have the same root-and-bundle source structure
- // as the signed-in Brightpath workspace. Form controls remain in the DOM.
+ // as the signed-in Celestial workspace. Form controls remain in the DOM.
  const loginSource=await (await page.request.get(base+'/login')).text();
  const loginTitle=loginSource.match(/<title>([^<]+)<\/title>/)?.[1]
    .replace(/&#(\d+);/g,(_,number)=>String.fromCodePoint(Number(number)));
- assert.match(loginTitle,/Brightpath/,'Encoded source must preserve its browser title');
- assert.match(loginSource,/href="\/assets\/brightpath-icon\.svg"/);
+ assert.match(loginTitle,/Celestial/,'Encoded source must preserve its browser title');
+ assert.ok(loginSource.includes('href="/assets/celestial-star.svg"'));
  assert.match(loginSource,/<div id="root"><\/div>/);
  assert.match(loginSource,/\/boba\/dist\/assets\/auth-[a-zA-Z0-9_-]+\.js/);
- assert.doesNotMatch(loginSource,/<input|<form|data-aform|celestial-star|<section/);
+ assert.doesNotMatch(loginSource,/<input|<form|data-aform|<section/);
  await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:30000});
  await page.locator('input[name="username"]').fill('UIAdmin');
  await page.locator('input[name="password"]').fill(password);
@@ -175,20 +175,20 @@ try{
  assert.equal(await home.locator('nav[aria-label="Quick access"] button').count(),3);
  // Guard against a rebrand accidentally replacing the original star art.
  const starIcon=home.locator('header img').first();
- assert.equal(await starIcon.getAttribute('src'),'/assets/brightpath-star.svg');
+ assert.equal(await starIcon.getAttribute('src'),'/assets/celestial-star.svg');
  await page.waitForFunction(()=>{
   const img=document.querySelector('[data-view="s0"].on header img');
   return !!img?.complete&&img.naturalWidth>0;
  },null,{timeout:10000});
  const dockStar=page.locator('#dock [data-section="s0"] img');
- assert.equal(await dockStar.getAttribute('src'),'/assets/brightpath-star.svg');
+ assert.equal(await dockStar.getAttribute('src'),'/assets/celestial-star.svg');
  await page.waitForFunction(()=>{
   const img=document.querySelector('#dock [data-section="s0"] img');
   return !!img?.complete&&img.naturalWidth>0;
  },null,{timeout:10000});
  const icon=await page.locator('link[rel="icon"]').getAttribute('href');
- assert.equal(new URL(icon,base).pathname,'/assets/brightpath-icon.svg');
- for(const asset of ['/assets/brightpath-star.svg','/assets/brightpath-icon.svg']){
+ assert.equal(new URL(icon,base).pathname,'/assets/celestial-star.svg');
+ for(const asset of ['/assets/celestial-star.svg']){
   const response=await page.request.get(base+asset);
   assert.equal(response.status(),200,asset+' must be available');
   assert.match(await response.text(),/<svg\s/);
@@ -201,7 +201,7 @@ try{
  const documentSource=await (await page.request.get(base+'/')).text();
  assert.match(documentSource,/<title>&#/);
  assert.doesNotMatch(documentSource,/Brightpath \| Learning Workspace/);
- assert.doesNotMatch(documentSource,/data-view=["']games|celestial-star\.svg|CELESTIAL ORIGINALS/i);
+ assert.doesNotMatch(documentSource,/data-view=["']games|CELESTIAL ORIGINALS/i);
  assert.match(documentSource,/\/boba\/dist\/assets\/app-[a-zA-Z0-9_-]+\.js/);
  assert.doesNotMatch(documentSource,/src=["']\/boba\/(?:native|games|catalog-ui)\.js/);
  assert.equal(await page.locator('[data-view="s2"]').count(),0,

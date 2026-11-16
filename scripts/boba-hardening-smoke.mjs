@@ -68,11 +68,12 @@ try{
  assert.ok(appAsset,'View Source should load a compiled hashed app entry');
  assert.equal((await page.request.get(origin+appAsset)).status(),200);
  await page.goto(origin+'/',{waitUntil:'domcontentloaded',timeout:30000});
- assert.match(await page.title(),/Brightpath/,'HTML entity encoding must not change rendered title');
+ // Page bootstrap may redirect to sign-in asynchronously; verify the title after it settles.
  await page.locator('input[name="username"]').fill('BobaAdmin');
  await page.locator('input[name="password"]').fill(password);
  await page.locator('form button[type="submit"]').click();
  await page.locator('#dock [data-section="s0"]').waitFor({timeout:25000});
+ assert.match(await page.title(),/Celestial/,'The signed-in workspace should use Celestial branding');
  assert.equal(await page.locator('#dock .dk').count(),7);
  assert.equal(await page.locator('#dock [data-section="s2"]').count(),0);
  const home=page.locator('[data-view="s0"].on');
@@ -85,7 +86,11 @@ try{
  // Reopen each tool through the actual dock. Bundled labels still render.
  await page.locator('#dock [data-section="s1"]').click();
  await page.locator('[data-view="s1"].on [data-omni]').waitFor({timeout:15000});
- assert.equal(await page.locator('[data-proxy-mode]').count(),1);
+ assert.equal(await page.locator('[data-engine-mode]').count(),1);
+ assert.equal(await page.locator('[data-engine-mode]').inputValue(),'ultraviolet','Reflux should be the default browsing engine');
+ assert.equal(await page.locator('[data-engine-mode]').getAttribute('aria-label'),'Browsing engine');
+ assert.equal(await page.locator('[data-engine-mode] option:checked').textContent(),'Reflux');
+ assert.equal(await page.locator('[data-view="s1"].on').getByText('Proxy',{exact:true}).count(),0);
  await page.screenshot({path:path.join(shots,'boba-browser.png')});
  await page.locator('#dock [data-section="s3"]').click();
  const chat=page.locator('[data-view="s3"].on');
@@ -101,8 +106,22 @@ try{
  await page.locator('[data-view="s5"].on [data-tab-blank]').waitFor({timeout:15000});
  await page.locator('#dock [data-section="s7"]').click();
  await page.locator('[data-view="s7"].on').waitFor({timeout:10000});
+ // A real signup request must appear in Boba's account review queue.
+ const application={username:'SmokeApplicant',password:'smoke applicant password'};
+ const signup=await page.request.post(origin+'/api/register',{data:application});
+ assert.equal(signup.status(),202);
  await page.locator('#dock [data-section="s6"]').click();
  await page.locator('[data-view="s6"].on').waitFor({timeout:15000});
+ const approval=page.getByRole('button',{name:'Approve SmokeApplicant'});
+ await approval.waitFor({timeout:15000});
+ await approval.click();
+ await page.getByRole('status').filter({hasText:'SmokeApplicant approved.'}).waitFor({timeout:10000});
+ const approvedContext=await browser.newContext();
+ try{
+  const login=await approvedContext.request.post(origin+'/api/login',{data:application});
+  assert.equal(login.status(),200,'Reviewed accounts can sign in after administrator approval');
+ }finally{await approvedContext.close();}
+ await page.screenshot({path:path.join(shots,'boba-approvals.png')});
  assert.equal(await page.locator('.native-start-error').count(),0,
   'Original Boba feature modules must mount successfully');
  assert.deepEqual(errors,[], 'No uncaught UI JavaScript errors expected');

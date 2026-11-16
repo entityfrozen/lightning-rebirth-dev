@@ -1,13 +1,13 @@
 import {openAboutBlank} from './about-blank.js';
 import { I } from './icons.js';
 import { createProxyFrame, disposeProxyFrame, getProxyController } from './proxy.js';
-import { createUltravioletFrame } from './uv-proxy.js';
+import { createUltravioletFrame, getUltravioletEngine } from './uv-proxy.js';
 import {maskFrameSearchLinks} from './search-link-mask.js';
 const $=(s,r=document)=>r.querySelector(s);
 const el=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild;};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ico=k=>'<svg viewBox="0 0 256 256" aria-hidden="true">'+(I[k]||I.link||'')+'</svg>';
-const cup=()=>'<img src="/assets/brightpath-star.svg" alt="Loading" style="width:54px">';
+const cup=()=>'<img src="/assets/celestial-star.svg" alt="Loading" style="width:54px">';
 const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch{return ''}};
 const favicon=d=>'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#8a5631"/><text x="16" y="22" text-anchor="middle" font-size="18" fill="white">'+(d[0]||'•').toUpperCase().replace(/[^A-Z0-9]/g,'•')+'</text></svg>');
 const FAVS=[];
@@ -19,11 +19,14 @@ function failPage(frame,url,retry,message='The page could not load.'){const doc=
 const frames=new WeakMap();
 // An about:blank wrapper is a framed workspace. Prefer the engine that does not
 // depend on cross-origin-isolated top-level document privileges.
+// Reflux wraps Ultraviolet's Epoxy transport; it is the primary browser route.
+// Use a new preference key so stale Scramjet defaults don't override the upgrade.
 const defaultProxy=()=>window.self!==window.top?'ultraviolet':
-  store.get('proxyEngine','scramjet')==='ultraviolet'?'ultraviolet':'scramjet';
+  store.get('browserEngine','reflux')==='scramjet'?'scramjet':'ultraviolet';
 const engine={
  normalise(input){const q=String(input||'').trim();if(!q)return '';try{const u=new URL(q);if(['http:','https:'].includes(u.protocol))return u.href}catch{}if(/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/:?#]|$)/i.test(q))return 'https://'+q;return 'https://www.google.com/search?q='+encodeURIComponent(q)},
- boot:getProxyController,recover:getProxyController,
+ boot(){return defaultProxy()==='ultraviolet'?getUltravioletEngine():getProxyController()},
+ recover(){return defaultProxy()==='ultraviolet'?getUltravioletEngine():getProxyController()},
  decode(url){try{const src=new URL(url,location.origin);if(src.pathname.startsWith('/uv/service/')){
      const decodeUv=window.__uv$config?.decodeUrl;
      return typeof decodeUv==='function'?decodeUv(src.pathname.slice('/uv/service/'.length)):'';
@@ -37,10 +40,11 @@ const engine={
    // page. Treat that as a transport failure rather than a successful page.
    try{
      const location=new URL(d.URL);
-     if(!location.pathname.startsWith('/~/sj/'))return false;
+     const browserPath=location.pathname.startsWith('/~/sj/')||location.pathname.startsWith('/uv/service/');
+     if(!browserPath)return false;
      if(d.querySelector('meta[http-equiv="refresh"][content*="/boba/index.html"]'))return true;
      const text=(d.body?.textContent||'').slice(0,300);
-     return /Proxy worker did not intercept|The proxy engine is unavailable|Proxy transport failed/i.test(text);
+     return /(?:Browser engine|Ultraviolet worker|Scramjet worker|Proxy worker) did not intercept|The (?:proxy|browser) engine is unavailable|(?:Proxy|Browser) transport failed|could not open this navigation/i.test(text);
    }catch{return false}
  },
  async openFrame(el,url,onNavigate,onPopup,mode='scramjet'){
@@ -127,7 +131,7 @@ const home = {
     '<button class="cb sm gh" data-wb="reload" aria-label="Reload">' + ico("reload") + "</button>" +
     '<label class="addr">' + ico("lock") + '<input data-omni placeholder="Search or enter a link" aria-label="Address" autocomplete="off" spellcheck="false">' +
     '<span class="disp" data-disp></span><div class="sugg gl g3" data-sugg></div></label>' +
-    '<select class="wproxy" data-proxy-mode aria-label="Proxy engine"><option value="scramjet">Scramjet</option><option value="ultraviolet">Ultraviolet</option></select>' +
+    '<select class="wproxy" data-engine-mode aria-label="Browsing engine"><option value="ultraviolet">Reflux</option><option value="scramjet">Scramjet</option></select>' +
     '<span class="wsep"></span><div class="wtabs" data-tabs></div>' +
     '<button class="cb sm gh" data-wnew aria-label="New tab">' + ico("plus") + "</button>" +
     '<button class="cb sm gh" data-direct title="Open direct in about:blank" aria-label="Open Direct">' + ico("link") + '</button>' +
@@ -135,7 +139,7 @@ const home = {
     '<button class="cb sm gh" data-wmax aria-label="Full screen">' + ico("expand") + "</button></div>" +
     '<span class="wtip" data-tip></span>' +
     '<div class="page" data-page><div class="gload off" data-bl>' + cup() + '</div><div class="home" data-nt>' +
-    '<div class="hwm"><img alt="" src="/assets/brightpath-star.svg"></div><div class="hcol"><div class="clock">' +
+    '<div class="hwm"><img alt="" src="/assets/celestial-star.svg"></div><div class="hcol"><div class="clock">' +
     '<div class="t num r"><span data-ck></span><i data-ap></i></div>' +
     '<div class="d r" style="--d:.03s" data-dt></div></div>' +
     '<label class="big-q r" style="--d:.06s">' + ico("search") + '<input data-bq placeholder="Search or enter a link" aria-label="Search or enter a link" autocomplete="off" spellcheck="false"></label>' +
@@ -154,7 +158,7 @@ const home = {
     const addr = $(".addr", root);
     const disp = $("[data-disp]", root);
     const tabsEl = $("[data-tabs]", root);
-    const proxySelect = $("[data-proxy-mode]", root);
+    const proxySelect = $("[data-engine-mode]", root);
     const tip = $("[data-tip]", root);
     const tab = () => st.tabs.find((t) => t.id === st.active);
     const clean = (s) => String(s || "").split(/\s+[-–·|]\s+/)[0].trim();
@@ -227,23 +231,27 @@ const home = {
     const clearError=t=>{t.errorEl?.remove();t.errorEl=null;};
     const showError=(t,message)=>{
       clearInterval(t.lt);
-      // Aether uses selectable Scramjet transports. Celestial uses two
-      // independent engines, so recover a failed Scramjet page through UV.
-      // Try only once per navigation; never loop or change the user's default.
-      if(t.mode==='scramjet'&&!t.autoFallbackAttempted&&!t.direct&&t.url){
+      // Recover through the other engine once per navigation. Both engines
+      // need a clean iframe: swapping transports in-place can leave a worker
+      // attached to the previous document and produce an empty frame.
+      if(!t.autoFallbackAttempted&&!t.direct&&t.url){
         t.autoFallbackAttempted=true;
         t.unmaskLinks?.();t.unmaskLinks=null;t.doc=null;
-        if(t.frame)ctx.engine.dispose(t.frame);
-        t.mode='ultraviolet';
+        if(t.frame){
+          ctx.engine.dispose(t.frame);
+          t.frame.remove();
+          t.frame=null;
+        }
+        t.mode=t.mode==='ultraviolet'?'scramjet':'ultraviolet';
         void navigate(t.url);
         return;
       }
       t.busy=false;sync();clearError(t);
       const panel=document.createElement('div');panel.className='native-browser-error';
       const heading=document.createElement('h2');heading.textContent="This page couldn't be opened";
-      const detail=document.createElement('p');detail.textContent=message||'The selected proxy could not load this site.';
+      const detail=document.createElement('p');detail.textContent=message||'The browsing engine could not open this site.';
       const buttons=document.createElement('div');
-      const again=document.createElement('button');again.className='btn k s';again.textContent='Try again';again.onclick=()=>navigate(t.url);
+      const again=document.createElement('button');again.className='btn k s';again.textContent='Try again';again.onclick=()=>{t.autoFallbackAttempted=false;navigate(t.url)};
       const direct=document.createElement('a');direct.className='btn s';direct.textContent='Open site directly';direct.href=t.url;direct.target='_blank';direct.rel='noopener noreferrer';
       const embed=document.createElement('button');embed.className='btn s';embed.textContent='Try direct embed';
       embed.onclick=()=>{
@@ -263,7 +271,7 @@ const home = {
       let d=null;
       try{d=t.frame?.contentDocument}catch{}
       if(t.direct||!t.proxyRequested||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
-      if(ctx.engine.failed(d)){showError(t,'The proxied site returned an error.');return true}
+      if(ctx.engine.failed(d)){showError(t,'The page returned an error.');return true}
       clearInterval(t.lt);t.busy=false;sync();clearError(t);track(t);return true;
     };
     const loading=t=>{
@@ -372,7 +380,7 @@ const home = {
     }, 160);
     omni.addEventListener("input", suggest);
     let picked = false;
-    const warm = () => ctx.engine.boot().catch(() => {});
+    const warm = () => ((tab()?.mode||defaultProxy())==='ultraviolet'?getUltravioletEngine():ctx.engine.boot()).catch(()=>{});
     omni.addEventListener("focus", () => {
       addr.classList.remove("show");
       omni.select();
@@ -485,7 +493,7 @@ const home = {
 
     proxySelect.addEventListener('change',()=>{
       const selected=proxySelect.value==='ultraviolet'?'ultraviolet':'scramjet';
-      store.set('proxyEngine',selected);
+      store.set('browserEngine',selected==='ultraviolet'?'reflux':'scramjet');
       const current=tab();
       if(!current)return;
       if(current.mode===selected)return;

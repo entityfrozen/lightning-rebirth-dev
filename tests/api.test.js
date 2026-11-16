@@ -39,7 +39,7 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     const html=await homepage.text();
     const decodedTitle=html.match(/<title>([^<]+)<\/title>/)?.[1]
       .replace(/&#(\d+);/g,(_,number)=>String.fromCodePoint(Number(number)));
-    assert.equal(decodedTitle,'Brightpath | Learning Workspace');
+    assert.equal(decodedTitle,'Celestial | Your space');
     assert.doesNotMatch(html,/Brightpath \| Learning Workspace/,'Production View Source should not include raw title copy');
     assert.match(html,/\/boba\/dist\/assets\/app-/);
     for(const privateAsset of [
@@ -57,7 +57,7 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.equal(loginPage.status,200);
     assert.match(await loginPage.text(),/\/boba\/dist\/assets\/auth-/);
     assert.doesNotMatch(html,/\/bundle\/main\.js/);
-    assert.match(html,/brightpath-icon\.svg/);
+    assert.match(html,/celestial-star\.svg/);
     assert.doesNotMatch(html,/lightning-chan|mascotSprite|lightning-mark/);
     const appAsset=await fetch(url+'/bundle/main.js');
     assert.equal(appAsset.status,200);

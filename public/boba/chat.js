@@ -81,7 +81,7 @@ export function mountChat(root,user){
     sessionStorage.removeItem('celestial.announcement.dismissed');
     paintAnnouncement();
     if(document.visibilityState==='hidden'&&'Notification' in window&&Notification.permission==='granted')
-      new Notification('Brightpath announcement',{body:m.entry.message.slice(0,150)});
+      new Notification('Celestial announcement',{body:m.entry.message.slice(0,150)});
    }
    if(m.type==='v2AnnouncementRemoved'){
     if(announcement?.id===m.id)announcement=null;

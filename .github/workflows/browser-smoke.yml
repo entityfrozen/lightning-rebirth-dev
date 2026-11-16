@@ -30,7 +30,10 @@ jobs:
           fi
       - name: Verify current Boba UI and browser packaging
         run: |
-          if [ "${{ github.head_ref || github.ref_name }}" = "celestial-boba-shell" ] || [ "${{ github.head_ref || github.ref_name }}" = "boba-source-hardening" ]; then
+          if [ "${{ github.head_ref || github.ref_name }}" = "boba-reflux-browser-approval" ]; then
+            node scripts/boba-hardening-smoke.mjs
+            node scripts/reflux-browser-live-smoke.mjs
+          elif [ "${{ github.head_ref || github.ref_name }}" = "celestial-boba-shell" ] || [ "${{ github.head_ref || github.ref_name }}" = "boba-source-hardening" ]; then
             node scripts/boba-hardening-smoke.mjs
           else
             node scripts/browser-smoke.mjs
@@ -43,5 +46,6 @@ jobs:
           path: |
             artifacts/browser-smoke/
             artifacts/boba-package/
+            artifacts/reflux-live/
           retention-days: 7
           if-no-files-found: ignore
