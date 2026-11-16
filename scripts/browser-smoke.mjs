@@ -126,7 +126,7 @@ try{
   assert.equal(await boba.locator('#celestialWorkspace,iframe.boba-app-host,script[src="/bundle/main.js"]').count(),0);
   assert.ok(await boba.locator('body').evaluate(()=>[...document.styleSheets].some(s=>s.href?.includes('/boba/dist/assets/'))));
   assert.equal(await boba.locator('script[src="/boba/native.js"],link[href="/boba/original.css"]').count(),0);
-  assert.equal(await boba.locator('script[src*="/boba/dist/assets/app-"]').count(),1);
+  assert.equal(await boba.locator('script[src*="/boba/dist/assets/launch-"]').count(),1);
   assert.equal(await boba.locator('[data-section="apps"]').count(),0);
   assert.equal(await boba.locator('[data-section="s2"]').count(),0);
   await boba.locator('[data-section="s0"]').click();
