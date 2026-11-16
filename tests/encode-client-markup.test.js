@@ -32,7 +32,9 @@ test('static and dynamic HTML templates encode without changing interpolations',
  const changed=encodeMarkupSource(original,parseAst);
  assert.ok(changed?.count>=1);
  assert.doesNotMatch(changed.code,/<section class="cel-dist-grid">/);
- assert.match(changed.code,/<button>\$\{name\}<\/button>/);
+ assert.doesNotMatch(changed.code,/<button>\$\{name\}<\/button>/);
+ assert.ok(changed.code.includes('String((name))'));
+
  assert.equal(runInNewContext(changed.code),runInNewContext(original));
 });
 
