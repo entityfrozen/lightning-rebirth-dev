@@ -202,7 +202,7 @@ try{
  assert.match(documentSource,/<title>&#/);
  assert.doesNotMatch(documentSource,/Brightpath \| Learning Workspace/);
  assert.doesNotMatch(documentSource,/data-view=["']games|CELESTIAL ORIGINALS/i);
- assert.match(documentSource,/\/boba\/dist\/assets\/app-[a-zA-Z0-9_-]+\.js/);
+ assert.match(documentSource,/\/boba\/dist\/assets\/launch-[a-zA-Z0-9_-]+\.js/);
  assert.doesNotMatch(documentSource,/src=["']\/boba\/(?:native|games|catalog-ui)\.js/);
  assert.equal(await page.locator('[data-view="s2"]').count(),0,
   'The retired Games section must stay unmounted');
