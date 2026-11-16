@@ -1,12 +1,12 @@
-// The HTML entry remains a minimal Brightpath shell. Build the accessible
+// The HTML entry remains a minimal Celestial shell. Build the accessible
 // account form from the production bundle, then attach its event handlers.
 export function mountAuthShell(){
  const root=document.getElementById('root');
- if(!root)throw Error('Brightpath account container is missing');
+ if(!root)throw Error('Celestial account container is missing');
  root.innerHTML=`<div class="atmo" aria-hidden="true"><div class="amb"></div><div class="wash"></div><div class="veil"></div><div class="grain"></div></div>
 <main class="acct auth-page">
-<section class="auth gl g2 r" aria-label="Brightpath account">
-<img class="auth-logo" src="/assets/brightpath-star.svg" alt="Brightpath">
+<section class="auth gl g2 r" aria-label="Celestial account">
+<img class="auth-logo" src="/assets/celestial-star.svg" alt="Celestial">
 <div class="seg" data-amode role="group" aria-label="Account action"><span class="th"></span><button type="button" class="on" data-v="in" aria-pressed="true">Sign in</button><button type="button" data-v="up" aria-pressed="false">Create account</button></div>
 <h2 class="ah" data-atitle hidden></h2>
 <form data-aform>
