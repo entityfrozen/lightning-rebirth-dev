@@ -37,7 +37,7 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.equal(homepage.headers.get('cross-origin-resource-policy'),'cross-origin');
 
     const html=await homepage.text();
-    assert.ok(html.includes('<title>Brightpath | Learning Workspace</title>'));
+    assert.ok(html.includes('<title>Celestial — Your Space</title>'));
     assert.match(html,/\/boba\/dist\/assets\/app-/);
     const loginPage=await fetch(url+'/login');
     assert.equal(loginPage.status,200);
