@@ -14,9 +14,9 @@ test('Connect Four drops one disc at a time and respects reduced motion',()=>{
  assert.match(section,/round!==currentRound/);
 });
 
-test('Library is the visible activity section label',()=>{
+test('Library code is preserved but removed from navigation',()=>{
  const games=readFileSync(new URL('../public/boba/games.js',import.meta.url),'utf8');
  const native=readFileSync(new URL('../public/boba/native.js',import.meta.url),'utf8');
  assert.match(games,/const libraryHeading='Library'/);
- assert.match(native,/\['games','Library','play'\]/);
+ assert.ok(!native.includes("'games','Library','play'"));
 });
