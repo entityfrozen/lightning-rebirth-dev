@@ -9,6 +9,8 @@ export function mountOrbitScene(canvas) {
   if (!gl) return () => {};
 
   const vertex = 'attribute vec2 position; void main(){gl_Position=vec4(position,0.,1.);}';
+  // The canvas uses premultiplied alpha: RGB must be scaled by opacity.
+  // Otherwise a transparent fragment can paint a fully bright turquoise quad.
   const fragment = [
     'precision mediump float;',
     'uniform vec2 resolution;',
@@ -36,7 +38,7 @@ export function mountOrbitScene(canvas) {
     'color += blue*inner;',
     'float stars=step(.9985,grain(floor(gl_FragCoord.xy/2.0)))*.24;',
     'float alpha=min(.97,arc*.91+outer*.43+inner*.28+shimmer*.46+stars);',
-    'gl_FragColor=vec4(color*1.4,alpha);',
+    'gl_FragColor=vec4(color*1.4*alpha,alpha);',
     '}'
   ].join('\n');
 
