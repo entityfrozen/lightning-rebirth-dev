@@ -1,3 +1,4 @@
+import {installCloseGuard} from './close-guard.js';
 import {mountReimuEffects} from './reimu-effects.js';
 import {startAccountSync} from './account-sync.js';
 import {mountShell} from './shell.js';
@@ -17,6 +18,7 @@ async function start(){
  const data=await api('/api/me');
  if(!data.user){location.replace('/login');return}
  const user=data.user,views=$('#views'),dock=$('#dock');
+ installCloseGuard();
  // An account sync outage must never prevent the local workspace from opening.
  try{await startAccountSync(user)}catch(error){console.warn('Account preferences unavailable:',error)}
  applyPrefs();
