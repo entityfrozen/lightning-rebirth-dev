@@ -38,7 +38,7 @@ export function mountV3Home(root,{user,navigate,openBrowser}) {
 
   root.addEventListener('click',event=>{
     const button=event.target.closest('[data-v3-go]');
-    if(button)navigate(button.dataset.v3Go);
+    if(button){event.stopPropagation();navigate(button.dataset.v3Go);}
   });
   root.querySelector('[data-v3-search]').addEventListener('submit',event=>{
     event.preventDefault();
