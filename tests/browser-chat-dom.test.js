@@ -36,7 +36,7 @@ test('Bare hostnames navigate directly instead of being treated as search terms'
 
 test('Arcade defaults to Scramjet and recreates the iframe when changing sources',()=>{
  const arcade=source('../public/boba/catalog-ui.js');
- assert.match(arcade,/\['ultraviolet','Ultraviolet proxy'\]/);
+ assert.match(arcade,/\['ultraviolet','Reflux browser'\]/);
  assert.match(arcade,/frame\.replaceWith\(replacement\);frame=replacement/);
  assert.match(arcade,/fetch\('\/api\/browser\/status'/);
 });
