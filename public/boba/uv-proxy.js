@@ -66,6 +66,12 @@ export async function getUltravioletEngine(){
    await withTimeout(connection.setTransport('/epoxy/index.mjs',[{wisp}]),
     'Starting browser connection',18000);
   }
+  // Verify the SharedWorker actually selected the transport we asked for,
+  // then allow the Ultraviolet worker to intercept the first navigation.
+  const selected=await withTimeout(connection.getTransport(),'Checking browser connection',8000);
+  if(selected!==(transport==='reflux'?'/reflux/index.mjs':'/epoxy/index.mjs')){
+   throw Error('The browser transport was not activated.');
+  }
   // Ordering matters: set the BareMux transport before the SW is usable.
   await startWorker();
   return {
