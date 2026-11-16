@@ -128,7 +128,7 @@ export function openDistributorGame(stage,game){
  }
  const modeSelect=document.createElement('select');
  modeSelect.setAttribute('aria-label','Embedding mode');
- for(const [value,label] of [['proxy','Scramjet proxy'],['ultraviolet','Ultraviolet proxy'],['direct','Direct embed']]){
+ for(const [value,label] of [['proxy','Scramjet browser'],['ultraviolet','Reflux browser'],['direct','Direct embed']]){
   const option=document.createElement('option');option.value=value;option.textContent=label;modeSelect.append(option);
  }
  // The about:blank wrapper can't guarantee Scramjet's isolation requirements.
@@ -219,7 +219,7 @@ export function openDistributorGame(stage,game){
   notice.textContent='Connecting through Scramjet…';
   try{
    const statusResponse=await fetch('/api/browser/status',{credentials:'same-origin'});
-   if(!statusResponse.ok)throw Error('Proxy status unavailable (HTTP '+statusResponse.status+')');
+   if(!statusResponse.ok)throw Error('Browser status unavailable (HTTP '+statusResponse.status+')');
    const status=await statusResponse.json();
    if(!status.authenticated)throw Error('Sign in to use Scramjet');
    if(!status.proxy)throw Error('Scramjet backend is unavailable');
