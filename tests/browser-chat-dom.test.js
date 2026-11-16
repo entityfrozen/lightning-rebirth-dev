@@ -81,12 +81,23 @@ test('Browser tabs and framed navigation avoid exposing search URLs as element a
  assert.doesNotMatch(adapter,/element\.removeAttribute\('src'\)/);
 });
 
-test('Browser recovers from a failed Scramjet load without a fallback loop',()=>{
+test('Reflux is the default browser engine; both engines recover once without a loop',()=>{
  const browser=source('../public/boba/browser.js');
- assert.match(browser,/t\.mode==='scramjet'&&!t\.autoFallbackAttempted/);
- assert.match(browser,/t\.autoFallbackAttempted=true/);
- assert.match(browser,/t\.mode='ultraviolet'/);
- assert.match(browser,/void navigate\(t\.url\)/);
- assert.match(browser,/if\(url!==t\.url\)t\.autoFallbackAttempted=false/);
- assert.match(browser,/current\.autoFallbackAttempted=false/);
+ const uv=source('../public/boba/uv-proxy.js');
+ const server=source('../server.js');
+ assert.match(browser,/store.get\('browserEngine','reflux'\)/);
+ assert.match(browser,/<option value="ultraviolet">Reflux<\/option>/);
+ assert.match(browser,/aria-label="Browsing engine"/);
+ assert.doesNotMatch(browser,/aria-label="Proxy engine"/);
+ assert.match(browser,/!t.autoFallbackAttempted&&!t.direct/);
+ assert.match(browser,/t.autoFallbackAttempted=true/);
+ assert.match(browser,/t.mode=t.mode==='ultraviolet'\?'scramjet':'ultraviolet'/);
+ assert.match(browser,/t.frame.remove\(\)/);
+ assert.match(browser,/void navigate\(t.url\)/);
+ assert.match(browser,/if\(url!==t.url\)t.autoFallbackAttempted=false/);
+ assert.match(uv,/connection.setTransport\('\/reflux\/index.mjs'/);
+ assert.match(uv,/connection.getTransport\(\)/);
+ assert.ok(uv.indexOf('await startWorker()')>uv.indexOf("connection.setTransport('/reflux/index.mjs'"));
+ assert.match(uv,/setTransport\('\/epoxy\/index.mjs'/);
+ assert.doesNotMatch(server,/fail\(res,502,'Proxy worker/);
 });
