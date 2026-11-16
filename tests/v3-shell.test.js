@@ -50,3 +50,14 @@ test('V3 loads tool modules on demand and keeps account-specific administration 
   assert.match(shell,/user\.role==='admin'/);
   assert.match(app,/const id=section\(request\)\?request:'home'/);
 });
+
+test('V3 auth visual redesign keeps all expected account form hooks',()=>{
+  const entry=read('../src/boba-login.js');
+  const shell=read('../public/boba/v3/auth-shell.js');
+  assert.match(entry,/mountV3AuthShell\(\)/);
+  for(const hook of ['data-amode','data-aform','data-asub','data-amsg','data-anote','data-alt',
+    'data-reveal="password"','data-reveal="confirmPassword"','name="username"','name="password"','name="confirmPassword"']){
+    assert.ok(shell.includes(hook),hook+' must remain available to auth.js');
+  }
+  assert.match(shell,/role="status"/);
+});
