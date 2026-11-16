@@ -1,22 +1,61 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-palette="boba" data-fx="full">
+<html lang="en" class="academy-loading" data-theme="light" data-palette="boba" data-fx="full">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f5f2ea">
-  <meta name="description" content="Celestial — your personal space for browsing, creativity, and connection.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#163f5b">
+  <meta name="description" content="Asterfield Academy student hub, campus updates, and resources.">
   <meta name="robots" content="noindex,nofollow">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="Celestial | Your space">
-  <meta property="og:description" content="An expressive workspace for browsing, creating and connecting.">
-  <title>Celestial | Your space</title>
-  <link rel="icon" href="/assets/celestial-star.svg" type="image/svg+xml">
+  <title>Asterfield Academy | Student Hub</title>
+  <link rel="icon" href="/assets/study-portal.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/boba/original.css">
   <link rel="stylesheet" href="/boba/native.css">
 </head>
 <body>
-  <div id="root"></div>
+  <main id="academyLanding" class="academy-site" aria-label="Asterfield Academy introductory page">
+    <div class="ac-announcement"><span>FALL TERM 2026</span> Explore this month's campus activities and learning highlights</div>
+    <header class="ac-header">
+      <a class="ac-brand" href="#academyLanding" aria-label="Asterfield Academy home">
+        <span class="ac-mark" aria-hidden="true">A</span>
+        <span><strong>Asterfield Academy</strong><small>Learning with purpose</small></span>
+      </a>
+      <nav class="ac-menu" aria-label="Campus navigation">
+        <a href="#academy-news">Our School</a>
+        <a href="#academy-news">Academics</a>
+        <a href="#academy-news">Student Life</a>
+        <a href="#academy-news">Families</a>
+        <a class="ac-portal-link" href="#academy-news">Student Hub</a>
+      </nav>
+    </header>
+    <section class="ac-hero" aria-labelledby="academy-heading">
+      <div class="ac-hero-inner">
+        <div>
+          <span class="ac-eyebrow">Welcome to Asterfield</span>
+          <h1 id="academy-heading">Learning today.<br>Leading tomorrow.</h1>
+          <p>A place to discover new ideas, make lasting connections, and shape what's next. See what our campus community is exploring.</p>
+          <a class="ac-hero-cta" href="#academy-news">Explore campus updates <span aria-hidden="true">&nbsp;↗</span></a>
+        </div>
+        <aside class="ac-highlight" aria-label="Campus spotlight">
+          <small>Campus Spotlight</small>
+          <strong>Every curious mind belongs here.</strong>
+          <div class="ac-rule"></div>
+          <p>Creativity, collaboration, and confidence are part of the everyday Asterfield experience.</p>
+        </aside>
+      </div>
+    </section>
+    <section id="academy-news" class="ac-main" aria-label="Campus announcements">
+      <div class="ac-section-title"><h2>What's happening on campus</h2><span>News and resources</span></div>
+      <div class="ac-cards">
+        <article class="ac-card"><span class="ac-icon" aria-hidden="true">✦</span><strong>New student resources</strong><p>Find helpful guides, creative projects, and tools for the school year.</p></article>
+        <article class="ac-card"><span class="ac-icon" aria-hidden="true">◇</span><strong>Clubs and activities</strong><p>Explore new interests and connect with our campus community.</p></article>
+        <article class="ac-card"><span class="ac-icon" aria-hidden="true">↗</span><strong>Upcoming events</strong><p>See what's next in our academic and extracurricular calendar.</p></article>
+      </div>
+      <p class="ac-error" role="alert"></p>
+    </section>
+    <footer class="ac-foot">Asterfield Academy · Fictional campus experience</footer>
+  </main>
+  <div id="root" aria-busy="true"></div>
   <script type="module" src="/boba/native.js"></script>
 </body>
 </html>
