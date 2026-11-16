@@ -74,7 +74,7 @@ try{
  await page.waitForFunction(()=>{
   const frame=document.querySelector('[data-view="s1"].on iframe[src*="/uv/service/"]');
   try{return frame?.contentDocument?.title==='Example Domain'&&
-    frame.contentDocument.body?.textContent?.includes('Example Domain')}catch{return false}
+    (frame.contentDocument.body?.textContent||'').trim().length>100}catch{return false}
  },null,{timeout:65000});
  assert.equal(await page.locator('.native-browser-error').count(),0,'Browsing must not show an error card');
  await page.screenshot({path:path.join(shots,'reflux-example-domain.png')});
