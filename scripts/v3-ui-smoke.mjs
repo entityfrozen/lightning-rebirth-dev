@@ -47,6 +47,10 @@ try{
   });
   const page=await browser.newPage({viewport:{width:1440,height:900}});
   page.on('pageerror',error=>errors.push(error.message));
+  const viewSettled=()=>page.waitForFunction(()=>{
+    const current=document.querySelector('.v3-view.on');
+    return current&&Number(getComputedStyle(current).opacity)>0.99;
+  },null,{timeout:5000});
   await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:30000});
   await page.locator('.v3-auth-layout').waitFor({timeout:15000});
   await page.screenshot({path:path.join(screenshots,'sign-in.png')});
@@ -62,6 +66,7 @@ try{
     'Games must remain retired');
   assert.equal(await page.locator('#dock .v3-nav').count(),4);
   assert.match(await page.locator('.v3-hero h1').innerText(),/room to think/);
+  await viewSettled();
   await page.screenshot({path:path.join(screenshots,'desktop-home.png')});
 
   await page.keyboard.press('Control+k');
@@ -73,10 +78,12 @@ try{
 
   await page.locator('[data-v3-go="chat"]').first().click();
   await page.locator('[data-view="s3"].on .native-messenger').waitFor({timeout:15000});
+  await viewSettled();
   await page.screenshot({path:path.join(screenshots,'community.png')});
 
   await page.locator('#dock [data-section="s1"]').click();
   await page.locator('[data-view="s1"].on [data-wv]').waitFor({timeout:15000});
+  await viewSettled();
   await page.screenshot({path:path.join(screenshots,'browser.png')});
 
   await page.locator('[data-v3-go="settings"]').first().click();
@@ -106,6 +113,7 @@ try{
     assert.ok(item.width>34&&item.left>=0&&item.right<=392&&item.top>=0&&item.bottom<=844,
       'Mobile tab must fit onscreen: '+JSON.stringify(item));
   }
+  await viewSettled();
   await page.screenshot({path:path.join(screenshots,'mobile-home.png')});
   assert.deepEqual(errors,[],'No uncaught runtime errors allowed');
   console.log('Celestial V3 desktop, feature routes, command palette, and mobile smoke passed.');
