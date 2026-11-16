@@ -86,6 +86,10 @@ try{
  await page.locator('#dock [data-section="s1"]').click();
  await page.locator('[data-view="s1"].on [data-omni]').waitFor({timeout:15000});
  assert.equal(await page.locator('[data-engine-mode]').count(),1);
+ assert.equal(await page.locator('[data-engine-mode]').inputValue(),'ultraviolet','Reflux should be the default browsing engine');
+ assert.equal(await page.locator('[data-engine-mode]').getAttribute('aria-label'),'Browsing engine');
+ assert.equal(await page.locator('[data-engine-mode] option:checked').textContent(),'Reflux');
+ assert.equal(await page.locator('[data-view="s1"].on').getByText('Proxy',{exact:true}).count(),0);
  await page.screenshot({path:path.join(shots,'boba-browser.png')});
  await page.locator('#dock [data-section="s3"]').click();
  const chat=page.locator('[data-view="s3"].on');
@@ -101,8 +105,22 @@ try{
  await page.locator('[data-view="s5"].on [data-tab-blank]').waitFor({timeout:15000});
  await page.locator('#dock [data-section="s7"]').click();
  await page.locator('[data-view="s7"].on').waitFor({timeout:10000});
+ // A real signup request must appear in Boba's account review queue.
+ const application={username:'SmokeApplicant',password:'smoke applicant password'};
+ const signup=await page.request.post(origin+'/api/register',{data:application});
+ assert.equal(signup.status(),202);
  await page.locator('#dock [data-section="s6"]').click();
  await page.locator('[data-view="s6"].on').waitFor({timeout:15000});
+ const approval=page.getByRole('button',{name:'Approve SmokeApplicant'});
+ await approval.waitFor({timeout:15000});
+ await approval.click();
+ await page.getByRole('status').filter({hasText:'SmokeApplicant approved.'}).waitFor({timeout:10000});
+ const approvedContext=await browser.newContext();
+ try{
+  const login=await approvedContext.request.post(origin+'/api/login',{data:application});
+  assert.equal(login.status(),200,'Reviewed accounts can sign in after administrator approval');
+ }finally{await approvedContext.close();}
+ await page.screenshot({path:path.join(shots,'boba-approvals.png')});
  assert.equal(await page.locator('.native-start-error').count(),0,
   'Original Boba feature modules must mount successfully');
  assert.deepEqual(errors,[], 'No uncaught UI JavaScript errors expected');
