@@ -43,5 +43,5 @@ test('live view IDs are opaque but map back to persisted internal IDs',()=>{
  }
  const shell=readFileSync(new URL('../public/boba/shell.js',import.meta.url),'utf8');
  assert.doesNotMatch(shell,/data-view=\\\"games\\\"/);
- assert.match(shell,/data-view=\\\"s2\\\"/);
+ assert.doesNotMatch(shell,/data-view=\\\"s2\\\"/);
 });
