@@ -40,11 +40,11 @@ test('Retired Library code remains available but is not loaded or mounted',()=>{
  const entry=read('../public/boba/native.js');
  const games=read('../public/boba/games.js');
  const home=read('../public/boba/home.js');
- assert.doesNotMatch(entry,/import\\(['"]\\.\\/games\\.js['"]\\)/);
- assert.doesNotMatch(entry,/mountArcade\\(/);
- assert.doesNotMatch(entry,/\\['games','Library'/);
- assert.doesNotMatch(home,/\\['games','Library'/);
- assert.match(games,/export function mountArcade\\s*\\(/);
+ assert.ok(!entry.includes("import('./games.js')"));
+ assert.ok(!entry.includes('mountArcade('));
+ assert.ok(!entry.includes("'games','Library'"));
+ assert.ok(!home.includes("'games','Library'"));
+ assert.ok(games.includes('export function mountArcade('));
 });
 
 test('Distributor Canvas cards retain neutral accessible names even when titles contain game',()=>{
