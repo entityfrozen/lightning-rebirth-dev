@@ -41,7 +41,7 @@ jobs:
         with:
           name: celestial-browser-screenshots
           path: |
-          artifacts/browser-smoke/
-          artifacts/v3/
+            artifacts/browser-smoke/
+            artifacts/v3/
           retention-days: 7
           if-no-files-found: ignore
