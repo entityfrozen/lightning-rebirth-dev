@@ -68,7 +68,7 @@ try{
  assert.ok(appAsset,'View Source should load a compiled hashed app entry');
  assert.equal((await page.request.get(origin+appAsset)).status(),200);
  await page.goto(origin+'/',{waitUntil:'domcontentloaded',timeout:30000});
- assert.match(await page.title(),/Brightpath/,'HTML entity encoding must not change rendered title');
+ assert.match(await page.title(),/Celestial/,'HTML entity encoding must not change rendered title');
  await page.locator('input[name="username"]').fill('BobaAdmin');
  await page.locator('input[name="password"]').fill(password);
  await page.locator('form button[type="submit"]').click();
