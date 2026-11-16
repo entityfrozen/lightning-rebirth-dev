@@ -93,7 +93,7 @@ try{
  assert.ok(loginSource.includes('href="/assets/celestial-star.svg"'));
  assert.match(loginSource,/<div id="root"><\/div>/);
  assert.match(loginSource,/\/boba\/dist\/assets\/auth-[a-zA-Z0-9_-]+\.js/);
- assert.doesNotMatch(loginSource,/<input|<form|data-aform|celestial-star|<section/);
+ assert.doesNotMatch(loginSource,/<input|<form|data-aform|<section/);
  await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:30000});
  await page.locator('input[name="username"]').fill('UIAdmin');
  await page.locator('input[name="password"]').fill(password);
@@ -188,7 +188,7 @@ try{
  },null,{timeout:10000});
  const icon=await page.locator('link[rel="icon"]').getAttribute('href');
  assert.equal(new URL(icon,base).pathname,'/assets/celestial-star.svg');
- for(const asset of ['/assets/celestial-star.svg','/assets/celestial-star.svg']){
+ for(const asset of ['/assets/celestial-star.svg']){
   const response=await page.request.get(base+asset);
   assert.equal(response.status(),200,asset+' must be available');
   assert.match(await response.text(),/<svg\s/);
@@ -201,7 +201,7 @@ try{
  const documentSource=await (await page.request.get(base+'/')).text();
  assert.match(documentSource,/<title>&#/);
  assert.doesNotMatch(documentSource,/Brightpath \| Learning Workspace/);
- assert.doesNotMatch(documentSource,/data-view=["']games|celestial-star\.svg|CELESTIAL ORIGINALS/i);
+ assert.doesNotMatch(documentSource,/data-view=["']games|CELESTIAL ORIGINALS/i);
  assert.match(documentSource,/\/boba\/dist\/assets\/app-[a-zA-Z0-9_-]+\.js/);
  assert.doesNotMatch(documentSource,/src=["']\/boba\/(?:native|games|catalog-ui)\.js/);
  assert.equal(await page.locator('[data-view="s2"]').count(),0,
