@@ -134,6 +134,18 @@ try{
  },null,{timeout:60000});
  assert.equal(await workspace.locator('.native-browser-error').count(),0,
    'Cloked workspace should navigate after restart');
+ // Explicitly exercise the other engine in a framed about:blank workspace.
+ // Previously only Reflux was verified inside the cloak.
+ await workspace.locator('[data-engine-mode]').selectOption('scramjet');
+ await workspace.locator('[data-omni]').fill('https://example.com/');
+ await workspace.locator('[data-omni]').press('Enter');
+ await popup.waitForFunction(()=>{
+   const host=document.querySelector('iframe[title="Website"]')?.contentDocument;
+   const frame=host?.querySelector('[data-view="s1"] iframe');
+   try{return frame?.contentDocument?.title==='Example Domain'}catch{return false}
+ },null,{timeout:60000});
+ assert.equal(await workspace.locator('.native-browser-error').count(),0,
+   'Scramjet must browse through the about:blank workspace');
  // Watch pages must never run YouTube's entire dynamic app in the
  // rewriter: even in a cloaked iframe, an official embed can be used instead.
  const watch='https://www.youtube.com/watch?v=jNQXAC9IVRw&t=3';
