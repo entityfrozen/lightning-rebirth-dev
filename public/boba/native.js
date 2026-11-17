@@ -16,7 +16,12 @@ applyPrefs();
 mountReimuEffects();
 async function start(){
  const data=await api('/api/me');
- if(!data.user){location.replace('/login');return}
+ if(!data.user){
+  if(window.parent!==window){
+   try{window.parent.postMessage({type:'celestial:auth-required'},location.origin)}catch{}
+  }
+  location.replace('/login');return
+ }
  const user=data.user,views=$('#views'),dock=$('#dock');
  installCloseGuard();
  // An account sync outage must never prevent the local workspace from opening.
@@ -73,11 +78,19 @@ async function start(){
  updateDock();
  views.hidden=false;dock.hidden=false;
  navigate(location.hash.slice(1)||sessionStorage.getItem('celestial.lastView')||'home');
+  // Report readiness after account validation and actual Boba app mounting.
+  // An iframe load alone does not prove the authenticated workspace opened.
+  if(window.parent!==window){
+    try{window.parent.postMessage({type:'celestial:workspace-ready'},location.origin)}catch{}
+  }
  window.addEventListener('hashchange',()=>{if(location.hash)navigate(location.hash.slice(1))});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dock.classList.contains('hide')){$('[data-wv]').classList.remove('max');dock.classList.remove('hide')}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='l'){e.preventDefault();navigate('browser');$('[data-omni]').focus()}});
 }
 start().catch(err=>{
  console.error('Celestial critical startup failure:',err);
+ if(window.parent!==window){
+  try{window.parent.postMessage({type:'celestial:workspace-failed'},location.origin)}catch{}
+ }
  const p=document.createElement('p');p.className='native-start-error';
  p.textContent='Unable to load Celestial: '+err.message;
  document.body.append(p);

@@ -67,7 +67,7 @@ test('cloaked browser selects the lightweight Reflux route for ordinary sites',(
  assert.match(browser,/const defaultEngineChoice=/);
  assert.match(browser,/browserRouter\.select\(url,t\.engineChoice\)/);
  assert.match(arcade,/if\(window\.self!==window\.top\)modeSelect\.value='ultraviolet'/);
- assert.match(wrapper,/Embedded browsing starts with Ultraviolet/);
+ assert.match(wrapper,/frame\.src=destination\.origin\+'\/\?cloaked=1'/);
 });
 
 test('Browser tabs and framed navigation avoid exposing search URLs as element attributes',()=>{
@@ -131,4 +131,24 @@ test('YouTube Music opens with Scramjet by default and Ultraviolet error pages t
   assert.match(browser,/return ultravioletError\|\|/);
   assert.match(browser,/!t\.autoFallbackAttempted&&!t\.direct/);
   assert.match(browser,/t\.mode=t\.mode==='ultraviolet'\?'scramjet':'ultraviolet'/);
+});
+
+test('cloaked workspace detects real startup and browsing status instead of iframe load',()=>{
+ const wrapper=source('../public/boba/about-blank.js');
+ const native=source('../public/boba/native.js');
+ const browser=source('../public/boba/browser.js');
+ assert.match(wrapper,/notice\.dataset\.cloakStatus='true'/);
+ assert.match(wrapper,/message\.type==='celestial:workspace-ready'/);
+ assert.match(wrapper,/message\.type==='celestial:auth-required'/);
+ assert.match(wrapper,/message\.type==='celestial:workspace-failed'/);
+ assert.match(native,/parent\.postMessage\(\{type:'celestial:auth-required'\}/);
+ assert.match(native,/parent\.postMessage\(\{type:'celestial:workspace-failed'\}/);
+ assert.match(wrapper,/message\.type==='celestial:browser-status'/);
+ assert.match(wrapper,/message\.status==='failed'/);
+ assert.match(wrapper,/event\.source!==frame\.contentWindow/);
+ assert.match(wrapper,/if\(failures>=3\)/);
+ assert.match(wrapper,/\?cloaked=1&retry=/);
+ assert.match(native,/parent\.postMessage\(\{type:'celestial:workspace-ready'\}/);
+ assert.match(browser,/reportStatus\('failed'\)/);
+ assert.match(browser,/reportStatus\('ready'\)/);
 });

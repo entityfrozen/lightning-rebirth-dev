@@ -243,6 +243,10 @@ const home = {
         }
       });
     };
+    const reportStatus=(status)=>{
+      if(window.parent===window)return;
+      try{window.parent.postMessage({type:'celestial:browser-status',status},location.origin)}catch{}
+    };
     const clearError=t=>{t.errorEl?.remove();t.errorEl=null;};
     const disposeView=t=>{
       clearInterval(t.lt);t.lt=null;
@@ -265,6 +269,7 @@ const home = {
         return;
       }
       t.busy=false;sync();clearError(t);
+      reportStatus('failed');
       const panel=document.createElement('div');panel.className='native-browser-error';
       const heading=document.createElement('h2');heading.textContent="This page couldn't be opened";
       const detail=document.createElement('p');detail.textContent=message||'The browsing engine could not open this site.';
@@ -293,7 +298,7 @@ const home = {
       clearInterval(t.lt);t.busy=false;sync();clearError(t);
       if(t.engineChoice==='smart'&&t.autoFallbackAttempted)
         browserRouter.remember(t.url,t.mode);
-      track(t);return true;
+      track(t);reportStatus('ready');return true;
     };
     const loading=t=>{
       clearInterval(t.lt);clearError(t);try{t.previousDoc=t.frame?.contentDocument||null}catch{t.previousDoc=null}t.busy=true;sync();
