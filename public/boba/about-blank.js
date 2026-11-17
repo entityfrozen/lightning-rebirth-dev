@@ -33,7 +33,8 @@ export function openAboutBlank(target,appearance={}){
   frame.title='Website';
   frame.src=destination.href;
   frame.referrerPolicy='no-referrer';
-  // Let the framed workspace inherit isolation so both browser engines can run.\n  frame.allow='cross-origin-isolated; fullscreen; clipboard-read; clipboard-write; picture-in-picture';
+  // Delegate media and isolation permissions through the cloaked workspace.
+  frame.allow='cross-origin-isolated; autoplay; encrypted-media; fullscreen; clipboard-read; clipboard-write; picture-in-picture';
   frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;background:#111621';
   const notice=doc.createElement('aside');
   notice.style.cssText='position:fixed;left:14px;bottom:14px;z-index:10;display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:10px;background:#202936;color:white;font:12px system-ui;box-shadow:0 2px 12px #0006;max-width:calc(100% - 28px)';
