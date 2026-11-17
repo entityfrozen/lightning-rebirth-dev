@@ -101,3 +101,9 @@ test('Reflux is the default browser engine; both engines recover once without a 
  assert.match(uv,/setTransport\('\/epoxy\/index.mjs'/);
  assert.doesNotMatch(server,/fail\(res,502,'Proxy worker/);
 });
+
+test('the cloaked workspace delegates isolation to its iframe',()=>{
+  const wrapper=source('../public/boba/about-blank.js');
+  assert.match(wrapper,/frame\.allow='cross-origin-isolated;/);
+  assert.match(wrapper,/frame\.src=destination\.href/);
+});
