@@ -114,6 +114,26 @@ try{
  assert.equal(nested.transport,'/reflux/index.mjs','Smart mode should still use Reflux on ordinary sites');
  assert.ok(nested.childTitle==='Example Domain'&&nested.childBody?.length>100,
    'Cloaked tab must render actual external content: '+JSON.stringify(nested));
+ // The about:blank launcher must acknowledge genuine browser readiness,
+ // expose recovery on a failed navigation, and reopen the authenticated app.
+ await popup.locator('[data-cloak-status]').waitFor({state:'hidden',timeout:12000});
+ await workspace.locator('#dock [data-section="s1"]').evaluate(el=>{
+   window.parent.postMessage({type:'celestial:browser-status',status:'failed'},location.origin);
+ });
+ await popup.locator('[data-cloak-status]').waitFor({state:'visible',timeout:10000});
+ assert.match(await popup.locator('[data-cloak-status]').innerText(),/Browser navigation failed/);
+ await popup.locator('[data-cloak-restart]').click();
+ await workspace.locator('#dock [data-section="s1"]').waitFor({timeout:30000});
+ await workspace.locator('#dock [data-section="s1"]').click();
+ await workspace.locator('[data-omni]').fill('https://example.com/');
+ await workspace.locator('[data-omni]').press('Enter');
+ await popup.waitForFunction(()=>{
+   const host=document.querySelector('iframe[title="Website"]')?.contentDocument;
+   const frame=host?.querySelector('[data-view="s1"] iframe');
+   try{return frame?.contentDocument?.title==='Example Domain'}catch{return false}
+ },null,{timeout:60000});
+ assert.equal(await workspace.locator('.native-browser-error').count(),0,
+   'Cloked workspace should navigate after restart');
  // Watch pages must never run YouTube's entire dynamic app in the
  // rewriter: even in a cloaked iframe, an official embed can be used instead.
  const watch='https://www.youtube.com/watch?v=jNQXAC9IVRw&t=3';
