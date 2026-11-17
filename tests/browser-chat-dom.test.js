@@ -119,3 +119,15 @@ test('Google verification navigations prefer Scramjet without changing the Reflu
   assert.match(browser,/store\.get\('browserEngine','reflux'\)/);
   assert.doesNotMatch(browser,/store\.set\('browserEngine','scramjet'\)/);
 });
+
+test('YouTube Music opens with Scramjet by default and Ultraviolet error pages trigger recovery',()=>{
+  const browser=source('../public/boba/browser.js');
+  assert.match(browser,/host==='youtube.com'/);
+  assert.match(browser,/host\.endsWith\('\.youtube.com'\)/);
+  assert.match(browser,/host==='youtu.be'/);
+  assert.match(browser,/error processing your request/i);
+  assert.match(browser,/internal server error/i);
+  assert.match(browser,/return ultravioletError\|\|/);
+  assert.match(browser,/!t\.autoFallbackAttempted&&!t\.direct/);
+  assert.match(browser,/t\.mode=t\.mode==='ultraviolet'\?'scramjet':'ultraviolet'/);
+});
