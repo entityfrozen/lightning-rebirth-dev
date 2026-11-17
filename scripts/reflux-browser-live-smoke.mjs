@@ -52,6 +52,9 @@ try{
  const status=await page.request.get(origin+'/api/browser/status');
  assert.equal(status.status(),200);
  assert.equal((await status.json()).proxy,true,'Browser backend must bootstrap');
+ const entry=await page.request.get(origin+'/');
+ assert.equal(entry.headers()['referrer-policy'],'strict-origin-when-cross-origin',
+   'The Boba workspace must identify itself to the official YouTube embed');
  for(const asset of ['/baremux/index.js','/baremux/worker.js',
   '/uv/sw.js','/uv/uv.bundle.js','/epoxy/index.mjs','/reflux/index.mjs']){
   const response=await page.request.get(origin+asset);
@@ -109,8 +112,34 @@ try{
  assert.equal(nested.mode,'ultraviolet','Framed browser should select Reflux');
  assert.ok(nested.childTitle==='Example Domain'&&nested.childBody?.length>100,
    'Cloaked tab must render actual external content: '+JSON.stringify(nested));
+ // Watch pages must never run YouTube's entire dynamic app in the
+ // rewriter: even in a cloaked iframe, an official embed can be used instead.
+ const watch='https://www.youtube.com/watch?v=jNQXAC9IVRw&t=3';
+ await workspace.locator('[data-omni]').fill(watch);
+ await workspace.locator('[data-omni]').press('Enter');
+ await workspace.locator('[data-youtube-player]').waitFor({timeout:10000});
+ const player=workspace.locator('[data-youtube-player] iframe');
+ const embed=await player.getAttribute('src');
+ assert.match(embed,/^https:\/\/www\.youtube-nocookie\.com\/embed\/jNQXAC9IVRw\?/);
+ assert.equal(new URL(embed).searchParams.get('start'),'3');
+ assert.equal(await player.getAttribute('referrerpolicy'),'strict-origin-when-cross-origin');
+ assert.match(await popup.locator('iframe[title="Website"]').getAttribute('allow'),
+   /autoplay; encrypted-media;/);
+ assert.equal(await workspace.locator('[data-view="s1"].on').count(),1,
+   'The browser shell must survive switching from a proxied site to video playback');
+ await popup.screenshot({path:path.join(shots,'cloaked-youtube-player.png')});
  await popup.close();
- console.log('Reflux transport, worker and actual external webpage rendered successfully.');
+ await page.locator('#dock [data-section="s1"]').click();
+ await page.locator('[data-omni]').fill(watch);
+ await page.locator('[data-omni]').press('Enter');
+ await page.locator('[data-youtube-player]').waitFor({timeout:10000});
+ assert.equal(await page.locator('[data-youtube-player] iframe').getAttribute('referrerpolicy'),
+   'strict-origin-when-cross-origin');
+ assert.equal(await page.locator('[data-youtube-player] [data-video-full]').count(),1);
+ assert.equal(await page.locator('[data-youtube-player] [data-video-external]').getAttribute('href'),
+   'https://www.youtube.com/watch?v=jNQXAC9IVRw&t=3');
+ console.log('Reflux and cloaked browsing work; lightweight YouTube player controls are mounted.');
+ console.log('External media decoding was not asserted: Google may block cloud-test traffic.');
 }catch(error){
  console.error('Reflux live smoke failed:',error.stack||error.message);
  if(page){

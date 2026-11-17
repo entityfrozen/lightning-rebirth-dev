@@ -3,6 +3,7 @@ import { I } from './icons.js';
 import { createProxyFrame, disposeProxyFrame, getProxyController } from './proxy.js';
 import { createUltravioletFrame, getUltravioletEngine } from './uv-proxy.js';
 import {maskFrameSearchLinks} from './search-link-mask.js';
+import {createYouTubePlayer,interceptYouTubeWatchLinks,isYouTubeSite,parseYouTubeVideoUrl} from './youtube-player.js';
 const $=(s,r=document)=>r.querySelector(s);
 const el=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild;};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -202,6 +203,7 @@ const home = {
         } catch {}
         const name = clean(d.title);
         const moved = !!real && real !== t.url;
+        if(moved&&handoffVideo(t,real))return;
         if (moved) {
           t.url = real;
           t.title = hostOf(real) || t.title;
@@ -214,11 +216,13 @@ const home = {
       };
       read();
       if (t.doc === d) return;
-      t.unmaskLinks?.();
-      t.unmaskLinks=null;
+      t.unmaskLinks?.();t.unmaskLinks=null;
+      t.unwatchLinks?.();t.unwatchLinks=null;
       t.doc=d;
-      // The visible markup does not need to expose each proxied search URL.
-      if(t.mode==='scramjet')t.unmaskLinks=maskFrameSearchLinks(d,(href,options)=>{
+      const realDoc=ctx.engine.decode(d.URL)||t.url;
+      // This observer scans all DOM additions; on YouTube's dense, constantly
+      // updating video pages it creates unnecessary work.
+      if(t.mode==='scramjet'&&!isYouTubeSite(realDoc))t.unmaskLinks=maskFrameSearchLinks(d,(href,options)=>{
         if(options.newTab){
           const real=ctx.engine.decode(href);
           if(real)navigate(real,true);
@@ -228,6 +232,11 @@ const home = {
         loading(t);
         t.frame.src=href;
       });
+      if(isYouTubeSite(realDoc))t.unwatchLinks=interceptYouTubeWatchLinks(d,
+        candidate=>ctx.engine.decode(candidate),(url,options)=>{
+          if(tab()!==t)return;
+          void navigate(url,options.newTab);
+        });
       const ttl = d.querySelector("title");
       if (ttl) new MutationObserver(read).observe(ttl, { childList: true, characterData: true, subtree: true });
     };
@@ -244,6 +253,13 @@ const home = {
       });
     };
     const clearError=t=>{t.errorEl?.remove();t.errorEl=null;};
+    const disposeView=t=>{
+      clearInterval(t.lt);t.lt=null;
+      t.unmaskLinks?.();t.unmaskLinks=null;
+      t.unwatchLinks?.();t.unwatchLinks=null;t.doc=null;
+      if(t.frame){ctx.engine.dispose(t.frame);t.frame.remove();t.frame=null}
+      t.videoPanel?.remove();t.videoPanel=null;
+    };
     const showError=(t,message)=>{
       clearInterval(t.lt);
       // Recover through the other engine once per navigation. Both engines
@@ -308,7 +324,11 @@ const home = {
       const t = tab();
       proxySelect.value=t?.mode||defaultProxy();
       nt.style.visibility = t && t.url ? "hidden" : "";
-      for(const x of st.tabs){if(x.frame)x.frame.style.display=x.id===st.active&&x.url?"block":"none"}
+      for(const x of st.tabs){
+        const visible=x.id===st.active&&!!x.url;
+        if(x.frame)x.frame.style.display=visible?'block':'none';
+        if(x.videoPanel)x.videoPanel.style.display=visible?'flex':'none';
+      }
       if (document.activeElement !== omni) omni.value = t && t.url ? hostOf(t.url) : "";
       show();
       sync();
@@ -330,9 +350,7 @@ const home = {
     const closeTab = (id) => {
       const i = st.tabs.findIndex((t) => t.id === id);
       if (i < 0) return;
-      clearInterval(st.tabs[i].lt);clearError(st.tabs[i]);
-      st.tabs[i].unmaskLinks?.();st.tabs[i].unmaskLinks=null;
-      if (st.tabs[i].frame) { ctx.engine.dispose(st.tabs[i].frame); st.tabs[i].frame.remove(); }
+      clearError(st.tabs[i]);disposeView(st.tabs[i]);
       st.tabs.splice(i, 1);
       if (st.active === id && st.tabs.length) st.active = st.tabs[Math.min(i, st.tabs.length - 1)].id;
       tip.classList.remove("on");
@@ -352,6 +370,27 @@ const home = {
       if (!url) return;
       const t = fresh || !tab() ? newTab() : tab();
       if(url!==t.url)t.autoFallbackAttempted=false;
+      const video=parseYouTubeVideoUrl(url);
+      if(video&&t.fullYouTubeUrl!==video.watchUrl){
+        if(!t.videoPanel&&isYouTubeSite(t.url)&&!parseYouTubeVideoUrl(t.url))
+          t.videoReturnUrl=t.url;
+        disposeView(t);
+        t.url=video.watchUrl;
+        t.title='YouTube video';
+        t.name='YouTube video';
+        t.busy=false;
+        t.direct=true;t.proxyRequested=false;
+        const player=createYouTubePlayer(video,{
+          back:()=>void navigate(t.videoReturnUrl||'https://www.youtube.com/'),
+          fullPage:()=>{t.fullYouTubeUrl=video.watchUrl;void navigate(video.watchUrl)}
+        });
+        t.videoPanel=player.panel;t.frame=player.frame;
+        page.append(player.panel);
+        ctx.history.push({kind:'site',key:'site:YouTube',name:'YouTube video',url:t.url});
+        paint();
+        return;
+      }
+      if(t.videoPanel)disposeView(t);
       // Keep Reflux as the general default. Route Google and YouTube through
       // Scramjet unless the user manually selected an engine in this tab.
       if(t.mode==='ultraviolet'&&!t.engineManuallySelected&&prefersScramjetForGoogle(url)){
@@ -375,10 +414,14 @@ const home = {
       t.url=url;
       t.proxyRequested=true;
       paint();
+      const liveFrame=t.frame;
       try{
         await ctx.engine.openFrame(t.frame,url,real=>{
+          if(t.frame!==liveFrame)return;
+          if(handoffVideo(t,real))return;
           t.url=real;t.title=hostOf(real)||"Page";paint();
         },popup=>navigate(popup,true),t.mode);
+        if(t.frame!==liveFrame)return;
       }catch(error){
         showError(t,error.message);
         return;
@@ -386,6 +429,20 @@ const home = {
       if(t.busy)loaded(t);
       ctx.history.push({ kind: "site", key: "site:" + t.title, name: t.title, url });
       paint();
+    };
+    // Scramjet can report SPA navigations without a document load. Turn a
+    // YouTube watch route into the lightweight player before hydration fails.
+    const handoffVideo=(t,real)=>{
+      const video=parseYouTubeVideoUrl(real);
+      if(!video||t.fullYouTubeUrl===video.watchUrl||
+         t.videoNavigationRequested===video.watchUrl)return false;
+      t.videoNavigationRequested=video.watchUrl;
+      queueMicrotask(()=>{
+        if(tab()===t&&t.videoNavigationRequested===video.watchUrl)
+          void navigate(video.watchUrl);
+        t.videoNavigationRequested=null;
+      });
+      return true;
     };
     st.navigate = navigate;
 
@@ -523,6 +580,7 @@ const home = {
       if(current.mode===selected)return;
       current.mode=selected;
       current.engineManuallySelected=true;
+      if(current.videoPanel)current.fullYouTubeUrl=current.url;
       current.autoFallbackAttempted=false;
       if(current.frame){
         current.unmaskLinks?.();current.unmaskLinks=null;current.doc=null;
