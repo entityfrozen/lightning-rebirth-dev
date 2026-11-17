@@ -60,11 +60,12 @@ test('Both proxy engines use separate service workers and transports',()=>{
  assert.ok(browser.includes('createUltravioletFrame'));
 });
 
-test('about:blank browser and Arcade select Ultraviolet by default without changing standalone preferences',()=>{
+test('cloaked browser selects the lightweight Reflux route for ordinary sites',()=>{
  const browser=source('../public/boba/browser.js');
  const arcade=source('../public/boba/catalog-ui.js');
  const wrapper=source('../public/boba/about-blank.js');
- assert.match(browser,/window\.self!==window\.top\?'ultraviolet'/);
+ assert.match(browser,/const defaultEngineChoice=/);
+ assert.match(browser,/browserRouter\.select\(url,t\.engineChoice\)/);
  assert.match(arcade,/if\(window\.self!==window\.top\)modeSelect\.value='ultraviolet'/);
  assert.match(wrapper,/Embedded browsing starts with Ultraviolet/);
 });
@@ -81,11 +82,12 @@ test('Browser tabs and framed navigation avoid exposing search URLs as element a
  assert.doesNotMatch(adapter,/element\.removeAttribute\('src'\)/);
 });
 
-test('Reflux is the default browser engine; both engines recover once without a loop',()=>{
+test('Smart browsing defaults to Reflux on ordinary sites and recovers once',()=>{
  const browser=source('../public/boba/browser.js');
  const uv=source('../public/boba/uv-proxy.js');
  const server=source('../server.js');
- assert.match(browser,/store.get\('browserEngine','reflux'\)/);
+ assert.match(browser,/store\.get\('browserEngine','smart'\)/);
+ assert.match(browser,/<option value="smart">Smart<\/option>/);
  assert.match(browser,/<option value="ultraviolet">Reflux<\/option>/);
  assert.match(browser,/aria-label="Browsing engine"/);
  assert.doesNotMatch(browser,/aria-label="Proxy engine"/);
@@ -108,23 +110,22 @@ test('the cloaked workspace delegates isolation to its iframe',()=>{
   assert.match(wrapper,/frame\.src=destination\.href/);
 });
 
-test('Google verification navigations prefer Scramjet without changing the Reflux default',()=>{
-  const browser=source('../public/boba/browser.js');
-  assert.match(browser,/prefersScramjetForGoogle\(url\)/);
-  assert.match(browser,/host==='google.com'/);
-  assert.match(browser,/host\.endsWith\('\.google.com'\)/);
-  assert.match(browser,/t\.mode==='ultraviolet'&&!t\.engineManuallySelected/);
-  assert.match(browser,/t\.mode='scramjet'/);
-  assert.match(browser,/current\.engineManuallySelected=true/);
-  assert.match(browser,/store\.get\('browserEngine','reflux'\)/);
-  assert.doesNotMatch(browser,/store\.set\('browserEngine','scramjet'\)/);
+test('Smart mode routes Google and YouTube through Scramjet without overriding manual choices',()=>{
+ const router=source('../public/boba/engine-router.js');
+ const browser=source('../public/boba/browser.js');
+ assert.match(router,/host==='google.com'|\x27google.com\x27/);
+ assert.match(router,/youtube.com/);
+ assert.match(browser,/browserRouter\.select\(url,t\.engineChoice\)/);
+ assert.match(browser,/current\.engineChoice=choice/);
+ assert.match(browser,/store\.get\('browserEngine','smart'\)/);
+ assert.match(browser,/browserRouter\.remember\(t\.url,t\.mode\)/);
 });
 
 test('YouTube Music opens with Scramjet by default and Ultraviolet error pages trigger recovery',()=>{
   const browser=source('../public/boba/browser.js');
-  assert.match(browser,/host==='youtube.com'/);
-  assert.match(browser,/host\.endsWith\('\.youtube.com'\)/);
-  assert.match(browser,/host==='youtu.be'/);
+  const router=source('../public/boba/engine-router.js');
+  assert.match(router,/youtube.com/);
+  assert.match(router,/youtu.be/);
   assert.match(browser,/error processing your request/i);
   assert.match(browser,/internal server error/i);
   assert.match(browser,/return ultravioletError\|\|/);
