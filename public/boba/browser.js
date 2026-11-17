@@ -17,15 +17,17 @@ const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f
 const get=async()=>[];
 function failPage(frame,url,retry,message='The page could not load.'){const doc=frame.contentDocument;if(!doc)return;doc.body?.replaceChildren();const p=doc.createElement('p');p.textContent=message;const b=doc.createElement('button');b.textContent='Retry';b.onclick=retry;doc.body?.append(p,b);}
 const frames=new WeakMap();
-// Google's challenge scripts can stall under the Ultraviolet rewrite path.
-// Use Scramjet for Google navigation, without changing the user's default
-// or routing arbitrary third-party hosts through a different engine.
+// Google verification and YouTube pages can fail under the Ultraviolet rewrite path.
+// Prefer Scramjet on those domains without changing the default engine.
 const prefersScramjetForGoogle=url=>{
   try{
     const host=new URL(url).hostname.toLowerCase().replace(/\.$/,'');
     return host==='google.com'||host.endsWith('.google.com')||
       host==='google.co.uk'||host.endsWith('.google.co.uk')||
-      host==='recaptcha.net'||host.endsWith('.recaptcha.net');
+      host==='recaptcha.net'||host.endsWith('.recaptcha.net')||
+      host==='youtube.com'||host.endsWith('.youtube.com')||
+      host==='youtube-nocookie.com'||host.endsWith('.youtube-nocookie.com')||
+      host==='youtu.be';
   }catch{return false}
 };
 // An about:blank wrapper is a framed workspace. Prefer the engine that does not
@@ -55,7 +57,9 @@ const engine={
      if(!browserPath)return false;
      if(d.querySelector('meta[http-equiv="refresh"][content*="/boba/index.html"]'))return true;
      const text=(d.body?.textContent||'').slice(0,300);
-     return /(?:Browser engine|Ultraviolet worker|Scramjet worker|Proxy worker) did not intercept|The (?:proxy|browser) engine is unavailable|(?:Proxy|Browser) transport failed|could not open this navigation/i.test(text);
+     const ultravioletError=/error processing your request/i.test(title+' '+text)||
+        (/internal server error/i.test(title+' '+text)&&/failed to load|ultraviolet/i.test(text));
+      return ultravioletError||/(?:Browser engine|Ultraviolet worker|Scramjet worker|Proxy worker) did not intercept|The (?:proxy|browser) engine is unavailable|(?:Proxy|Browser) transport failed|could not open this navigation/i.test(text);
    }catch{return false}
  },
  async openFrame(el,url,onNavigate,onPopup,mode='scramjet'){
@@ -348,8 +352,8 @@ const home = {
       if (!url) return;
       const t = fresh || !tab() ? newTab() : tab();
       if(url!==t.url)t.autoFallbackAttempted=false;
-      // Keep Reflux as the general default. Google uses the engine that
-      // preserves its verification flow more reliably in our browser shell.
+      // Keep Reflux as the general default. Route Google and YouTube through
+      // Scramjet unless the user manually selected an engine in this tab.
       if(t.mode==='ultraviolet'&&!t.engineManuallySelected&&prefersScramjetForGoogle(url)){
         t.mode='scramjet';
         if(t.frame){
