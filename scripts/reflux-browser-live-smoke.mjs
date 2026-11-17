@@ -78,6 +78,38 @@ try{
  },null,{timeout:65000});
  assert.equal(await page.locator('.native-browser-error').count(),0,'Browsing must not show an error card');
  await page.screenshot({path:path.join(shots,'reflux-example-domain.png')});
+ // The about:blank wrapper must browse too, not just render Celestial.
+ await page.locator('#dock [data-section="s5"]').click();
+ const [popup]=await Promise.all([
+   page.waitForEvent('popup',{timeout:12000}),
+   page.locator('[data-tab-blank]').click()
+ ]);
+ await popup.waitForLoadState('domcontentloaded');
+ const workspace=popup.frameLocator('iframe[title="Website"]');
+ await workspace.locator('#dock [data-section="s1"]').waitFor({timeout:25000});
+ await workspace.locator('#dock [data-section="s1"]').click();
+ await workspace.locator('[data-omni]').fill('https://example.com/');
+ await workspace.locator('[data-omni]').press('Enter');
+ await popup.waitForTimeout(12000);
+ const nested=await popup.evaluate(async()=>{
+   const iframe=document.querySelector('iframe[title="Website"]');
+   const win=iframe?.contentWindow;
+   const doc=iframe?.contentDocument;
+   const child=doc?.querySelector('[data-view="s1"] iframe');
+   let connection='unavailable';
+   try{connection=win?.BareMux?.BareMuxConnection?await new win.BareMux.BareMuxConnection('/baremux/worker.js').getTransport():'missing'}catch(e){connection=e.message}
+   return {crossOriginIsolated:win?.crossOriginIsolated,secure:win?.isSecureContext,
+      workerSupported:!!win?.navigator?.serviceWorker,transport:connection,
+      mode:doc?.querySelector('[data-engine-mode]')?.value,
+      error:doc?.querySelector('.native-browser-error')?.textContent,
+      childSrc:child?.getAttribute('src'),childUrl:child?.contentDocument?.URL,
+      childTitle:child?.contentDocument?.title,childBody:child?.contentDocument?.body?.textContent?.slice(0,350)};
+ });
+ console.log('CLOAKED_BROWSER_DIAGNOSTIC',JSON.stringify(nested));
+ assert.equal(nested.mode,'ultraviolet','Framed browser should select Reflux');
+ assert.ok(nested.childTitle==='Example Domain'&&nested.childBody?.length>100,
+   'Cloaked tab must render actual external content: '+JSON.stringify(nested));
+ await popup.close();
  console.log('Reflux transport, worker and actual external webpage rendered successfully.');
 }catch(error){
  console.error('Reflux live smoke failed:',error.stack||error.message);
