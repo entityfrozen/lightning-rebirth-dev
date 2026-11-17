@@ -73,6 +73,11 @@ async function start(){
  updateDock();
  views.hidden=false;dock.hidden=false;
  navigate(location.hash.slice(1)||sessionStorage.getItem('celestial.lastView')||'home');
+  // Report readiness after account validation and actual Boba app mounting.
+  // An iframe load alone does not prove the authenticated workspace opened.
+  if(window.parent!==window){
+    try{window.parent.postMessage({type:'celestial:workspace-ready'},location.origin)}catch{}
+  }
  window.addEventListener('hashchange',()=>{if(location.hash)navigate(location.hash.slice(1))});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dock.classList.contains('hide')){$('[data-wv]').classList.remove('max');dock.classList.remove('hide')}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='l'){e.preventDefault();navigate('browser');$('[data-omni]').focus()}});
 }
