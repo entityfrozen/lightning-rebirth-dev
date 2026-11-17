@@ -454,7 +454,14 @@ const home = {
     }, 160);
     omni.addEventListener("input", suggest);
     let picked = false;
-    const warm = () => ((tab()?.mode||defaultProxy())==='ultraviolet'?getUltravioletEngine():ctx.engine.boot()).catch(()=>{});
+    const warm=()=>{
+      const active=tab();
+      // An empty Smart tab has no destination yet. Starting both workers
+      // while the user types wastes resources and can slow mobile devices.
+      if((active?.engineChoice||defaultEngineChoice())==='smart')return;
+      const mode=active?.mode||defaultProxy();
+      (mode==='scramjet'?getProxyController():getUltravioletEngine()).catch(()=>{});
+    };
     omni.addEventListener("focus", () => {
       addr.classList.remove("show");
       omni.select();
