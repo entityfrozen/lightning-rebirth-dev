@@ -101,3 +101,33 @@ test('Reflux is the default browser engine; both engines recover once without a 
  assert.match(uv,/setTransport\('\/epoxy\/index.mjs'/);
  assert.doesNotMatch(server,/fail\(res,502,'Proxy worker/);
 });
+
+test('the cloaked workspace delegates isolation to its iframe',()=>{
+  const wrapper=source('../public/boba/about-blank.js');
+  assert.match(wrapper,/frame\.allow='cross-origin-isolated;/);
+  assert.match(wrapper,/frame\.src=destination\.href/);
+});
+
+test('Google verification navigations prefer Scramjet without changing the Reflux default',()=>{
+  const browser=source('../public/boba/browser.js');
+  assert.match(browser,/prefersScramjetForGoogle\(url\)/);
+  assert.match(browser,/host==='google.com'/);
+  assert.match(browser,/host\.endsWith\('\.google.com'\)/);
+  assert.match(browser,/t\.mode==='ultraviolet'&&!t\.engineManuallySelected/);
+  assert.match(browser,/t\.mode='scramjet'/);
+  assert.match(browser,/current\.engineManuallySelected=true/);
+  assert.match(browser,/store\.get\('browserEngine','reflux'\)/);
+  assert.doesNotMatch(browser,/store\.set\('browserEngine','scramjet'\)/);
+});
+
+test('YouTube Music opens with Scramjet by default and Ultraviolet error pages trigger recovery',()=>{
+  const browser=source('../public/boba/browser.js');
+  assert.match(browser,/host==='youtube.com'/);
+  assert.match(browser,/host\.endsWith\('\.youtube.com'\)/);
+  assert.match(browser,/host==='youtu.be'/);
+  assert.match(browser,/error processing your request/i);
+  assert.match(browser,/internal server error/i);
+  assert.match(browser,/return ultravioletError\|\|/);
+  assert.match(browser,/!t\.autoFallbackAttempted&&!t\.direct/);
+  assert.match(browser,/t\.mode=t\.mode==='ultraviolet'\?'scramjet':'ultraviolet'/);
+});

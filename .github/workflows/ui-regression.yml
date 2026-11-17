@@ -2,7 +2,7 @@ name: Home and Arcade UI smoke test
 
 on:
   push:
-    branches: [main, celestial-boba-shell, 'feature/**']
+    branches: [main, celestial-boba-shell, 'feature/**', 'fix/**']
   pull_request:
 
 permissions:
