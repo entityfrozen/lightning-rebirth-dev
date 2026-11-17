@@ -344,7 +344,7 @@ const home = {
       paint();
       const first = !t.frame;
       if(first){
-        t.frame=el('<iframe title="Page" allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"></iframe>');
+        t.frame=el('<iframe title="Page" allow="cross-origin-isolated; autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"></iframe>');
         page.appendChild(t.frame);
         t.frame.addEventListener("load",()=>loaded(t));
       }
