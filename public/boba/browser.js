@@ -259,12 +259,7 @@ const home = {
       // attached to the previous document and produce an empty frame.
       if(!t.autoFallbackAttempted&&!t.direct&&t.url){
         t.autoFallbackAttempted=true;
-        t.unmaskLinks?.();t.unmaskLinks=null;t.doc=null;
-        if(t.frame){
-          ctx.engine.dispose(t.frame);
-          t.frame.remove();
-          t.frame=null;
-        }
+        disposeView(t);
         t.mode=t.mode==='ultraviolet'?'scramjet':'ultraviolet';
         void navigate(t.url);
         return;
@@ -581,13 +576,8 @@ const home = {
       if(current.mode===selected){paint();return}
       current.mode=selected;
       if(current.videoPanel)current.fullYouTubeUrl=current.url;
-      if(current.frame){
-        current.unmaskLinks?.();current.unmaskLinks=null;current.doc=null;
-        ctx.engine.dispose(current.frame);
-        current.frame.remove();
-        current.frame=null;
-        current.proxyRequested=false;
-      }
+      disposeView(current);
+      current.proxyRequested=false;
       if(current.url)navigate(current.url);
       else paint();
     });
