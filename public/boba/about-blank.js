@@ -111,6 +111,16 @@ export function openAboutBlank(target,appearance={}){
     restartFrame();
     return;
    }
+   if(message.type==='celestial:auth-required'){
+    ready=true;popup.clearTimeout(watchdog);
+    display('Sign in to Celestial in this window to enable the browser.');
+    return;
+   }
+   if(message.type==='celestial:workspace-failed'){
+    ready=false;popup.clearTimeout(watchdog);
+    display('Celestial could not finish starting. Restart the browser.',true);
+    return;
+   }
    if(message.type==='celestial:workspace-ready'){
     ready=true;failures=0;
     popup.clearTimeout(watchdog);
