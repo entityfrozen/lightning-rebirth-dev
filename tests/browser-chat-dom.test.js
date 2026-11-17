@@ -67,7 +67,7 @@ test('cloaked browser selects the lightweight Reflux route for ordinary sites',(
  assert.match(browser,/const defaultEngineChoice=/);
  assert.match(browser,/browserRouter\.select\(url,t\.engineChoice\)/);
  assert.match(arcade,/if\(window\.self!==window\.top\)modeSelect\.value='ultraviolet'/);
- assert.match(wrapper,/Embedded browsing starts with Ultraviolet/);
+ assert.match(wrapper,/frame\.src=destination\.origin\+'\/\?cloaked=1'/);
 });
 
 test('Browser tabs and framed navigation avoid exposing search URLs as element attributes',()=>{
@@ -137,7 +137,7 @@ test('cloaked workspace detects real startup and browsing status instead of ifra
  const wrapper=source('../public/boba/about-blank.js');
  const native=source('../public/boba/native.js');
  const browser=source('../public/boba/browser.js');
- assert.match(wrapper,/data\.cloakStatus='true'/);
+ assert.match(wrapper,/notice\.dataset\.cloakStatus='true'/);
  assert.match(wrapper,/message\.type==='celestial:workspace-ready'/);
  assert.match(wrapper,/message\.type==='celestial:browser-status'/);
  assert.match(wrapper,/message\.status==='failed'/);
