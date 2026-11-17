@@ -139,6 +139,10 @@ test('cloaked workspace detects real startup and browsing status instead of ifra
  const browser=source('../public/boba/browser.js');
  assert.match(wrapper,/notice\.dataset\.cloakStatus='true'/);
  assert.match(wrapper,/message\.type==='celestial:workspace-ready'/);
+ assert.match(wrapper,/message\.type==='celestial:auth-required'/);
+ assert.match(wrapper,/message\.type==='celestial:workspace-failed'/);
+ assert.match(native,/parent\.postMessage\(\{type:'celestial:auth-required'\}/);
+ assert.match(native,/parent\.postMessage\(\{type:'celestial:workspace-failed'\}/);
  assert.match(wrapper,/message\.type==='celestial:browser-status'/);
  assert.match(wrapper,/message\.status==='failed'/);
  assert.match(wrapper,/event\.source!==frame\.contentWindow/);
