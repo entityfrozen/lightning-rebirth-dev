@@ -146,6 +146,18 @@ try{
  },null,{timeout:60000});
  assert.equal(await workspace.locator('.native-browser-error').count(),0,
    'Scramjet must browse through the about:blank workspace');
+ // The in-memory diagnostics must report Scramjet startup and navigation,
+ // without ever exposing the visited website address.
+ await workspace.locator('#dock [data-section="s5"]').click();
+ await workspace.locator('[data-scramjet-log]').waitFor({timeout:10000});
+ const scramjetLog=await workspace.locator('[data-scramjet-log]').innerText();
+ assert.match(scramjetLog,/bootstrap|controller-ready|frame-create/);
+ assert.match(scramjetLog,/navigate/);
+ assert.doesNotMatch(scramjetLog,/https?:\/\/|example\.com|cookie|password/);
+ await workspace.locator('[data-scramjet-clear]').click();
+ assert.match(await workspace.locator('[data-scramjet-log]').innerText(),
+   /No Scramjet events recorded/);
+ await workspace.locator('#dock [data-section="s1"]').click();
  // Watch pages must never run YouTube's entire dynamic app in the
  // rewriter: even in a cloaked iframe, an official embed can be used instead.
  const watch='https://www.youtube.com/watch?v=jNQXAC9IVRw&t=3';
