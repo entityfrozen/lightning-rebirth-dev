@@ -58,11 +58,11 @@ export function openAboutBlank(target,appearance={}){
    element.style.cssText='border:1px solid #ffffff36;border-radius:7px;padding:6px 9px;background:#303d4e;color:white;font:600 12px system-ui;cursor:pointer';
   }
   fallback.style.cssText='color:#9dd9ff;white-space:nowrap';
-  dismiss.onclick=()=>notice.hidden=true;
+  dismiss.onclick=()=>{notice.style.display='none'};
   let ready=false,failures=0,watchdog;
   const display=(message,failed=false)=>{
    label.textContent=message;
-   notice.hidden=false;
+   notice.style.display='flex';
    restart.hidden=!failed;
   };
   const startWatchdog=()=>{
@@ -115,7 +115,7 @@ export function openAboutBlank(target,appearance={}){
     ready=true;failures=0;
     popup.clearTimeout(watchdog);
     display('Celestial browser ready');
-    popup.setTimeout(()=>{if(ready)notice.hidden=true},1800);
+    popup.setTimeout(()=>{if(ready)notice.style.display='none'},1800);
     return;
    }
    if(message.type==='celestial:browser-status'){
@@ -123,7 +123,7 @@ export function openAboutBlank(target,appearance={}){
      display('Browser navigation failed. Change engines in Browser, or restart the workspace.',true);
     }else if(message.status==='ready'){
      ready=true;popup.clearTimeout(watchdog);
-     notice.hidden=true;
+     notice.style.display='none';
     }
     return;
    }
