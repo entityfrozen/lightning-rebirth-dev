@@ -33,7 +33,7 @@ jobs:
           if [ "${{ github.head_ref || github.ref_name }}" = "boba-reflux-browser-approval" ]; then
             node scripts/boba-hardening-smoke.mjs
             node scripts/reflux-browser-live-smoke.mjs
-          elif [ "${{ github.head_ref || github.ref_name }}" = "fix/cloaked-browser-2026" ] || [ "${{ github.head_ref || github.ref_name }}" = "fix/youtube-watch-playback" ]; then
+          elif [ "${{ github.head_ref || github.ref_name }}" = "fix/cloaked-browser-2026" ] || [ "${{ github.head_ref || github.ref_name }}" = "fix/youtube-watch-playback" ] || [ "${{ github.head_ref || github.ref_name }}" = "feature/browser-smart-engine" ]; then
             node scripts/reflux-browser-live-smoke.mjs
           elif [ "${{ github.head_ref || github.ref_name }}" = "celestial-boba-shell" ] || [ "${{ github.head_ref || github.ref_name }}" = "boba-source-hardening" ] || [ "${{ github.head_ref || github.ref_name }}" = "feature/academy-launch-transition" ]; then
             node scripts/boba-hardening-smoke.mjs
