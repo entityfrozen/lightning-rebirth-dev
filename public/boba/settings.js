@@ -70,7 +70,7 @@ export const settings = {
        scramjetOutput.textContent=snapshot.events.length?
          snapshot.events.slice(-35).map(event=>event.at.slice(11,19)+'  '+event.stage+
            '  '+event.outcome+(event.reason?' ('+event.reason+')':'')+
-           (event.durationMs!==undefined?'  '+event.durationMs+'ms':'')).join('\\n'):
+           (event.durationMs!==undefined?'  '+event.durationMs+'ms':'')).join('\n'):
          'No Scramjet events recorded in this tab.';
      };
      window.addEventListener('celestial:scramjet-log',refreshScramjet);
