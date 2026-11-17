@@ -16,7 +16,12 @@ applyPrefs();
 mountReimuEffects();
 async function start(){
  const data=await api('/api/me');
- if(!data.user){location.replace('/login');return}
+ if(!data.user){
+  if(window.parent!==window){
+   try{window.parent.postMessage({type:'celestial:auth-required'},location.origin)}catch{}
+  }
+  location.replace('/login');return
+ }
  const user=data.user,views=$('#views'),dock=$('#dock');
  installCloseGuard();
  // An account sync outage must never prevent the local workspace from opening.
@@ -83,6 +88,9 @@ async function start(){
 }
 start().catch(err=>{
  console.error('Celestial critical startup failure:',err);
+ if(window.parent!==window){
+  try{window.parent.postMessage({type:'celestial:workspace-failed'},location.origin)}catch{}
+ }
  const p=document.createElement('p');p.className='native-start-error';
  p.textContent='Unable to load Celestial: '+err.message;
  document.body.append(p);
