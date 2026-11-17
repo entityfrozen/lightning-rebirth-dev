@@ -9,11 +9,11 @@ test('Scramjet reports safe, bounded stage diagnostics with no third-party URLs'
  clearScramjetDiagnostics();
  const target='https://secret.example.net/watch?token=password123';
  const error=new Error('Could not load '+target+'; secret_cookie=123');
- for(let i=0;i<110;i++)recordScramjet('controller-init','error',{error,durationMs:10});
+ for(let i=0;i<110;i++)recordScramjet('controller-init',i===109?'error':'info',{error,durationMs:10});
  const report=getScramjetDiagnostics();
  assert.equal(report.events.length,80);
  assert.equal(report.events[0].stage,'controller-init');
- assert.equal(report.events[0].outcome,'error');
+ assert.equal(report.events[79].outcome,'error');
  const json=exportScramjetDiagnostics();
  assert.doesNotMatch(json,/secret\.example|password123|secret_cookie|watch\?/);
  assert.match(json,/controller-init/);
