@@ -89,14 +89,17 @@ export function openAboutBlank(target,appearance={}){
   notice.append(label,restart,fallback,dismiss);
   restart.hidden=true;
   doc.body.append(frame,notice);
-  if(destination.origin===location.origin&&
-    (destination.pathname==='/'||destination.pathname==='/boba/index.html')){
+  const isWorkspace=destination.origin===location.origin&&
+    (destination.pathname==='/'||destination.pathname==='/boba/index.html');
+  if(isWorkspace){
    frame.src=destination.origin+'/?cloaked=1';
    fallback.href=destination.origin+'/';
+   startWatchdog();
   }else{
+   label.textContent='This website may prevent being opened inside a frame.';
    fallback.href=destination.href;
+   restart.hidden=true;
   }
-  startWatchdog();
   popup.addEventListener('pagehide',()=>popup.clearTimeout(watchdog),{once:true});
   // Only accept signals from the workspace we created. Other pages or
   // unrelated iframes cannot dismiss an error or rewrite this control.
