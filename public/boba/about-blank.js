@@ -36,48 +36,100 @@ export function openAboutBlank(target,appearance={}){
   // Delegate media and isolation permissions through the cloaked workspace.
   frame.allow='cross-origin-isolated; autoplay; encrypted-media; fullscreen; clipboard-read; clipboard-write; picture-in-picture';
   frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;background:#111621';
+  // A framed workspace is a real application, not just an iframe. Keep a
+  // small recovery surface in the about:blank tab so blocked workers do not
+  // leave the user staring at an unresponsive blank page.
   const notice=doc.createElement('aside');
-  notice.style.cssText='position:fixed;left:14px;bottom:14px;z-index:10;display:flex;gap:10px;align-items:center;padding:9px 12px;border-radius:10px;background:#202936;color:white;font:12px system-ui;box-shadow:0 2px 12px #0006;max-width:calc(100% - 28px)';
+  notice.dataset.cloakStatus='true';
+  notice.style.cssText='position:fixed;left:14px;bottom:14px;z-index:10;display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding:9px 12px;border-radius:11px;background:#202936;color:white;font:12px system-ui;box-shadow:0 2px 12px #0006;max-width:calc(100% - 28px)';
   const label=doc.createElement('span');
-  label.textContent='If the page is blank, this site may block embedded windows.';
+  label.textContent='Starting Celestial browser…';
+  const restart=doc.createElement('button');
+  restart.type='button';
+  restart.textContent='Restart browser';
+  restart.dataset.cloakRestart='true';
   const fallback=doc.createElement('a');
-  fallback.href=destination.href;fallback.target='_blank';fallback.rel='noopener noreferrer';
-  fallback.textContent='Open regular tab';fallback.style.cssText='color:#9dd9ff;white-space:nowrap';
+  fallback.href=destination.origin+'/';
+  fallback.target='_blank';fallback.rel='noopener noreferrer';
+  fallback.textContent='Open regular tab';
   const dismiss=doc.createElement('button');
-  dismiss.type='button';dismiss.textContent='×';dismiss.setAttribute('aria-label','Dismiss');
-  dismiss.style.cssText='border:0;background:none;color:white;font:20px system-ui;cursor:pointer';
-  dismiss.onclick=()=>notice.remove();
-  notice.append(label,fallback,dismiss);
-  // A Scramjet controller needs a top-level isolated HTTPS document.
-  // Keep an escape hatch in the *wrapper*, not in the framed application:
-  // privacy checks or frame restrictions can prevent the iframe loading.
-  if(destination.origin===location.origin&&(destination.pathname==='/'||destination.pathname==='/boba/index.html')){
-   label.textContent='Embedded browsing starts with Ultraviolet. Scramjet may require a regular tab.';
-   const standalone=doc.createElement('button');
-   standalone.type='button';
-   standalone.dataset.openStandalone='true';
-   standalone.textContent='Open Browser';
-   standalone.style.cssText='border:0;border-radius:7px;padding:7px 10px;background:#75d4df;color:#06141b;font-weight:700;cursor:pointer;white-space:nowrap';
-   standalone.onclick=()=>{
-    const browser=new URL('/',destination.origin);
-    popup.location.assign(browser.href);
-   };
-   notice.insertBefore(standalone,fallback);
+  dismiss.type='button';dismiss.textContent='×';dismiss.setAttribute('aria-label','Hide status');
+  for(const element of [restart,dismiss]){
+   element.style.cssText='border:1px solid #ffffff36;border-radius:7px;padding:6px 9px;background:#303d4e;color:white;font:600 12px system-ui;cursor:pointer';
   }
-  doc.body.append(frame,notice);
-  // The iframe handles its own sign-in redirect. The parent also refreshes it
-  // on a successful login in case the browser delays child navigation.
-  // Only trust messages from the iframe we created on our origin.
-  popup.addEventListener('message',event=>{
-   if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
-   if(event.data?.type==='celestial:auth-success'){
-    frame.src=destination.origin+'/';
+  fallback.style.cssText='color:#9dd9ff;white-space:nowrap';
+  dismiss.onclick=()=>notice.hidden=true;
+  let ready=false,failures=0,watchdog;
+  const display=(message,failed=false)=>{
+   label.textContent=message;
+   notice.hidden=false;
+   restart.hidden=!failed;
+  };
+  const startWatchdog=()=>{
+   popup.clearTimeout(watchdog);
+   watchdog=popup.setTimeout(()=>{
+    if(ready)return;
+    display('Celestial did not finish opening. Restart the browser to reconnect.',true);
+   },22000);
+  };
+  const restartFrame=()=>{
+   if(failures>=3){
+    display('Repeated startup failures. Try a regular tab or clear this site\'s browser data.',true);
     return;
    }
-   if(event.data?.type!=='celestial:appearance')return;
-   doc.title=String(event.data.title||doc.title).slice(0,70);
-   try{const icon=new URL(event.data.icon,location.origin);
-    if(icon.protocol==='https:'||icon.origin===location.origin)favicon.href=icon.href}catch{}
+   failures+=1;
+   ready=false;
+   display('Reconnecting browser…');
+   // Use a fresh document rather than reloading a stalled iframe in place.
+   // Existing authentication stays in the site's normal secure cookies.
+   frame.src=destination.origin+'/?cloaked=1&retry='+failures;
+   startWatchdog();
+  };
+  restart.onclick=restartFrame;
+  notice.append(label,restart,fallback,dismiss);
+  restart.hidden=true;
+  doc.body.append(frame,notice);
+  if(destination.origin===location.origin&&
+    (destination.pathname==='/'||destination.pathname==='/boba/index.html')){
+   frame.src=destination.origin+'/?cloaked=1';
+   fallback.href=destination.origin+'/';
+  }else{
+   fallback.href=destination.href;
+  }
+  startWatchdog();
+  popup.addEventListener('pagehide',()=>popup.clearTimeout(watchdog),{once:true});
+  // Only accept signals from the workspace we created. Other pages or
+  // unrelated iframes cannot dismiss an error or rewrite this control.
+  popup.addEventListener('message',event=>{
+   if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
+   const message=event.data;
+   if(!message||typeof message!=='object')return;
+   if(message.type==='celestial:auth-success'){
+    restartFrame();
+    return;
+   }
+   if(message.type==='celestial:workspace-ready'){
+    ready=true;failures=0;
+    popup.clearTimeout(watchdog);
+    display('Celestial browser ready');
+    popup.setTimeout(()=>{if(ready)notice.hidden=true},1800);
+    return;
+   }
+   if(message.type==='celestial:browser-status'){
+    if(message.status==='failed'){
+     display('Browser navigation failed. Change engines in Browser, or restart the workspace.',true);
+    }else if(message.status==='ready'){
+     ready=true;popup.clearTimeout(watchdog);
+     notice.hidden=true;
+    }
+    return;
+   }
+   if(message.type!=='celestial:appearance')return;
+   doc.title=String(message.title||doc.title).slice(0,70);
+   try{
+    const icon=new URL(message.icon,location.origin);
+    if(icon.protocol==='https:'||icon.origin===location.origin)favicon.href=icon.href;
+   }catch{}
   });
   popup.focus();
   return {ok:true};
