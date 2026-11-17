@@ -4,6 +4,12 @@ import {recordScramjet} from './scramjet-diagnostics.js';
 // Scramjet adapter. The page owns a same-origin loader because the upstream
 // proxy-bootstrap loader dynamically imports data: modules, blocked by our CSP.
 // Proxy assets and Wisp remain session-protected by the server.
+// The classic bootstrap cannot import this ES module directly. Its events
+// carry only a fixed stage/outcome pair, which the diagnostics collector vets.
+if(typeof window!=='undefined')window.addEventListener('celestial:scramjet-stage',event=>{
+ const detail=event.detail||{};
+ recordScramjet(detail.stage,detail.outcome);
+});
 let controllerPromise=null;
 let keepalive=null;
 const timed=async(promise,label,ms=28000)=>{
