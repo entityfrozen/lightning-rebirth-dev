@@ -3,6 +3,7 @@ import { I } from './icons.js';
 import { createProxyFrame, disposeProxyFrame, getProxyController } from './proxy.js';
 import { createUltravioletFrame, getUltravioletEngine } from './uv-proxy.js';
 import {maskFrameSearchLinks} from './search-link-mask.js';
+import {makeBrowserEngineRouter,normalizeEngineChoice} from './engine-router.js';
 import {createYouTubePlayer,interceptYouTubeWatchLinks,isYouTubeSite,parseYouTubeVideoUrl} from './youtube-player.js';
 const $=(s,r=document)=>r.querySelector(s);
 const el=html=>{const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild;};
@@ -18,25 +19,9 @@ const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f
 const get=async()=>[];
 function failPage(frame,url,retry,message='The page could not load.'){const doc=frame.contentDocument;if(!doc)return;doc.body?.replaceChildren();const p=doc.createElement('p');p.textContent=message;const b=doc.createElement('button');b.textContent='Retry';b.onclick=retry;doc.body?.append(p,b);}
 const frames=new WeakMap();
-// Google verification and YouTube pages can fail under the Ultraviolet rewrite path.
-// Prefer Scramjet on those domains without changing the default engine.
-const prefersScramjetForGoogle=url=>{
-  try{
-    const host=new URL(url).hostname.toLowerCase().replace(/\.$/,'');
-    return host==='google.com'||host.endsWith('.google.com')||
-      host==='google.co.uk'||host.endsWith('.google.co.uk')||
-      host==='recaptcha.net'||host.endsWith('.recaptcha.net')||
-      host==='youtube.com'||host.endsWith('.youtube.com')||
-      host==='youtube-nocookie.com'||host.endsWith('.youtube-nocookie.com')||
-      host==='youtu.be';
-  }catch{return false}
-};
-// An about:blank wrapper is a framed workspace. Prefer the engine that does not
-// depend on cross-origin-isolated top-level document privileges.
-// Reflux wraps Ultraviolet's Epoxy transport; it is the primary browser route.
-// Use a new preference key so stale Scramjet defaults don't override the upgrade.
-const defaultProxy=()=>window.self!==window.top?'ultraviolet':
-  store.get('browserEngine','reflux')==='scramjet'?'scramjet':'ultraviolet';
+const browserRouter=makeBrowserEngineRouter();
+const defaultEngineChoice=()=>normalizeEngineChoice(store.get('browserEngine','smart'));
+const defaultProxy=()=>defaultEngineChoice()==='scramjet'?'scramjet':'ultraviolet';
 const engine={
  normalise(input){const q=String(input||'').trim();if(!q)return '';try{const u=new URL(q);if(['http:','https:'].includes(u.protocol))return u.href}catch{}if(/^[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:[/:?#]|$)/i.test(q))return 'https://'+q;return 'https://www.google.com/search?q='+encodeURIComponent(q)},
  boot(){return defaultProxy()==='ultraviolet'?getUltravioletEngine():getProxyController()},
@@ -147,7 +132,8 @@ const home = {
     '<button class="cb sm gh" data-wb="reload" aria-label="Reload">' + ico("reload") + "</button>" +
     '<label class="addr">' + ico("lock") + '<input data-omni placeholder="Search or enter a link" aria-label="Address" autocomplete="off" spellcheck="false">' +
     '<span class="disp" data-disp></span><div class="sugg gl g3" data-sugg></div></label>' +
-    '<select class="engine-switch" data-engine-mode aria-label="Browsing engine"><option value="ultraviolet">Reflux</option><option value="scramjet">Scramjet</option></select>' +
+    '<select class="engine-switch" data-engine-mode aria-label="Browsing engine"><option value="smart">Smart</option><option value="ultraviolet">Reflux</option><option value="scramjet">Scramjet</option></select>' +
+    '<span class="engine-active" data-active-engine title="Active browser engine" aria-live="polite"></span>' +
     '<span class="wsep"></span><div class="wtabs" data-tabs></div>' +
     '<button class="cb sm gh" data-wnew aria-label="New tab">' + ico("plus") + "</button>" +
     '<button class="cb sm gh" data-direct title="Open direct in about:blank" aria-label="Open Direct">' + ico("link") + '</button>' +
@@ -175,6 +161,7 @@ const home = {
     const disp = $("[data-disp]", root);
     const tabsEl = $("[data-tabs]", root);
     const proxySelect = $("[data-engine-mode]", root);
+    const engineIndicator=$("[data-active-engine]",root);
     const tip = $("[data-tip]", root);
     const tab = () => st.tabs.find((t) => t.id === st.active);
     const clean = (s) => String(s || "").split(/\s+[-–·|]\s+/)[0].trim();
@@ -218,6 +205,7 @@ const home = {
       if (t.doc === d) return;
       t.unmaskLinks?.();t.unmaskLinks=null;
       t.unwatchLinks?.();t.unwatchLinks=null;
+      t.titleObserver?.disconnect();t.titleObserver=null;
       t.doc=d;
       const realDoc=ctx.engine.decode(d.URL)||t.url;
       // This observer scans all DOM additions; on YouTube's dense, constantly
@@ -238,12 +226,15 @@ const home = {
           void navigate(url,options.newTab);
         });
       const ttl = d.querySelector("title");
-      if (ttl) new MutationObserver(read).observe(ttl, { childList: true, characterData: true, subtree: true });
+      if(ttl){
+        t.titleObserver=new MutationObserver(read);
+        t.titleObserver.observe(ttl,{childList:true,characterData:true,subtree:true});
+      }
     };
     const retry = (t) => {
       t.busy = true;
       sync();
-      ctx.engine.recover().finally(() => {
+      (t.mode==='scramjet'?getProxyController():getUltravioletEngine()).finally(() => {
         loading(t);
         try {
           t.frame.contentWindow.location.reload();
@@ -257,6 +248,7 @@ const home = {
       clearInterval(t.lt);t.lt=null;
       t.unmaskLinks?.();t.unmaskLinks=null;
       t.unwatchLinks?.();t.unwatchLinks=null;t.doc=null;
+      t.titleObserver?.disconnect();t.titleObserver=null;
       if(t.frame){ctx.engine.dispose(t.frame);t.frame.remove();t.frame=null}
       t.videoPanel?.remove();t.videoPanel=null;
     };
@@ -267,12 +259,7 @@ const home = {
       // attached to the previous document and produce an empty frame.
       if(!t.autoFallbackAttempted&&!t.direct&&t.url){
         t.autoFallbackAttempted=true;
-        t.unmaskLinks?.();t.unmaskLinks=null;t.doc=null;
-        if(t.frame){
-          ctx.engine.dispose(t.frame);
-          t.frame.remove();
-          t.frame=null;
-        }
+        disposeView(t);
         t.mode=t.mode==='ultraviolet'?'scramjet':'ultraviolet';
         void navigate(t.url);
         return;
@@ -303,7 +290,10 @@ const home = {
       try{d=t.frame?.contentDocument}catch{}
       if(t.direct||!t.proxyRequested||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
       if(ctx.engine.failed(d)){showError(t,'The page returned an error.');return true}
-      clearInterval(t.lt);t.busy=false;sync();clearError(t);track(t);return true;
+      clearInterval(t.lt);t.busy=false;sync();clearError(t);
+      if(t.engineChoice==='smart'&&t.autoFallbackAttempted)
+        browserRouter.remember(t.url,t.mode);
+      track(t);return true;
     };
     const loading=t=>{
       clearInterval(t.lt);clearError(t);try{t.previousDoc=t.frame?.contentDocument||null}catch{t.previousDoc=null}t.busy=true;sync();
@@ -322,7 +312,9 @@ const home = {
         (t.url ? '<img alt="" src="' + favicon(hostOf(t.url)) + '">' : '<span class="ph"></span>') +
         '<span class="x" data-close>' + ico("x") + "</span></button>").join("");
       const t = tab();
-      proxySelect.value=t?.mode||defaultProxy();
+      proxySelect.value=t?.engineChoice||defaultEngineChoice();
+      engineIndicator.textContent=t?.url?(t.mode==='scramjet'?'Scramjet':'Reflux'):'';
+      engineIndicator.hidden=!t?.url;
       nt.style.visibility = t && t.url ? "hidden" : "";
       for(const x of st.tabs){
         const visible=x.id===st.active&&!!x.url;
@@ -358,7 +350,8 @@ const home = {
     };
 
     const newTab = () => {
-      const t = { id: st.next++, title: "New tab", url: "", frame: null, mode: defaultProxy() };
+      const t = { id: st.next++, title: "New tab", url: "", frame: null,
+        engineChoice:defaultEngineChoice(),mode:defaultProxy() };
       st.tabs.push(t);
       st.active = t.id;
       paint();
@@ -370,6 +363,10 @@ const home = {
       if (!url) return;
       const t = fresh || !tab() ? newTab() : tab();
       if(url!==t.url)t.autoFallbackAttempted=false;
+      // Smart mode may use a learned alternative after a successful retry.
+      // Once a retry starts, do not route back to the engine that just failed.
+      if(!t.autoFallbackAttempted)
+        t.mode=browserRouter.select(url,t.engineChoice);
       const video=parseYouTubeVideoUrl(url);
       if(video&&t.fullYouTubeUrl!==video.watchUrl){
         if(!t.videoPanel&&isYouTubeSite(t.url)&&!parseYouTubeVideoUrl(t.url))
@@ -391,14 +388,9 @@ const home = {
         return;
       }
       if(t.videoPanel)disposeView(t);
-      // Keep Reflux as the general default. Route Google and YouTube through
-      // Scramjet unless the user manually selected an engine in this tab.
-      if(t.mode==='ultraviolet'&&!t.engineManuallySelected&&prefersScramjetForGoogle(url)){
-        t.mode='scramjet';
-        if(t.frame){
-          t.unmaskLinks?.();t.unmaskLinks=null;t.doc=null;
-          ctx.engine.dispose(t.frame);t.frame.remove();t.frame=null;
-        }
+      // The engine may change between destinations in one Smart tab.
+      if(t.frame&&t.activeFrameEngine&&t.activeFrameEngine!==t.mode){
+        disposeView(t);
       }
       t.title = hostOf(url) || "Page";
       t.mode ||= defaultProxy();
@@ -409,9 +401,13 @@ const home = {
       if(first){
         t.frame=el('<iframe title="Page" allow="cross-origin-isolated; autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"></iframe>');
         page.appendChild(t.frame);
-        t.frame.addEventListener("load",()=>loaded(t));
+        const browsingFrame=t.frame;
+        browsingFrame.addEventListener('load',()=>{
+          if(t.frame===browsingFrame)loaded(t);
+        });
       }
       t.url=url;
+      t.activeFrameEngine=t.mode;
       t.proxyRequested=true;
       paint();
       const liveFrame=t.frame;
@@ -461,7 +457,14 @@ const home = {
     }, 160);
     omni.addEventListener("input", suggest);
     let picked = false;
-    const warm = () => ((tab()?.mode||defaultProxy())==='ultraviolet'?getUltravioletEngine():ctx.engine.boot()).catch(()=>{});
+    const warm=()=>{
+      const active=tab();
+      // An empty Smart tab has no destination yet. Starting both workers
+      // while the user types wastes resources and can slow mobile devices.
+      if((active?.engineChoice||defaultEngineChoice())==='smart')return;
+      const mode=active?.mode||defaultProxy();
+      (mode==='scramjet'?getProxyController():getUltravioletEngine()).catch(()=>{});
+    };
     omni.addEventListener("focus", () => {
       addr.classList.remove("show");
       omni.select();
@@ -573,22 +576,18 @@ const home = {
     });
 
     proxySelect.addEventListener('change',()=>{
-      const selected=proxySelect.value==='ultraviolet'?'ultraviolet':'scramjet';
-      store.set('browserEngine',selected==='ultraviolet'?'reflux':'scramjet');
+      const choice=normalizeEngineChoice(proxySelect.value);
+      store.set('browserEngine',choice==='ultraviolet'?'reflux':choice);
       const current=tab();
       if(!current)return;
-      if(current.mode===selected)return;
-      current.mode=selected;
-      current.engineManuallySelected=true;
-      if(current.videoPanel)current.fullYouTubeUrl=current.url;
+      const selected=browserRouter.select(current.url||'https://example.com/',choice);
+      current.engineChoice=choice;
       current.autoFallbackAttempted=false;
-      if(current.frame){
-        current.unmaskLinks?.();current.unmaskLinks=null;current.doc=null;
-        ctx.engine.dispose(current.frame);
-        current.frame.remove();
-        current.frame=null;
-        current.proxyRequested=false;
-      }
+      if(current.mode===selected){paint();return}
+      current.mode=selected;
+      if(current.videoPanel)current.fullYouTubeUrl=current.url;
+      disposeView(current);
+      current.proxyRequested=false;
       if(current.url)navigate(current.url);
       else paint();
     });

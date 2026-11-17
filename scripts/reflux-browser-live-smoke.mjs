@@ -62,7 +62,8 @@ try{
  }
  await page.locator('#dock [data-section="s1"]').click();
  await page.locator('[data-view="s1"].on [data-omni]').waitFor();
- assert.equal(await page.locator('[data-engine-mode]').inputValue(),'ultraviolet');
+ assert.equal(await page.locator('[data-engine-mode]').inputValue(),'smart');
+ assert.equal(await page.locator('[data-engine-mode] option:checked').textContent(),'Smart');
  await page.locator('[data-omni]').fill('https://example.com/');
  await page.locator('[data-omni]').press('Enter');
  await page.waitForFunction(()=>{
@@ -109,7 +110,8 @@ try{
       childTitle:child?.contentDocument?.title,childBody:child?.contentDocument?.body?.textContent?.slice(0,350)};
  });
  console.log('CLOAKED_BROWSER_DIAGNOSTIC',JSON.stringify(nested));
- assert.equal(nested.mode,'ultraviolet','Framed browser should select Reflux');
+ assert.equal(nested.mode,'smart','Framed browser should prefer Smart mode');
+ assert.equal(nested.transport,'/reflux/index.mjs','Smart mode should still use Reflux on ordinary sites');
  assert.ok(nested.childTitle==='Example Domain'&&nested.childBody?.length>100,
    'Cloaked tab must render actual external content: '+JSON.stringify(nested));
  // Watch pages must never run YouTube's entire dynamic app in the
@@ -138,6 +140,13 @@ try{
  assert.equal(await page.locator('[data-youtube-player] [data-video-full]').count(),1);
  assert.equal(await page.locator('[data-youtube-player] [data-video-external]').getAttribute('href'),
    'https://www.youtube.com/watch?v=jNQXAC9IVRw&t=3');
+ // The engine chooser is functional, not decorative. A user can override
+ // Smart for a tab and return to Smart without changing the other tabs.
+ await page.locator('[data-wnew]').click();
+ await page.locator('[data-engine-mode]').selectOption('scramjet');
+ assert.equal(await page.locator('[data-engine-mode]').inputValue(),'scramjet');
+ await page.locator('[data-engine-mode]').selectOption('smart');
+ assert.equal(await page.locator('[data-engine-mode]').inputValue(),'smart');
  console.log('Reflux and cloaked browsing work; lightweight YouTube player controls are mounted.');
  console.log('External media decoding was not asserted: Google may block cloud-test traffic.');
 }catch(error){
