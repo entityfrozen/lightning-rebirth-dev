@@ -132,3 +132,19 @@ test('YouTube Music opens with Scramjet by default and Ultraviolet error pages t
   assert.match(browser,/!t\.autoFallbackAttempted&&!t\.direct/);
   assert.match(browser,/t\.mode=t\.mode==='ultraviolet'\?'scramjet':'ultraviolet'/);
 });
+
+test('cloaked workspace detects real startup and browsing status instead of iframe load',()=>{
+ const wrapper=source('../public/boba/about-blank.js');
+ const native=source('../public/boba/native.js');
+ const browser=source('../public/boba/browser.js');
+ assert.match(wrapper,/data\.cloakStatus='true'/);
+ assert.match(wrapper,/message\.type==='celestial:workspace-ready'/);
+ assert.match(wrapper,/message\.type==='celestial:browser-status'/);
+ assert.match(wrapper,/message\.status==='failed'/);
+ assert.match(wrapper,/event\.source!==frame\.contentWindow/);
+ assert.match(wrapper,/if\(failures>=3\)/);
+ assert.match(wrapper,/\?cloaked=1&retry=/);
+ assert.match(native,/parent\.postMessage\(\{type:'celestial:workspace-ready'\}/);
+ assert.match(browser,/reportStatus\('failed'\)/);
+ assert.match(browser,/reportStatus\('ready'\)/);
+});
