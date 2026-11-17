@@ -21,6 +21,11 @@
     wasm: "/scram/scramjet.wasm",
     wisp: "/wisp/"
   });
+  // Relay stage names only; never expose URLs, cookies or transport payloads.
+  function stage(name,outcome='info'){
+    try{window.dispatchEvent(new CustomEvent('celestial:scramjet-stage',
+      {detail:{stage:name,outcome}}))}catch{}
+  }
   const loadedScripts = new Map();
   let controllerPromise = null;
 
@@ -61,6 +66,7 @@
     if (!window.isSecureContext) {
       throw new Error("Open Celestial over HTTPS to use the browser.");
     }
+    stage('worker-register','start');
     const registration = await withTimeout(
       navigator.serviceWorker.register(paths.worker, {
         type: "classic",
@@ -68,10 +74,12 @@
       }),
       "Registering the browser worker"
     );
+    stage('worker-register','ok');
     await withTimeout(navigator.serviceWorker.ready, "Activating the browser worker");
     // A newly installed worker may be active without controlling this tab.
     // Scramjet navigations require a controlling worker, not merely an active one.
     if (!navigator.serviceWorker.controller) {
+      stage('worker-control','start');
       const reloadKey = "celestial:proxy-worker-reload";
       if (!sessionStorage.getItem(reloadKey)) {
         sessionStorage.setItem(reloadKey, "1");
@@ -89,6 +97,7 @@
         if (navigator.serviceWorker.controller) onChange();
       }), "Waiting for the Scramjet worker to control this page", 12000);
     }
+    stage('worker-control','ok');
     sessionStorage.removeItem("celestial:proxy-worker-reload");
     return navigator.serviceWorker.controller;
   }
@@ -98,10 +107,18 @@
       controllerPromise = (async () => {
         const worker = await waitForServiceWorker();
         // Controller expects the runtime first; utility plugins are last.
+        stage('runtime','start');
         await loadScript(paths.runtime);
+        stage('runtime','ok');
+        stage('controller-script','start');
         await loadScript(paths.controller);
+        stage('controller-script','ok');
+        stage('utils','start');
         await loadScript(paths.utils);
+        stage('utils','ok');
+        stage('libcurl','start');
         await loadScript(paths.transport);
+        stage('libcurl','ok');
 
         const controllerApi = window.$scramjetController;
         const Transport = window.LibcurlTransport?.LibcurlClient;
@@ -122,9 +139,12 @@
           serviceworker: worker,
           transport
         });
+        stage('controller-ready','start');
         await withTimeout(controller.wait(), "Starting the browser engine", 25000);
+        stage('controller-ready','ok');
         return controller;
       })().catch(error => {
+        stage('controller-init','error');
         controllerPromise = null;
         throw error;
       });
