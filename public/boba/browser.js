@@ -1,6 +1,7 @@
 import {openAboutBlank} from './about-blank.js';
 import { I } from './icons.js';
 import { createProxyFrame, disposeProxyFrame, getProxyController } from './proxy.js';
+import {recordScramjet} from './scramjet-diagnostics.js';
 import { createUltravioletFrame, getUltravioletEngine } from './uv-proxy.js';
 import {maskFrameSearchLinks} from './search-link-mask.js';
 import {makeBrowserEngineRouter,normalizeEngineChoice} from './engine-router.js';
@@ -258,6 +259,7 @@ const home = {
     };
     const showError=(t,message)=>{
       clearInterval(t.lt);
+      if(t.mode==='scramjet')recordScramjet('navigation-failed','error',{reason:/finish loading|timed out/i.test(message)?'timeout':'unknown'});
       // Recover through the other engine once per navigation. Both engines
       // need a clean iframe: swapping transports in-place can leave a worker
       // attached to the previous document and produce an empty frame.
@@ -298,9 +300,12 @@ const home = {
       clearInterval(t.lt);t.busy=false;sync();clearError(t);
       if(t.engineChoice==='smart'&&t.autoFallbackAttempted)
         browserRouter.remember(t.url,t.mode);
-      track(t);reportStatus('ready');return true;
+      track(t);
+      if(t.mode==='scramjet')recordScramjet('navigation-ready','ok',{durationMs:Date.now()-(t.navigationStarted||Date.now())});
+      reportStatus('ready');return true;
     };
     const loading=t=>{
+      t.navigationStarted=Date.now();
       clearInterval(t.lt);clearError(t);try{t.previousDoc=t.frame?.contentDocument||null}catch{t.previousDoc=null}t.busy=true;sync();
       const started=Date.now();
       t.lt=setInterval(()=>{
@@ -424,6 +429,7 @@ const home = {
         },popup=>navigate(popup,true),t.mode);
         if(t.frame!==liveFrame)return;
       }catch(error){
+        if(t.mode==='scramjet')recordScramjet('navigation-failed','error',{error});
         showError(t,error.message);
         return;
       }
