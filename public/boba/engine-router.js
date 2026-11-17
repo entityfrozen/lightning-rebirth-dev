@@ -8,7 +8,9 @@
 const SCRAMJET_HOSTS=[
   'google.com','google.co.uk','recaptcha.net',
   'youtube.com','youtube-nocookie.com','youtu.be',
-  'discord.com','discord.gg','spotify.com','open.spotify.com'
+  'discord.com','discord.gg','spotify.com',
+  'instagram.com','reddit.com','x.com','twitter.com',
+  'chatgpt.com','geforcenow.com','now.gg'
 ];
 const LEARNING_TTL=15*60*1000;
 const MAX_LEARNED_HOSTS=64;
