@@ -140,6 +140,13 @@ try{
  assert.equal(await page.locator('[data-youtube-player] [data-video-full]').count(),1);
  assert.equal(await page.locator('[data-youtube-player] [data-video-external]').getAttribute('href'),
    'https://www.youtube.com/watch?v=jNQXAC9IVRw&t=3');
+ // The engine chooser is functional, not decorative. A user can override
+ // Smart for a tab and return to Smart without changing the other tabs.
+ await page.locator('[data-wnew]').click();
+ await page.locator('[data-engine-mode]').selectOption('scramjet');
+ assert.equal(await page.locator('[data-engine-mode]').inputValue(),'scramjet');
+ await page.locator('[data-engine-mode]').selectOption('smart');
+ assert.equal(await page.locator('[data-engine-mode]').inputValue(),'smart');
  console.log('Reflux and cloaked browsing work; lightweight YouTube player controls are mounted.');
  console.log('External media decoding was not asserted: Google may block cloud-test traffic.');
 }catch(error){
