@@ -40,7 +40,9 @@ export const settings = {
       '<div class="lr">' + lic("ask", "#c084fc", "#7c3aed") + '<h3>Effects</h3><div class="seg" data-fx><span class="th"></span><button data-v="full">Full</button><button data-v="lite">Lite</button></div></div>' +
       '<div class="lr"><span class="lic">'+ico("ask")+'</span><h3>AI dock icon</h3><label class="native-pref-switch"><input type="checkbox" data-show-ai> Show AI in the dock</label></div></section>' +
       '<div class="gt r" style="--d:.08s">Browsing</div><section class="grp gl g2 r" style="--d:.08s">' +
-      '<div class="lr">' + lic("link", "#2be0e6", "#0b8f86") + '<h3>Connection</h3><span class="netst"><i data-cn></i><span data-cnm>Checking</span></span></div></section>' +
+      '<div class="lr">' + lic("link", "#2be0e6", "#0b8f86") + '<h3>Connection</h3><span class="netst"><i data-cn></i><span data-cnm>Checking</span></span></div>' +
+      '<div class="lr"><h3>Default browser engine</h3><select data-default-engine aria-label="Default browser engine"><option value="smart">Smart (recommended)</option><option value="reflux">Reflux</option><option value="scramjet">Scramjet</option></select></div>' +
+      '<p class="native-tab-note">Smart chooses the engine per site, then learns from successful recovery for this session. Applies to new tabs.</p></section>' +
       '<div class="gt r" style="--d:.12s">This tab</div><section class="grp gl g2 r" style="--d:.12s">' +
       '<div class="lr">' + lic("tv", "#7d8ba0", "#4a5566") + '<h3>Tab appearance</h3><select data-tab aria-label="Tab appearance"><option value="celestial">Celestial</option><option value="workspace">Workspace</option><option value="notes">My Notes</option><option value="dcss">DCSS Portal</option><option value="classroom">Google Classroom</option><option value="docs">Google Docs</option><option value="drive">Google Drive</option><option value="clever">Clever Portal</option><option value="canvas">Canvas</option><option value="wikipedia">Wikipedia</option><option value="custom">Custom title & icon</option></select></div>' +
       '<div class="lr" data-custom-tab hidden><h3>Custom title</h3><label class="fld"><input data-tab-title maxlength="70" aria-label="Tab title"></label></div>' +
@@ -49,7 +51,7 @@ export const settings = {
       '<p class="native-tab-note">Cloaking only changes how this tab looks. It does not change the address, browser history, network activity, or school monitoring.</p>' +
       '<div class="lr"><h3>Confirm before closing</h3><label class="native-pref-switch"><input type="checkbox" data-prevent-close> Ask before closing or leaving this tab</label></div>' +
       '<div class="lr"><h3>Open in about:blank</h3><button type="button" class="btn s" data-tab-blank>Open cloaked tab</button></div>' +
-      '<p class="native-tab-note">Framed tabs prefer Ultraviolet. Scramjet may require a standalone tab, and browsers can still block embedded sites.</p>' +
+      '<p class="native-tab-note">Smart chooses an engine per site. Some websites and browser security policies can still block framed tabs.</p>' +
       '<div class="lr"><h3>Account sync</h3><span class="netst" data-account-sync>Saving preferences across your devices</span></div>' +
       '<div class="lr">' + lic("trash", "#ff6b6b", "#d62e4a") + '<h3>Reset appearance preferences</h3><button class="btn s" data-reset>Reset</button></div></section></div>';
   },
@@ -58,7 +60,16 @@ export const settings = {
     const paint=()=>{applyPrefs();const p=localStorage.getItem('celestial.boba.theme')||'boba';window.dispatchEvent(new Event('celestial:reimu-refresh'));for(const b of root.querySelectorAll('.thm'))b.classList.toggle('on',b.dataset.v===p);for(const b of root.querySelectorAll('.sw'))b.classList.toggle('on',Number(b.dataset.i)===Number(localStorage.getItem('boba.accent')||0));const seg=$('[data-fx]',root);for(const b of seg.querySelectorAll('button'))b.classList.toggle('on',b.dataset.v===document.documentElement.dataset.fx);segThumb(seg)};
     root.addEventListener('click',e=>{const t=e.target.closest('.thm'),a=e.target.closest('.sw'),f=e.target.closest('[data-fx] button');if(t){localStorage.setItem('celestial.boba.theme',t.dataset.v);if(t.dataset.v==='touhou')requestAnimationFrame(()=>window.dispatchEvent(new Event('celestial:reimu-activated')))}if(a)localStorage.setItem('boba.accent',a.dataset.i);if(f)localStorage.setItem('boba.fx',f.dataset.v);if(e.target.closest('[data-reset]')){for(const k of ['celestial.boba.theme','boba.accent','boba.fx'])localStorage.removeItem(k)}paint();accountSave()});
     api('/api/browser/status').then(d=>{$('[data-cnm]',root).textContent=d.proxy?'Available':'Unavailable'}).catch(()=>{$('[data-cnm]',root).textContent='Offline'});
-    const closeToggle=$('[data-prevent-close]',root);
+    const defaultEngine=$('[data-default-engine]',root);
+     let savedEngine=null;
+     try{savedEngine=JSON.parse(localStorage.getItem('boba.native.browserEngine'))}catch{}
+     defaultEngine.value=savedEngine==='scramjet'?'scramjet':
+       savedEngine==='reflux'||savedEngine==='ultraviolet'?'reflux':'smart';
+     defaultEngine.onchange=()=>{
+       localStorage.setItem('boba.native.browserEngine',JSON.stringify(defaultEngine.value));
+       accountSave();
+     };
+     const closeToggle=$('[data-prevent-close]',root);
     closeToggle.checked=localStorage.getItem('boba.preventClose')!=='false';
     closeToggle.onchange=()=>{localStorage.setItem('boba.preventClose',String(closeToggle.checked));accountSave()};
     const showAi=$('[data-show-ai]',root);
