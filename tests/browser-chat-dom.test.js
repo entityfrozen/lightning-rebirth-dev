@@ -70,16 +70,14 @@ test('cloaked browser selects the lightweight Reflux route for ordinary sites',(
  assert.match(wrapper,/frame\.src=destination\.origin\+'\/\?cloaked=1'/);
 });
 
-test('Browser tabs and framed navigation avoid exposing search URLs as element attributes',()=>{
+test('Browser tabs keep address overlay compact while Scramjet uses native frame navigation',()=>{
  const browser=source('../public/boba/browser.js');
  const proxy=source('../public/boba/proxy.js');
- const adapter=source('../public/boba/frame-navigation.js');
  assert.match(browser,/aria-label="Browser tab /);
  assert.doesNotMatch(browser,/esc\(t\.name \|\| t\.title\)/);
  assert.match(browser,/omni\.value = t && t\.url \? hostOf\(t\.url\)/);
- assert.match(proxy,/navigateWithNeutralFrameSrc/);
- assert.match(adapter,/contentWindow\.location\.replace\(destination\)/);
- assert.doesNotMatch(adapter,/element\.removeAttribute\('src'\)/);
+ assert.match(proxy,/const upstreamGo=frame\.go\.bind\(frame\)/);
+ assert.doesNotMatch(proxy,/navigateWithNeutralFrameSrc/);
 });
 
 test('Smart browsing defaults to Reflux on ordinary sites and recovers once',()=>{
