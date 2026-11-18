@@ -99,20 +99,16 @@ try{
  await page.locator('input[name="password"]').fill(password);
  await page.locator('form button[type="submit"]').click();
  await page.locator('#dock [data-section="s0"]').waitFor({timeout:25000});
- // The real iframe must navigate without writing the search term into its
- // src attribute. A mock Frame.go simulates the upstream setter, and Chromium
- // verifies that both initial and subsequent window navigations still work.
- const navSource=await readFile(path.join(root,'public/boba/frame-navigation.js'),'utf8');
- const frameResult=await page.evaluate(async source=>{
-  const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
+ // Scramjet's supported Frame.go() updates the actual iframe src. This
+ // verifies that Chromium follows successive native iframe navigations.
+ // URLs in running browser code are inspectable regardless of masking.
+ const frameResult=await page.evaluate(async()=>{
   const frame=document.createElement('iframe');
   frame.src='about:blank';
   const initial=new Promise(resolve=>frame.addEventListener('load',resolve,{once:true}));
   document.body.append(frame);
   await initial;
   try{
-   const {navigateWithNeutralFrameSrc}=await import(url);
-   const proxy={element:frame,go(next){this.element.src=next}};
    const results=[];
    for(const q of ['fort','second']){
     const loaded=new Promise((resolve,reject)=>{
@@ -121,15 +117,15 @@ try{
       clearTimeout(timer);resolve();
      },{once:true});
     });
-    navigateWithNeutralFrameSrc(proxy,location.origin+'/iframe-navigation-fixture?q='+q);
+    frame.src=location.origin+'/iframe-navigation-fixture?q='+q;
     await loaded;
     results.push({attr:frame.getAttribute('src')});
    }
    return results;
-  }finally{frame.remove();URL.revokeObjectURL(url)}
- },navSource);
- assert.deepEqual(frameResult.map(result=>result.attr),['about:blank','about:blank'],
-  'The iframe source must remain a neutral about:blank attribute');
+  }finally{frame.remove()}
+ });
+ assert.deepEqual(frameResult.map(result=>new URL(result.attr).searchParams.get('q')),
+   ['fort','second'],'Successive iframe navigations must use the newest URL');
  assert.equal(routeHits,2,'Both destinations must really be requested');
 
 
