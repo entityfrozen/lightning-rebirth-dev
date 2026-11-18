@@ -43,7 +43,7 @@ test('Celestial prefers its CSP-compatible same-origin loader and has bounded ti
  const bootstrap=readFileSync(new URL('../public/proxy-entry.js',import.meta.url),'utf8');
  assert.match(bootstrap,/celestial:scramjet-stage/);
  assert.match(bootstrap,/stage\('worker-register','start'\)/);
- assert.match(bootstrap,/stage\('worker-control','ok'\)/);
+ assert.match(bootstrap,/stage\('worker-control',worker===controlled/);
  assert.match(bootstrap,/stage\('controller-ready','ok'\)/);
 });
 
