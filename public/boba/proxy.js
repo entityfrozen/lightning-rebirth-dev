@@ -1,4 +1,3 @@
-import {navigateWithNeutralFrameSrc} from './frame-navigation.js';
 import {recordScramjet} from './scramjet-diagnostics.js';
 
 // Scramjet adapter. The page owns a same-origin loader because the upstream
@@ -64,7 +63,10 @@ export async function getProxyController(){
       throw error;
     }
     if(!keepalive)keepalive=window.setInterval(()=>{
-      try{navigator.serviceWorker.controller?.postMessage('keepalive');}catch{}
+      // When a new tab is framed in about:blank, the registered worker may be
+      // active but not control this document. Ping the worker Scramjet actually
+      // initialized against; otherwise its routing table can go idle.
+      try{(controller.serviceWorkerController||navigator.serviceWorker.controller)?.postMessage('keepalive')}catch{}
     },15000);
     return controller;
   })().catch(error=>{controllerPromise=null;throw error;});
@@ -101,14 +103,15 @@ export async function createProxyFrame(element,onNavigate,openTab){
     frame=controller.createFrame(element,{plugins});
     recordScramjet('frame-create','ok',{durationMs:performance.now()-started});
   }catch(error){recordScramjet('frame-create','error',{error});throw error}
-  const originalGo=frame.go;
+  // Use upstream Frame.go(), which sets the real iframe's src. The previous
+  // detached-frame/location.replace trick broke the official navigation
+  // lifecycle in some nested browsing contexts. Encoded URLs remain visible
+  // in DevTools either way, so correctness takes precedence.
+  const upstreamGo=frame.go.bind(frame);
   frame.go=url=>{
-    frame.go=originalGo;
     recordScramjet('navigate','start');
-    try{return navigateWithNeutralFrameSrc(frame,url)}
+    try{return upstreamGo(url)}
     catch(error){recordScramjet('navigation-failed','error',{error});throw error}
-    finally{frame.go=navigate}
   };
-  const navigate=frame.go;
   return frame;
 }
