@@ -146,6 +146,10 @@ try{
  },null,{timeout:60000});
  assert.equal(await workspace.locator('.native-browser-error').count(),0,
    'Scramjet must browse through the about:blank workspace');
+ const proxiedSrc=await workspace.locator('iframe[title="Page"]').getAttribute('src');
+ assert.match(proxiedSrc,/\/\~\/sj\//,
+   'Scramjet must navigate through its upstream iframe src protocol');
+
  // The in-memory diagnostics must report Scramjet startup and navigation,
  // without ever exposing the visited website address.
  await workspace.locator('#dock [data-section="s5"]').click();
@@ -154,6 +158,9 @@ try{
  assert.match(scramjetLog,/bootstrap|controller-ready|frame-create/);
  assert.match(scramjetLog,/navigate/);
  assert.doesNotMatch(scramjetLog,/https?:\/\/|example\.com|cookie|password/);
+ await workspace.locator('[data-scramjet-test]').click();
+ await workspace.locator('[data-scramjet-test]').getByText('Ready').waitFor({timeout:30000});
+ assert.match(await workspace.locator('[data-scramjet-log]').innerText(),/health\s+ok/);
  await workspace.locator('[data-scramjet-clear]').click();
  assert.match(await workspace.locator('[data-scramjet-log]').innerText(),
    /No Scramjet events recorded/);
