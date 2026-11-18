@@ -72,34 +72,31 @@
         type: "classic",
         updateViaCache: "none"
       }),
-      "Registering the browser worker"
+      "Registering the browser worker",
+      12000
     );
     stage('worker-register','ok');
-    await withTimeout(navigator.serviceWorker.ready, "Activating the browser worker");
-    // A newly installed worker may be active without controlling this tab.
-    // Scramjet navigations require a controlling worker, not merely an active one.
-    if (!navigator.serviceWorker.controller) {
-      stage('worker-control','start');
-      const reloadKey = "celestial:proxy-worker-reload";
-      if (!sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, "1");
-        location.reload();
-        throw new Error("Activating the browser worker. The page will reload once.");
-      }
-      await withTimeout(new Promise((resolve, reject) => {
-        const onChange = () => {
-          if (!navigator.serviceWorker.controller) return;
-          navigator.serviceWorker.removeEventListener("controllerchange", onChange);
-          resolve();
-        };
-        navigator.serviceWorker.addEventListener("controllerchange", onChange);
-        registration.active?.postMessage({type:"SKIP_WAITING"});
-        if (navigator.serviceWorker.controller) onChange();
-      }), "Waiting for the Scramjet worker to control this page", 12000);
-    }
-    stage('worker-control','ok');
-    sessionStorage.removeItem("celestial:proxy-worker-reload");
-    return navigator.serviceWorker.controller;
+
+    // Registration.ready can resolve with an active SW even when a newly
+    // opened about:blank workspace iframe is not yet controlled by that SW.
+    // Upstream Scramjet supports passing that active worker directly to
+    // Controller. Do not force-reload the entire workspace to establish control.
+    const readyRegistration = await withTimeout(
+      navigator.serviceWorker.ready,
+      "Activating the browser worker",
+      15000
+    );
+    const controlled = navigator.serviceWorker.controller;
+    const active = registration.active || readyRegistration?.active;
+    const sameWorker = worker => {
+      try {
+        return !!worker && new URL(worker.scriptURL).pathname === paths.worker;
+      } catch { return false; }
+    };
+    const worker = sameWorker(controlled) ? controlled : active;
+    if (!worker) throw new Error("The browser worker is not active.");
+    stage('worker-control',worker===controlled?'ok':'info');
+    return worker;
   }
 
   window.initBootstrap = function initBootstrap() {
