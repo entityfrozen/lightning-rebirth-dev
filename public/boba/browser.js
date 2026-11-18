@@ -61,10 +61,26 @@ const engine={
    if(!status.proxy)throw Error('Scramjet is unavailable on this server.');
    let record=frames.get(el);
    if(!record||record.mode!=='scramjet'){
-     record={mode:'scramjet',frame:await createProxyFrame(el,onNavigate,onPopup)};
+     record={mode:'scramjet',frame:null,pending:null,disposed:false,navSequence:0};
      frames.set(el,record);
+     // Two searches made during startup must not create two controllers
+     // for one iframe, or allow the older URL to win after the newer one.
+     record.pending=createProxyFrame(el,onNavigate,onPopup).then(frame=>{
+       if(record.disposed||frames.get(el)!==record||!el.isConnected){
+         disposeProxyFrame(frame);return null;
+       }
+       record.frame=frame;
+       return frame;
+     }).catch(error=>{
+       if(frames.get(el)===record)frames.delete(el);
+       throw error;
+     });
    }
-   record.frame.go(url);
+   const sequence=++record.navSequence;
+   const frame=record.frame||await record.pending;
+   if(!frame||record.disposed||!el.isConnected||
+      frames.get(el)!==record||sequence!==record.navSequence)return;
+   frame.go(url);
  },
  action(el,kind){
    const record=frames.get(el);
@@ -84,8 +100,10 @@ const engine={
  },
  dispose(el){
    const record=frames.get(el);
-   if(record?.mode==='scramjet')disposeProxyFrame(record.frame);
-   else record?.frame?.dispose?.();
+   if(record?.mode==='scramjet'){
+     record.disposed=true;
+     if(record.frame)disposeProxyFrame(record.frame);
+   }else record?.frame?.dispose?.();
    frames.delete(el);
  }
 };
