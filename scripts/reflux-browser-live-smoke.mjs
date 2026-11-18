@@ -159,7 +159,7 @@ try{
  assert.match(scramjetLog,/navigate/);
  assert.doesNotMatch(scramjetLog,/https?:\/\/|example\.com|cookie|password/);
  await workspace.locator('[data-scramjet-test]').click();
- await workspace.locator('[data-scramjet-test]').getByText('Ready').waitFor({timeout:30000});
+ await workspace.locator('[data-scramjet-test]').filter({hasText:'Ready'}).waitFor({timeout:30000});
  assert.match(await workspace.locator('[data-scramjet-log]').innerText(),/health\s+ok/);
  await workspace.locator('[data-scramjet-clear]').click();
  assert.match(await workspace.locator('[data-scramjet-log]').innerText(),
