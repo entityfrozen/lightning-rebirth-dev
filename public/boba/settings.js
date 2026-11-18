@@ -1,5 +1,6 @@
 import {openAboutBlank} from './about-blank.js';
-import {getScramjetDiagnostics,clearScramjetDiagnostics,exportScramjetDiagnostics} from './scramjet-diagnostics.js';
+import {getScramjetDiagnostics,clearScramjetDiagnostics,exportScramjetDiagnostics,recordScramjet} from './scramjet-diagnostics.js';
+import {getProxyController} from './proxy.js';
 import {$,$$,ico,lic,THEMES,ACCENTS,applyPrefs,segThumb,api} from './common.js';
 const identityPresets={
  celestial:['Celestial | Your space','/assets/celestial-star.svg'],
@@ -44,7 +45,7 @@ export const settings = {
       '<div class="lr">' + lic("link", "#2be0e6", "#0b8f86") + '<h3>Connection</h3><span class="netst"><i data-cn></i><span data-cnm>Checking</span></span></div>' +
       '<div class="lr"><h3>Default browser engine</h3><select data-default-engine aria-label="Default browser engine"><option value="smart">Smart (recommended)</option><option value="reflux">Reflux</option><option value="scramjet">Scramjet</option></select></div>' +
       '<p class="native-tab-note">Smart chooses the engine per site, then learns from successful recovery for this session. Applies to new tabs.</p>' +
-      '<div class="lr"><h3>Scramjet diagnostics</h3><button class="btn s" type="button" data-scramjet-copy>Copy report</button><button class="btn s" type="button" data-scramjet-clear>Clear</button></div>' +
+      '<div class="lr"><h3>Scramjet diagnostics</h3><button class="btn s" type="button" data-scramjet-test>Test connection</button><button class="btn s" type="button" data-scramjet-copy>Copy report</button><button class="btn s" type="button" data-scramjet-clear>Clear</button></div>' +
       '<p class="native-tab-note">Local-only startup and navigation stages. No URLs, search terms, passwords or cookies are included.</p>' +
       '<pre data-scramjet-log aria-label="Scramjet diagnostics" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:210px;overflow:auto;font:11px/1.5 ui-monospace,monospace;padding:12px;border-radius:12px;background:#121923;color:#cbd5e1"></pre></section>' +
       '<div class="gt r" style="--d:.12s">This tab</div><section class="grp gl g2 r" style="--d:.12s">' +
@@ -64,7 +65,27 @@ export const settings = {
     const paint=()=>{applyPrefs();const p=localStorage.getItem('celestial.boba.theme')||'boba';window.dispatchEvent(new Event('celestial:reimu-refresh'));for(const b of root.querySelectorAll('.thm'))b.classList.toggle('on',b.dataset.v===p);for(const b of root.querySelectorAll('.sw'))b.classList.toggle('on',Number(b.dataset.i)===Number(localStorage.getItem('boba.accent')||0));const seg=$('[data-fx]',root);for(const b of seg.querySelectorAll('button'))b.classList.toggle('on',b.dataset.v===document.documentElement.dataset.fx);segThumb(seg)};
     root.addEventListener('click',e=>{const t=e.target.closest('.thm'),a=e.target.closest('.sw'),f=e.target.closest('[data-fx] button');if(t){localStorage.setItem('celestial.boba.theme',t.dataset.v);if(t.dataset.v==='touhou')requestAnimationFrame(()=>window.dispatchEvent(new Event('celestial:reimu-activated')))}if(a)localStorage.setItem('boba.accent',a.dataset.i);if(f)localStorage.setItem('boba.fx',f.dataset.v);if(e.target.closest('[data-reset]')){for(const k of ['celestial.boba.theme','boba.accent','boba.fx'])localStorage.removeItem(k)}paint();accountSave()});
     api('/api/browser/status').then(d=>{$('[data-cnm]',root).textContent=d.proxy?'Available':'Unavailable'}).catch(()=>{$('[data-cnm]',root).textContent='Offline'});
-    const scramjetOutput=$('[data-scramjet-log]',root);
+    const testScramjet=$('[data-scramjet-test]',root);
+     testScramjet.onclick=async()=>{
+       testScramjet.disabled=true;
+       testScramjet.textContent='Testing…';
+       const started=performance.now();
+       recordScramjet('health','start');
+       try{
+         const status=await api('/api/browser/status');
+         if(!status.authenticated||!status.proxy)throw Error('Browser backend unavailable');
+         const controller=await getProxyController();
+         if(typeof controller.createFrame!=='function')throw Error('Scramjet controller unavailable');
+         recordScramjet('health','ok',{durationMs:performance.now()-started});
+         testScramjet.textContent='Ready';
+       }catch(error){
+         recordScramjet('health','error',{error});
+         testScramjet.textContent='Failed';
+       }finally{
+         testScramjet.disabled=false;
+       }
+     };
+     const scramjetOutput=$('[data-scramjet-log]',root);
      const refreshScramjet=()=>{
        const snapshot=getScramjetDiagnostics();
        scramjetOutput.textContent=snapshot.events.length?
