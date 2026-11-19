@@ -194,7 +194,11 @@ const home = {
 
     const sync = () => {
       const t = tab();
-      bl.classList.toggle("off", !(t && t.busy));
+      // October Bolt dismissed the blocking indicator once frame.go()
+      // initiated a navigation. Keep tracking page readiness and failures,
+      // but do not cover a live iframe indefinitely with the loader.
+      const connecting=Boolean(t && t.busy && !t.navigationStarted);
+      bl.classList.toggle("off", !connecting);
     };
     const track = (t) => {
       let d = null;
