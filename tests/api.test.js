@@ -61,6 +61,9 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
 
 
     assert.match(await cssAsset.text(),/browser-window/);
+    assert.equal((await fetch(url+'/sw.js')).status,401,'Browser worker must require login');
+    assert.equal((await fetch(url+'/scram/scramjet.js')).status,401,'Runtime must require login');
+    assert.equal((await fetch(url+'/epoxy/index.mjs')).status,401,'Epoxy must require login');
     const guestAiStatus=await call('/api/ai/status');
     assert.equal(guestAiStatus.response.status,401);
     const guestAiMessage=await call('/api/ai','POST',{messages:[{role:'user',content:'Hello'}]});
@@ -86,6 +89,14 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     result=await call('/api/login','POST',{username:'ReviewAdmin',password:'a very long test password 123!'});
     assert.equal(result.response.status,200);
     assert.equal(result.data.user.role,'admin');
+    const authHeaders={headers:{Cookie:cookie}};
+    const ownedWorker=await fetch(url+'/sw.js',authHeaders);
+    assert.equal(ownedWorker.status,200);
+    assert.match(await ownedWorker.text(),/scramjetController/);
+    assert.equal((await fetch(url+'/scram/scramjet.js',authHeaders)).status,200);
+    assert.equal((await fetch(url+'/controller/controller.api.js',authHeaders)).status,200);
+    assert.equal((await fetch(url+'/libcurl/index.mjs',authHeaders)).status,200);
+    assert.equal((await fetch(url+'/epoxy/index.mjs',authHeaders)).status,200);
     result=await call('/api/admin/accounts/pending');
     assert.equal(result.response.status,200);
     const request=result.data.accounts.find(a=>a.username==='TestCelestial');
