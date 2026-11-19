@@ -71,8 +71,8 @@ test('Browser uses a real proxy controller and handles failures visibly',()=>{
   assert.doesNotMatch(browser,/\.go\(tab\.url\)\.catch\(/);
   assert.doesNotMatch(browser,/el\.src=tab\.url/);
   const boot=read('public/proxy-entry.js');
-  assert.match(proxy,/await window\\.initBootstrap\\(transport\\)/);
-  assert.match(boot,/await timeout\\(controller\\.wait\\(\\),/);
+  assert.match(proxy,/await window\.initBootstrap\(transport\)/);
+  assert.match(boot,/await timeout\(controller\.wait\(\),/);
 });
 
 test('Browser, games and community Chat can stay mounted together',()=>{
