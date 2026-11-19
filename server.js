@@ -511,7 +511,7 @@ export function createServer(){
     if(pathname==='/live')return;
     if(!browserEnabled||pathname!=='/wisp/'){socket.destroy();return;}
     if(!liveIdentity(req.headers)){
-      socket.write('HTTP/1.1 401 Unauthorized\\r\\nConnection: close\\r\\n\\r\\n');
+      socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
       socket.destroy();return;
     }
     try{
