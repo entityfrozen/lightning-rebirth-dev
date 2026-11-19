@@ -313,7 +313,11 @@ const home = {
     const loaded=t=>{
       let d=null;
       try{d=t.frame?.contentDocument}catch{}
-      if(t.direct||!t.proxyRequested||!d||d===t.previousDoc||d.URL==='about:blank'||d.readyState==='loading'||(!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
+      // Some sites leave document.readyState at "loading" while a useful
+      // document has already rendered. Trust a new, nonempty document
+      // rather than holding the overlay for images and third-party scripts.
+      if(t.direct||!t.proxyRequested||!d||d===t.previousDoc||d.URL==='about:blank'||
+        (!d.body?.children.length&&!d.body?.textContent?.trim()))return false;
       if(ctx.engine.failed(d)){showError(t,'The page returned an error.');return true}
       clearInterval(t.lt);t.busy=false;sync();clearError(t);
       if(t.engineChoice==='smart'&&t.autoFallbackAttempted)
@@ -323,12 +327,17 @@ const home = {
       reportStatus('ready');return true;
     };
     const loading=t=>{
-      t.navigationStarted=Date.now();
-      clearInterval(t.lt);clearError(t);try{t.previousDoc=t.frame?.contentDocument||null}catch{t.previousDoc=null}t.busy=true;sync();
-      const started=Date.now();
+      // Start the navigation timeout only after the engine has mounted the
+      // iframe. Previously controller startup used most of the page budget.
+      t.navigationStarted=0;
+      clearInterval(t.lt);clearError(t);
+      try{t.previousDoc=t.frame?.contentDocument||null}catch{t.previousDoc=null}
+      t.busy=true;sync();
       t.lt=setInterval(()=>{
         if(loaded(t))return;
-        if(Date.now()-started>26000)showError(t,'The website did not finish loading. Try again or open it directly.');
+        if(t.navigationStarted&&Date.now()-t.navigationStarted>30000){
+          showError(t,'The website did not finish loading. Try again or open it directly.');
+        }
       },180);
     };
 
@@ -446,6 +455,8 @@ const home = {
           t.url=real;t.title=hostOf(real)||"Page";paint();
         },popup=>navigate(popup,true),t.mode);
         if(t.frame!==liveFrame)return;
+        // openFrame returns after Frame.go() has initiated the navigation.
+        if(t.busy)t.navigationStarted=Date.now();
       }catch(error){
         if(t.mode==='scramjet')recordScramjet('navigation-failed','error',{error});
         showError(t,error.message);
