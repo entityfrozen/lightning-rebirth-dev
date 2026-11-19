@@ -29,7 +29,13 @@
     "@titaniumnetwork-dev/ultraviolet": "3.2.10",
     "@mercuryworkshop/bare-mux": "2.1.9",
     "@mercuryworkshop/epoxy-transport": "2.1.29",
-    "@nightnetwork/reflux": "2.2.0"
+    "@nightnetwork/reflux": "2.2.0",
+    "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
+    "@mercuryworkshop/scramjet-controller": "0.0.14",
+    "@mercuryworkshop/scramjet-utils": "0.0.3",
+    "@mercuryworkshop/libcurl-transport": "2.0.6",
+    "@mercuryworkshop/epoxy-transport-v3": "npm:@mercuryworkshop/epoxy-transport@3.0.1",
+    "@mercuryworkshop/wisp-js": "0.4.1"
   },
   "engines": {
     "node": ">=20.19.0"
