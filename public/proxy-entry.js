@@ -31,8 +31,8 @@
     status.error = error ? String(error.message || error).slice(0, 240) : null;
     history.push({at: new Date().toISOString(), ...status});
     if (history.length > 25) history.shift();
-    const stage = { 'registering-worker':'worker-register', 'loading-controller':'controller-script', 'loading-transport':'libcurl', 'handshaking':'controller-ready', 'ready':'controller-ready', 'error':'controller-init' }[stage] || null;
-    if (stage) window.dispatchEvent(new CustomEvent('celestial:scramjet-stage', {detail: {stage, outcome: error ? 'error' : status.stage === 'ready' ? 'ok' : 'start'}}));
+    const mappedStage = { 'registering-worker':'worker-register', 'loading-controller':'controller-script', 'loading-transport':'libcurl', 'handshaking':'controller-ready', 'ready':'controller-ready', 'error':'controller-init' }[stage] || null;
+    if (mappedStage) window.dispatchEvent(new CustomEvent('celestial:scramjet-stage', {detail: {stage: mappedStage, outcome: error ? 'error' : status.stage === 'ready' ? 'ok' : 'start'}}));
     window.dispatchEvent(new CustomEvent('celestial:browser-engine', {
       detail: {...status}
     }));
