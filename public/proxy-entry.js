@@ -28,10 +28,14 @@
   function report(stage, error = null) {
     status.stage = stage;
     status.transport = currentTransport;
-    status.error = error ? String(error.message || error).slice(0, 240) : null;
+    // Only expose broad categories. Raw network errors may contain query strings.
+    const message = String(error?.message || '').toLowerCase();
+    status.error = !error ? null : /timeout|timed out/.test(message) ? 'timeout' :
+      /worker/.test(message) ? 'worker' : /transport|wisp|socket/.test(message) ?
+      'transport' : /script|runtime|file|asset/.test(message) ? 'asset' : 'initialization';
     history.push({at: new Date().toISOString(), ...status});
     if (history.length > 25) history.shift();
-    const mappedStage = { 'registering-worker':'worker-register', 'loading-controller':'controller-script', 'loading-transport':'libcurl', 'handshaking':'controller-ready', 'ready':'controller-ready', 'error':'controller-init' }[stage] || null;
+    const mappedStage = { 'registering-worker':'worker-register', 'worker-control':'worker-control', 'loading-controller':'controller-script', 'loading-transport':'libcurl', 'handshaking':'controller-ready', 'ready':'controller-ready', 'error':'controller-init' }[stage] || null;
     if (mappedStage) window.dispatchEvent(new CustomEvent('celestial:scramjet-stage', {detail: {stage: mappedStage, outcome: error ? 'error' : status.stage === 'ready' ? 'ok' : 'start'}}));
     window.dispatchEvent(new CustomEvent('celestial:browser-engine', {
       detail: {...status}
@@ -78,9 +82,6 @@
 
   async function getWorker() {
     if (!window.isSecureContext) throw new Error('Open Celestial over HTTPS.');
-    if (!window.crossOriginIsolated) {
-      throw new Error('Browser isolation is unavailable. Open Celestial directly in a supported browser tab.');
-    }
     if (!('serviceWorker' in navigator)) {
       throw new Error('This browser does not support service workers.');
     }
@@ -94,8 +95,18 @@
       'Registering browser service worker'
     );
     await timeout(navigator.serviceWorker.ready, 'Activating browser service worker');
-    const worker = navigator.serviceWorker.controller || registration.active;
+    const controlled=navigator.serviceWorker.controller;
+    const active=registration.active;
+    const belongs=worker=>{
+      try{return !!worker&&new URL(worker.scriptURL).pathname===paths.worker}
+      catch{return false}
+    };
+    const worker=belongs(controlled)?controlled:active;
     if (!worker) throw new Error('Browser service worker did not activate.');
+    report('worker-control');
+    window.dispatchEvent(new CustomEvent('celestial:scramjet-stage', {
+      detail:{stage:'worker-control',outcome:worker===controlled?'ok':'info'}
+    }));
     return worker;
   }
 
