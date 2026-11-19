@@ -31,7 +31,7 @@ const savedTabs=()=> {
       cursor:typeof tab.cursor==='number'?tab.cursor:-1
     })):[blank()];
 };
-function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retryKey}){
+function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retryKey,transport}){
   const iframe=useRef(null),frame=useRef(null),loadingTimeout=useRef(null);
   const lastRenderedDocument=useRef(null);
   const lastUrl=useRef(''),navigateRef=useRef(onNavigate),popupRef=useRef(onPopup),titleRef=useRef(onTitle);
@@ -83,7 +83,7 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
             lastUrl.current=url;
             navigateRef.current(tab.id,url);
           },
-          url=>{if(!cancelled)popupRef.current(url);});
+          url=>{if(!cancelled)popupRef.current(url);},transport);
         if(cancelled){disposeProxyFrame(connection);return;}
         frame.current=connection;
         register(tab.id,{
@@ -101,7 +101,7 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
       cancelled=true;clearInterval(watchDocument);clearTimeout(loadingTimeout.current);
       register(tab.id,null);disposeProxyFrame(frame.current);frame.current=null;
     };
-  },[tab.id,Boolean(user),retryKey]);
+  },[tab.id,Boolean(user),retryKey,transport]);
   useEffect(()=>{
     if(!tab.url||!frame.current||tab.url===lastUrl.current)return;
     try{
@@ -422,7 +422,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null,onOpe
           onClick={()=>{addTab(bookmark.url);if(homeMode)onOpenBrowser?.();}}>✧ {bookmark.label}</button>)}</div>}
       </div>}
       {tabs.map(tab=>tab.url?<BrowserFrame key={tab.id} tab={tab} active={tab.id===currentId}
-        user={user} onNavigate={onLocation} onPopup={openPopup} onTitle={updateTitle} retryKey={retry[tab.id]||0}
+        user={user} onNavigate={onLocation} onPopup={openPopup} onTitle={updateTitle} retryKey={retry[tab.id]||0} transport={prefs.transport}
         register={(id,control)=>{
           if(control?.retry){setRetry(all=>({...all,[id]:(all[id]||0)+1}));return;}
           if(control)controls.current.set(id,control);else controls.current.delete(id);
