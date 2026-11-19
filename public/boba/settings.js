@@ -1,6 +1,6 @@
 import {openAboutBlank} from './about-blank.js';
 import {getScramjetDiagnostics,clearScramjetDiagnostics,exportScramjetDiagnostics,recordScramjet} from './scramjet-diagnostics.js';
-import {getProxyController} from './proxy.js';
+import {getProxyController,disposeProxyFrame} from './proxy.js';
 import {$,$$,ico,lic,THEMES,ACCENTS,applyPrefs,segThumb,api} from './common.js';
 const identityPresets={
  celestial:['Celestial | Your space','/assets/celestial-star.svg'],
@@ -76,11 +76,45 @@ export const settings = {
          if(!status.authenticated||!status.proxy)throw Error('Browser backend unavailable');
          const controller=await getProxyController();
          if(typeof controller.createFrame!=='function')throw Error('Scramjet controller unavailable');
-         recordScramjet('health','ok',{durationMs:performance.now()-started});
-         testScramjet.textContent='Ready';
+         // Handshake success is not page success. Render an external static
+         // document before claiming the browser connection works.
+         const probe=document.createElement('iframe');
+         probe.title='Browser connection test';
+         probe.setAttribute('aria-hidden','true');
+         probe.style.cssText='position:absolute;width:8px;height:8px;left:-10000px;opacity:0;pointer-events:none';
+         root.appendChild(probe);
+         let frame=null;
+         try{
+           frame=controller.createFrame(probe);
+           const pageReady=new Promise((resolve,reject)=>{
+             let poll,deadline;
+             const cleanup=()=>{clearInterval(poll);clearTimeout(deadline)};
+             const check=()=>{
+               try{
+                 const doc=probe.contentDocument;
+                 if(doc&&doc.URL!=='about:blank'&&doc.title==='Example Domain'&&
+                   (doc.body?.textContent||'').trim().length>80){
+                   cleanup();resolve();
+                 }
+               }catch{/* Navigation is in progress. */}
+             };
+             poll=setInterval(check,200);
+             deadline=setTimeout(()=>{
+               cleanup();reject(new Error('Browser page test timed out'));
+             },20000);
+             check();
+           });
+           frame.go('https://example.com/');
+           await pageReady;
+           recordScramjet('health','ok',{durationMs:performance.now()-started});
+           testScramjet.textContent='Page loaded';
+         }finally{
+           disposeProxyFrame(frame);
+           probe.remove();
+         }
        }catch(error){
          recordScramjet('health','error',{error});
-         testScramjet.textContent='Failed';
+         testScramjet.textContent='Page test failed';
        }finally{
          testScramjet.disabled=false;
        }
