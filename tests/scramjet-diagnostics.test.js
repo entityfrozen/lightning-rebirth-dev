@@ -35,16 +35,19 @@ test('Scramjet diagnostic event names and reasons are allowlisted',()=>{
  assert.equal(entries[3].reason,undefined);
 });
 
-test('Celestial prefers its CSP-compatible same-origin loader and has bounded timeouts',()=>{
- const source=readFileSync(new URL('../public/boba/proxy.js',import.meta.url),'utf8');
- assert.ok(source.indexOf("load('/proxy-entry.js')")<source.indexOf("load('/bootstrap-init.js')"));
- assert.match(source,/timed\(Promise\.resolve\(\)\.then\(\(\)=>window\.initBootstrap\(\)\)/);
- assert.match(source,/recordScramjet\('controller-ready','ok'/);
- const bootstrap=readFileSync(new URL('../public/proxy-entry.js',import.meta.url),'utf8');
- assert.match(bootstrap,/celestial:scramjet-stage/);
- assert.match(bootstrap,/stage\('worker-register','start'\)/);
- assert.match(bootstrap,/stage\('worker-control',worker===controlled/);
- assert.match(bootstrap,/stage\('controller-ready','ok'\)/);
+test('Celestial loads its own V2 controller with bounded timeouts and safe diagnostics',()=>{
+  const source=readFileSync(new URL('../public/boba/proxy.js',import.meta.url),'utf8');
+  assert.match(source,/script\.src='\/proxy-entry\.js'/);
+  assert.doesNotMatch(source,/bootstrap-init\.js/);
+  assert.match(source,/withTimeout\(window\.initBootstrap\(transport\)/);
+  assert.match(source,/recordScramjet\('controller-ready','ok'/);
+  const bootstrap=readFileSync(new URL('../public/proxy-entry.js',import.meta.url),'utf8');
+  assert.match(bootstrap,/celestial:scramjet-stage/);
+  assert.match(bootstrap,/registering-worker/);
+  assert.match(bootstrap,/worker-control/);
+  assert.match(bootstrap,/controller-ready/);
+  assert.match(bootstrap,/transportQueue/);
+  assert.match(bootstrap,/status\.error =/);
 });
 
 test('Scramjet diagnostics are accessible through Settings without server upload',()=>{
