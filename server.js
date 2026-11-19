@@ -2,6 +2,9 @@
 import http from 'node:http';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { bootstrap } from '@mercuryworkshop/proxy-bootstrap';
+import { scramjetPath } from '@mercuryworkshop/scramjet/path';
+import { server as wispV2 } from '@mercuryworkshop/wisp-js/server';
+import { createRequire } from 'node:module';
 import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
 import { baremuxPath } from '@mercuryworkshop/bare-mux/node';
 import { epoxyPath } from '@mercuryworkshop/epoxy-transport';
@@ -19,8 +22,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+const moduleDist = name => path.dirname(require.resolve(name));
 const PUBLIC = path.join(ROOT, 'public');
-const PROXY_VENDOR_ASSETS=[['/uv/',path.resolve(uvPath)],['/baremux/',path.resolve(baremuxPath)],['/epoxy/',path.resolve(epoxyPath)],
+const PROXY_VENDOR_ASSETS=[
+  ['/v2/scram/',path.resolve(scramjetPath)],
+  ['/v2/controller/',moduleDist('@mercuryworkshop/scramjet-controller')],
+  ['/v2/utils/',moduleDist('@mercuryworkshop/scramjet-utils')],
+  ['/v2/libcurl/',moduleDist('@mercuryworkshop/libcurl-transport')],
+  ['/v2/epoxy/',moduleDist('@mercuryworkshop/epoxy-transport-v3')],
+  ['/uv/',path.resolve(uvPath)],['/baremux/',path.resolve(baremuxPath)],['/epoxy/',path.resolve(epoxyPath)],
   // Reflux is a BareMux middleware transport for Ultraviolet (not Scramjet 2).
   ['/reflux/',path.dirname(fileURLToPath(import.meta.resolve('@nightnetwork/reflux/transport')))]];
 const DATA_DIR=path.resolve(ROOT,process.env.BOLT_DATA_DIR||
@@ -321,7 +332,7 @@ async function handleAPI(req,res,url) {
     return respond(res,200,{configured:Boolean(providers.nvidia)});
   }
 
-  if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),ultraviolet:Boolean(proxyBackend),authenticated:Boolean(user)});
+  if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),scramjetV2:process.env.DISABLE_WEB_PROXY!=='1',ultraviolet:Boolean(proxyBackend),authenticated:Boolean(user)});
   if(req.method==='GET' && pathname==='/api/community/members'){
     if(!user)return fail(res,401,'Sign in required');
     // The community directory includes approved accounts, even when offline.
@@ -721,7 +732,8 @@ export function createServer(){
       if(url.pathname.startsWith('/api/'))return await handleAPI(req,res,url);
       // All Scramjet bootstrap, service worker and rewritten pages are
       // session protected, just like the original Bolt implementation.
-      if(proxyBackend&&liveIdentity(req.headers)&&proxyBackend.routeRequest(req,res))return;
+      if(url.pathname==='/sw.js'||url.pathname.startsWith('/v2/'))return await staticFile(req,res,url);
+       if(proxyBackend&&liveIdentity(req.headers)&&proxyBackend.routeRequest(req,res))return;
       return await staticFile(req,res,url);
     }catch(error){
       console.error('Request error:',error.message);
@@ -730,13 +742,25 @@ export function createServer(){
     }
   });
   if(proxyBackend)server.on('upgrade',(req,socket,head)=>{
-    if(req.url?.startsWith('/live'))return;
+    if(req.url?.startsWith('/live')||req.url?.startsWith('/wisp-v2/'))return;
     if(!liveIdentity(req.headers)){
       socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
       socket.destroy();return;
     }
     try{proxyBackend.routeUpgrade(req,socket,head);}
     catch(error){console.warn('Browser transport failed:',error.message);socket.destroy();}
+  });
+  server.on('upgrade',(req,socket,head)=>{
+    const pathname=new URL(req.url||'/', 'http://localhost').pathname;
+    if(pathname!=='/wisp-v2/')return;
+    if(process.env.DISABLE_WEB_PROXY==='1'||!liveIdentity(req.headers)){
+      socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+      socket.destroy();return;
+    }
+    try {
+      req.url='/wisp/';
+      wispV2.routeRequest(req,socket,head);
+    }catch(error){console.warn('Scramjet V2 Wisp error:',error.message);socket.destroy();}
   });
   // Bridge Celestial's existing accounts to Bolt's proven multiplayer
   // server; old user IDs remain stable, preserving community identity.
