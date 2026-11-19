@@ -58,7 +58,7 @@ const engine={
    }
    const status=await fetch('/api/browser/status',{credentials:'same-origin'}).then(r=>r.json());
    if(!status.authenticated)throw Error('Sign in to browse with Scramjet.');
-   if(!status.proxy)throw Error('Scramjet is unavailable on this server.');
+   if(!status.scramjetV2)throw Error('Scramjet V2 is unavailable on this server.');
    let record=frames.get(el);
    if(!record||record.mode!=='scramjet'){
      record={mode:'scramjet',frame:null,pending:null,disposed:false,navSequence:0};
