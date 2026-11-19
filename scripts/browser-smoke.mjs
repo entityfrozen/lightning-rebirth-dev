@@ -141,8 +141,8 @@ try{
   page.on('request',req=>{
     const route=new URL(req.url()).pathname;
     if(['/proxy-entry.js','/sw.js','/scram/scramjet.js',
-      '/controller/controller.api.js','/scram/scramjet-utils.js',
-      '/clients/libcurl-client.js','/scram/scramjet.wasm'].includes(route)){
+      '/controller/controller.api.js','/utils/scramjet-utils.js',
+      '/libcurl/index.mjs','/scram/scramjet.wasm'].includes(route)){
       scriptPaths.add(route);
     }
   });
@@ -216,8 +216,8 @@ try{
   });
   console.log('Scramjet worker registrations:',JSON.stringify(worker));
   for(const required of ['/proxy-entry.js','/scram/scramjet.js',
-      '/controller/controller.api.js','/scram/scramjet-utils.js',
-      '/clients/libcurl-client.js']){
+      '/controller/controller.api.js','/utils/scramjet-utils.js',
+      '/libcurl/index.mjs']){
     assert.ok(scriptPaths.has(required),'Required browser asset never loaded: '+required+
       '\nObserved: '+[...scriptPaths].join(', ')+'\n'+events.join('\n'));
   }
