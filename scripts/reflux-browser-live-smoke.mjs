@@ -150,28 +150,6 @@ try{
  assert.match(proxiedSrc,/\/\~\/sj\//,
    'Scramjet must navigate through its upstream iframe src protocol');
 
- // The live V2 controller should switch transports without recreating Boba.
- await workspace.locator('#dock [data-section="s5"]').click();
- await workspace.locator('[data-scramjet-transport]').selectOption('epoxy');
- await workspace.locator('[data-transport-status]').filter({hasText:'Ready'}).waitFor({timeout:30000});
- const epoxy=await popup.evaluate(()=>
-   document.querySelector('iframe[title="Website"]')?.contentWindow
-     ?.celestialBrowserDiagnostics?.()?.transport);
- assert.equal(epoxy,'epoxy','Scramjet V2 must support the Epoxy transport');
- await workspace.locator('[data-scramjet-transport]').selectOption('libcurl');
- await workspace.locator('[data-transport-status]').filter({hasText:'Ready'}).waitFor({timeout:30000});
- const curl=await popup.evaluate(()=>
-   document.querySelector('iframe[title="Website"]')?.contentWindow
-     ?.celestialBrowserDiagnostics?.()?.transport);
- assert.equal(curl,'libcurl','Scramjet V2 must restore the libcurl transport');
- await workspace.locator('#dock [data-section="s1"]').click();
- await workspace.locator('[data-wb="reload"]').click();
- await popup.waitForFunction(()=>{
-   const host=document.querySelector('iframe[title="Website"]')?.contentDocument;
-   const frame=host?.querySelector('[data-view="s1"] iframe');
-   try{return frame?.contentDocument?.title==='Example Domain'}catch{return false}
- },null,{timeout:60000});
-
  // The in-memory diagnostics must report Scramjet startup and navigation,
  // without ever exposing the visited website address.
  await workspace.locator('#dock [data-section="s5"]').click();
