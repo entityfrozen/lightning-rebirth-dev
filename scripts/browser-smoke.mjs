@@ -282,6 +282,19 @@ try{
       JSON.stringify(snapshot)+'; original '+error.message);
   });
 
+  // Switch both V2 Wisp transports with a live frame. No second controller
+  // or worker should be needed, and the existing document must survive.
+  const modes=await page.evaluate(async()=>{
+    await window.initBootstrap('epoxy');
+    const epoxy=window.celestialBrowserDiagnostics?.()?.transport;
+    await window.initBootstrap('libcurl');
+    const libcurl=window.celestialBrowserDiagnostics?.()?.transport;
+    return {epoxy,libcurl,frame:document.querySelector('iframe.portal-iframe')?.src};
+  });
+  assert.equal(modes.epoxy,'epoxy','Epoxy transport must initialize');
+  assert.equal(modes.libcurl,'libcurl','libcurl must be restorable after Epoxy');
+  assert.equal(modes.frame,state.iframe,'Changing transport must preserve the frame');
+
   // The companion must work without unmounting the proxied iframe.
   await page.getByRole('button',{name:'Open community Chat beside this page'}).click();
   await page.locator('.celestial-messenger.compact').waitFor({timeout:15000});
