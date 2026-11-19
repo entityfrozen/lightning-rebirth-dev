@@ -23,11 +23,14 @@
   let currentTransport = null;
   let transportQueue = Promise.resolve();
   const status = {stage: 'idle', transport: null, error: null};
+  const history = [];
 
   function report(stage, error = null) {
     status.stage = stage;
     status.transport = currentTransport;
     status.error = error ? String(error.message || error).slice(0, 240) : null;
+    history.push({at: new Date().toISOString(), ...status});
+    if (history.length > 25) history.shift();
     window.dispatchEvent(new CustomEvent('celestial:browser-engine', {
       detail: {...status}
     }));
@@ -35,6 +38,7 @@
 
   window.celestialBrowserDiagnostics = () => ({
     ...status,
+    history: [...history],
     secure: window.isSecureContext,
     isolated: window.crossOriginIsolated,
     serviceWorker: navigator.serviceWorker?.controller?.state || 'uncontrolled'
@@ -153,21 +157,19 @@
       });
     }
     const controller = await controllerPromise;
-    if (currentTransport !== kind) {
-      const change = transportQueue.catch(() => {}).then(async () => {
-        if (currentTransport === kind) return;
-        const replacement = await buildTransport(kind);
-        await controller.setTransport(replacement);
-        currentTransport = kind;
-        report('ready');
-      });
-      transportQueue = change;
-      try {
-        await change;
-      } catch (error) {
-        report('error', error);
-        throw error;
-      }
+    const change = transportQueue.catch(() => {}).then(async () => {
+      if (currentTransport === kind) return;
+      const replacement = await buildTransport(kind);
+      await controller.setTransport(replacement);
+      currentTransport = kind;
+      report('ready');
+    });
+    transportQueue = change;
+    try {
+      await change;
+    } catch (error) {
+      report('error', error);
+      throw error;
     }
     return controller;
   };
