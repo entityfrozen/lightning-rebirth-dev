@@ -148,6 +148,10 @@ try{
    'Scramjet must browse through the about:blank workspace');
  assert.equal(await workspace.locator('[data-bl]').evaluate(el=>el.classList.contains('off')),true,
    'The loading overlay must disappear once Scramjet renders real content');
+ // The October-style loader must not block after Frame.go() returns,
+ // even when a third-party script never reaches full document readiness.
+ const overlayCleared=await workspace.locator('[data-bl]').evaluate(node=>node.classList.contains('off'));
+ assert.equal(overlayCleared,true,'The navigation overlay must be nonblocking after Frame.go()');
  const proxiedSrc=await workspace.locator('iframe[title="Page"]').getAttribute('src');
  assert.match(proxiedSrc,/\/\~\/sj\//,
    'Scramjet must navigate through its upstream iframe src protocol');
