@@ -141,8 +141,8 @@ try{
   page.on('request',req=>{
     const route=new URL(req.url()).pathname;
     if(['/proxy-entry.js','/sw.js','/scram/scramjet.js',
-      '/controller/controller.api.js','/scram/scramjet-utils.js',
-      '/clients/libcurl-client.js','/scram/scramjet.wasm'].includes(route)){
+      '/controller/controller.api.js','/utils/scramjet-utils.js',
+      '/libcurl/index.mjs','/scram/scramjet.wasm'].includes(route)){
       scriptPaths.add(route);
     }
   });
@@ -216,8 +216,8 @@ try{
   });
   console.log('Scramjet worker registrations:',JSON.stringify(worker));
   for(const required of ['/proxy-entry.js','/scram/scramjet.js',
-      '/controller/controller.api.js','/scram/scramjet-utils.js',
-      '/clients/libcurl-client.js']){
+      '/controller/controller.api.js','/utils/scramjet-utils.js',
+      '/libcurl/index.mjs']){
     assert.ok(scriptPaths.has(required),'Required browser asset never loaded: '+required+
       '\nObserved: '+[...scriptPaths].join(', ')+'\n'+events.join('\n'));
   }
@@ -281,6 +281,19 @@ try{
     throw Error('Scramjet did not render the test website: '+
       JSON.stringify(snapshot)+'; original '+error.message);
   });
+
+  // Switch both V2 Wisp transports with a live frame. No second controller
+  // or worker should be needed, and the existing document must survive.
+  const modes=await page.evaluate(async()=>{
+    await window.initBootstrap('epoxy');
+    const epoxy=window.celestialBrowserDiagnostics?.()?.transport;
+    await window.initBootstrap('libcurl');
+    const libcurl=window.celestialBrowserDiagnostics?.()?.transport;
+    return {epoxy,libcurl,frame:document.querySelector('iframe.portal-iframe')?.src};
+  });
+  assert.equal(modes.epoxy,'epoxy','Epoxy transport must initialize');
+  assert.equal(modes.libcurl,'libcurl','libcurl must be restorable after Epoxy');
+  assert.equal(modes.frame,state.iframe,'Changing transport must preserve the frame');
 
   // The companion must work without unmounting the proxied iframe.
   await page.getByRole('button',{name:'Open community Chat beside this page'}).click();

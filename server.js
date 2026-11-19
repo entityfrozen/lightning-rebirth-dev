@@ -1,7 +1,9 @@
 /** Celestial's small single-instance server. No npm dependencies needed. */
 import http from 'node:http';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { bootstrap } from '@mercuryworkshop/proxy-bootstrap';
+import { server as wisp } from '@mercuryworkshop/wisp-js/server';
+import { scramjetPath } from '@mercuryworkshop/scramjet/path';
+import { createRequire } from 'node:module';
 import { attachLightningLive } from './live.js';
 import {importBoltData,bootstrapAdministrator,backupBoltData} from './legacy-data.js';
 import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
@@ -11,6 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
 const PUBLIC = path.join(ROOT, 'public');
 const DATA_DIR=path.resolve(ROOT,process.env.BOLT_DATA_DIR||
   process.env.RAILWAY_VOLUME_MOUNT_PATH||
@@ -26,12 +29,17 @@ if(process.env.RAILWAY_VOLUME_MOUNT_PATH){
   }
 }
 mkdirSync(DATA_DIR,{recursive:true});
-// The Bolt-era backend provides real browser proxying and multiplayer.
-// Missing proxy downloads must never block the rest of the platform.
-let proxyBackend=null;
-if(process.env.DISABLE_WEB_PROXY!=='1')try{
-  proxyBackend=await bootstrap();
-}catch(error){console.warn('Browser proxy unavailable:',error.message);}
+// Serve pinned Scramjet V2 packages instead of fetching mutable bundles at boot.
+// The browser remains disabled in environments that explicitly opt out.
+const browserEnabled = process.env.DISABLE_WEB_PROXY !== '1';
+const runtimeDirectory = name => path.dirname(require.resolve(name));
+const browserAssets = browserEnabled ? [
+  {prefix:'/scram/',directory:scramjetPath},
+  {prefix:'/controller/',directory:runtimeDirectory('@mercuryworkshop/scramjet-controller')},
+  {prefix:'/utils/',directory:runtimeDirectory('@mercuryworkshop/scramjet-utils')},
+  {prefix:'/libcurl/',directory:runtimeDirectory('@mercuryworkshop/libcurl-transport')},
+  {prefix:'/epoxy/',directory:runtimeDirectory('@mercuryworkshop/epoxy-transport')}
+] : [];
 
 const channels = new Set(['general', 'help', 'showcase']);
 const listeners = new Set();
@@ -198,7 +206,7 @@ async function handleAPI(req,res,url) {
     if(!user)return fail(res,401,'Sign in required');
     return respond(res,200,{configured:Boolean(process.env.OPENAI_API_KEY||process.env.NVIDIA_API_KEY)});
   }
-  if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),authenticated:Boolean(user)});
+  if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:browserEnabled,authenticated:Boolean(user)});
   if(req.method==='GET' && pathname==='/api/community/members'){
     if(!user)return fail(res,401,'Sign in required');
     // The community directory includes approved accounts, even when offline.
@@ -434,6 +442,39 @@ async function handleAPI(req,res,url) {
   }
   return fail(res,404,'API route not found');
 }
+const browserTypes={'.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8',
+  '.wasm':'application/wasm','.json':'application/json; charset=utf-8','.data':'application/octet-stream'};
+async function runtimeFile(req,res,url){
+  const mount=browserAssets.find(item=>url.pathname.startsWith(item.prefix));
+  if(!mount)return false;
+  if(!liveIdentity(req.headers)){fail(res,401,'Sign in to use the browser');return true;}
+  if(!['GET','HEAD'].includes(req.method)){fail(res,405,'Method not allowed');return true;}
+  let relative;
+  try{relative=decodeURIComponent(url.pathname.slice(mount.prefix.length));}
+  catch{fail(res,400,'Invalid asset path');return true;}
+  const root=path.resolve(mount.directory);
+  const filename=path.resolve(root,relative);
+  if(!relative || !(filename.startsWith(root+path.sep))){
+    fail(res,403,'Invalid asset path');return true;
+  }
+  const type=browserTypes[path.extname(filename)];
+  if(!type){fail(res,404,'Browser asset not found');return true;}
+  try{
+    const info=await stat(filename);
+    if(!info.isFile())throw Error('Not a file');
+    const content=await readFile(filename);
+    res.writeHead(200,{
+      'Content-Type':type,'Content-Length':content.length,
+      'X-Content-Type-Options':'nosniff','Cache-Control':'private, max-age=3600',
+      'Cross-Origin-Resource-Policy':'same-origin',
+      'Cross-Origin-Opener-Policy':'same-origin',
+      'Cross-Origin-Embedder-Policy':'credentialless',
+      'Referrer-Policy':'same-origin'
+    });
+    res.end(req.method==='HEAD'?undefined:content);
+  }catch{fail(res,404,'Browser asset not found');}
+  return true;
+}
 const types={'.json':'application/json; charset=utf-8','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.ico':'image/x-icon'};
 async function staticFile(req,res,url) {
   if(req.method!=='GET' && req.method!=='HEAD')return fail(res,405,'Method not allowed');
@@ -454,9 +495,9 @@ export function createServer(){
   const server=http.createServer(async(req,res)=>{
     try {const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
       if(url.pathname.startsWith('/api/'))return await handleAPI(req,res,url);
-      // All Scramjet bootstrap, service worker and rewritten pages are
-      // session protected, just like the original Bolt implementation.
-      if(proxyBackend&&liveIdentity(req.headers)&&proxyBackend.routeRequest(req,res))return;
+      // Worker and transport assets require a signed-in session.
+      if(url.pathname==='/sw.js'&&!liveIdentity(req.headers))return fail(res,401,'Sign in to use the browser');
+      if(await runtimeFile(req,res,url))return;
       return await staticFile(req,res,url);
     }catch(error){
       console.error('Request error:',error.message);
@@ -464,16 +505,20 @@ export function createServer(){
       else res.end();
     }
   });
-  if(proxyBackend)server.on('upgrade',(req,socket,head)=>{
-    if(req.url?.startsWith('/live'))return;
+  server.on('upgrade',(req,socket,head)=>{
+    const pathname=new URL(req.url||'/', 'http://localhost').pathname;
+    // The live chat handler is separately attached below.
+    if(pathname==='/live')return;
+    if(!browserEnabled||pathname!=='/wisp/'){socket.destroy();return;}
     if(!liveIdentity(req.headers)){
       socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
       socket.destroy();return;
     }
-    try{proxyBackend.routeUpgrade(req,socket,head);}
-    catch(error){console.warn('Browser transport failed:',error.message);socket.destroy();}
+    try{
+      req.url='/wisp/';
+      wisp.routeRequest(req,socket,head);
+    }catch(error){console.warn('Browser Wisp transport error:',error.message);socket.destroy();}
   });
-  // Bridge Celestial's existing accounts to Bolt's proven multiplayer
   // server; old user IDs remain stable, preserving community identity.
   attachLightningLive({
     server,sessionFromHeaders:liveIdentity,dataDir:DATA_DIR,

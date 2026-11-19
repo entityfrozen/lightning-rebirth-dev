@@ -5,7 +5,7 @@ import {
   ArrowDownload20Filled,ArrowUpload20Filled,People24Filled
 } from '@fluentui/react-icons';
 import {readLocal,saveLocal} from './constants.js';
-import {browserPreferences,setBrowserPreferences,searchEngines} from './Preferences.js';
+import {browserPreferences,setBrowserPreferences,searchEngines,browserTransports} from './Preferences.js';
 import {getCloakSettings,saveCloak,cloakPresets,openCloakedTab} from './Cloak.js';
 import {AccountReview} from './AccountReview.jsx';
 
@@ -76,6 +76,7 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
           if(typeof data.browser[key]==='boolean')prefs[key]=data.browser[key];
         }
         if(Object.hasOwn(searchEngines,data.browser.searchEngine))prefs.searchEngine=data.browser.searchEngine;
+        if(Object.hasOwn(browserTransports,data.browser.transport))prefs.transport=data.browser.transport;
         preference(prefs);
       }
       if(data.cloak&&Object.hasOwn(cloakPresets,data.cloak.preset)){
@@ -148,6 +149,17 @@ export function Settings({user,palette,setPalette,backdrop,setBackdrop,reduced,s
                   {Object.entries(searchEngines).map(([id,engine])=><option key={id} value={id}>{engine.label}</option>)}
                 </select>
               </label>
+            </div>
+            <div className="celestial-settings-group"><h3>CONNECTION ENGINE</h3>
+              <label className="celestial-settings-select"><span><strong>Browser transport</strong>
+                <small>libcurl is recommended. Epoxy is a lighter alternative for sites that have trouble loading.</small></span>
+                <select value={browser.transport} onChange={e=>preference({transport:e.target.value})}>
+                  {Object.entries(browserTransports).map(([id,choice])=>
+                    <option key={id} value={id}>{choice.label}</option>)}
+                </select>
+              </label>
+              <p className="celestial-settings-footnote">Switching transports reconnects your open tabs.
+                Some sites still block embedded browsing or require direct access.</p>
             </div>
             <div className="celestial-settings-group"><h3>TABS & HISTORY</h3>
               <Toggle title="Restore tabs" description="Reopen the tabs you left here last time."

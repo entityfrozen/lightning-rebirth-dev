@@ -5,7 +5,7 @@ import {
 } from '@fluentui/react-icons';
 import {api,readLocal,saveLocal} from './constants.js';
 import {browserAddress,browserPreferences} from './Preferences.js';
-import {createProxyFrame,disposeProxyFrame} from './BoltProxy.js';
+import {createProxyFrame,disposeProxyFrame,getBrowserDiagnostics} from './BoltProxy.js';
 
 const shortcuts=[
   {id:'apps',name:'apps',icon:Grid20Filled},
@@ -31,19 +31,20 @@ const savedTabs=()=> {
       cursor:typeof tab.cursor==='number'?tab.cursor:-1
     })):[blank()];
 };
-function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retryKey}){
+function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retryKey,transport}){
   const iframe=useRef(null),frame=useRef(null),loadingTimeout=useRef(null);
   const lastRenderedDocument=useRef(null);
   const lastUrl=useRef(''),navigateRef=useRef(onNavigate),popupRef=useRef(onPopup),titleRef=useRef(onTitle);
   const [state,setState]=useState('loading'),[error,setError]=useState('');
   const [loadedOnce,setLoadedOnce]=useState(false);
+  const [diagnosticsCopied,setDiagnosticsCopied]=useState(false);
   navigateRef.current=onNavigate;popupRef.current=onPopup;titleRef.current=onTitle;
 
   useEffect(()=>{
     let cancelled=false;
     const el=iframe.current;
     if(!el||!tab.url)return;
-    setState('loading');setError('');setLoadedOnce(false);
+    setState('loading');setError('');setLoadedOnce(false);setDiagnosticsCopied(false);
     lastRenderedDocument.current=null;
     // Scramjet replaces iframe documents through a service worker.
     // Chromium may render those documents without firing the host iframe's
@@ -61,10 +62,8 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
         setState('ready');setError('');setLoadedOnce(true);
       }catch{}
     },180);
+    // Startup has its own staged timeouts; only time actual page navigation.
     clearTimeout(loadingTimeout.current);
-    loadingTimeout.current=setTimeout(()=>{
-      if(!cancelled){setState('error');setError('The site took too long to respond. Try again or open it directly.');}
-    },26000);
     (async()=>{
       try{
         if(!user)throw Error('Sign in to browse in Celestial.');
@@ -83,7 +82,7 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
             lastUrl.current=url;
             navigateRef.current(tab.id,url);
           },
-          url=>{if(!cancelled)popupRef.current(url);});
+          url=>{if(!cancelled)popupRef.current(url);},transport);
         if(cancelled){disposeProxyFrame(connection);return;}
         frame.current=connection;
         register(tab.id,{
@@ -93,6 +92,9 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
         });
         lastUrl.current=tab.url;
         connection.go(tab.url); // Frame.go() navigates synchronously.
+        loadingTimeout.current=setTimeout(()=>{
+          if(!cancelled){setState('error');setError('The site took too long to respond. Try again or open it directly.');}
+        },30000);
       }catch(failure){
         if(!cancelled){clearTimeout(loadingTimeout.current);setState('error');setError(failure.message||'Unable to open this site.');}
       }
@@ -101,7 +103,7 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
       cancelled=true;clearInterval(watchDocument);clearTimeout(loadingTimeout.current);
       register(tab.id,null);disposeProxyFrame(frame.current);frame.current=null;
     };
-  },[tab.id,Boolean(user),retryKey]);
+  },[tab.id,Boolean(user),retryKey,transport]);
   useEffect(()=>{
     if(!tab.url||!frame.current||tab.url===lastUrl.current)return;
     try{
@@ -129,6 +131,12 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
       <h2>We couldn't open that page.</h2>
       <p>{error}</p>
       <div><button onClick={()=>register(tab.id,{retry:true})}>Try again</button>
+      <button type="button" onClick={async()=>{
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(getBrowserDiagnostics(),null,2));
+          setDiagnosticsCopied(true);
+        } catch { setDiagnosticsCopied(false); }
+      }}>{diagnosticsCopied?'Diagnostics copied':'Copy diagnostics'}</button>
       {window.self!==window.top&&!window.crossOriginIsolated&&
         <a href={location.origin+'/#browser'} target="_blank" rel="noopener noreferrer">Open full Celestial browser ↗</a>}
       <a href={tab.url} target="_blank" rel="noopener noreferrer">Open site directly ↗</a></div>
@@ -422,7 +430,7 @@ export function Browser({user,onAuth,onShortcut,homeMode=false,launch=null,onOpe
           onClick={()=>{addTab(bookmark.url);if(homeMode)onOpenBrowser?.();}}>✧ {bookmark.label}</button>)}</div>}
       </div>}
       {tabs.map(tab=>tab.url?<BrowserFrame key={tab.id} tab={tab} active={tab.id===currentId}
-        user={user} onNavigate={onLocation} onPopup={openPopup} onTitle={updateTitle} retryKey={retry[tab.id]||0}
+        user={user} onNavigate={onLocation} onPopup={openPopup} onTitle={updateTitle} retryKey={retry[tab.id]||0} transport={prefs.transport}
         register={(id,control)=>{
           if(control?.retry){setRetry(all=>({...all,[id]:(all[id]||0)+1}));return;}
           if(control)controls.current.set(id,control);else controls.current.delete(id);
