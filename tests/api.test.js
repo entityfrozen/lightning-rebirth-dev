@@ -51,7 +51,8 @@ test('end-to-end account, chat, and community drop API', {timeout:18000}, async 
     assert.match(loaderCode,/window\.initBootstrap/);
     assert.match(loaderCode,/navigator\.serviceWorker\.register/);
     assert.match(loaderCode,/scramjet\.js/);
-    assert.match(loaderCode,/libcurl-client\.js/);
+    assert.match(loaderCode,/libcurl\\/index\\.mjs/);
+    assert.match(loaderCode,/epoxy\\/index\\.mjs/);
     assert.doesNotMatch(loaderCode,/import\(["']data:/);
     const policy=loader.headers.get('content-security-policy')||'';
     assert.match(policy,/script-src 'self' blob:/);
