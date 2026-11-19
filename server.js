@@ -732,7 +732,8 @@ export function createServer(){
       if(url.pathname.startsWith('/api/'))return await handleAPI(req,res,url);
       // All Scramjet bootstrap, service worker and rewritten pages are
       // session protected, just like the original Bolt implementation.
-      if(url.pathname==='/sw.js'||url.pathname.startsWith('/v2/'))return await staticFile(req,res,url);
+      if(url.pathname==='/sw.js'&&!liveIdentity(req.headers))return fail(res,401,'Sign in to use the browser');
+       if(url.pathname==='/sw.js'||url.pathname.startsWith('/v2/'))return await staticFile(req,res,url);
        if(proxyBackend&&liveIdentity(req.headers)&&proxyBackend.routeRequest(req,res))return;
       return await staticFile(req,res,url);
     }catch(error){
