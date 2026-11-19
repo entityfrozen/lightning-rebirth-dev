@@ -1,6 +1,6 @@
 import {openAboutBlank} from './about-blank.js';
 import {getScramjetDiagnostics,clearScramjetDiagnostics,exportScramjetDiagnostics,recordScramjet} from './scramjet-diagnostics.js';
-import {getProxyController,getScramjetTransport,setScramjetTransport} from './proxy.js';
+import {getProxyController,disposeProxyFrame} from './proxy.js';
 import {$,$$,ico,lic,THEMES,ACCENTS,applyPrefs,segThumb,api} from './common.js';
 const identityPresets={
  celestial:['Celestial | Your space','/assets/celestial-star.svg'],
@@ -45,8 +45,6 @@ export const settings = {
       '<div class="lr">' + lic("link", "#2be0e6", "#0b8f86") + '<h3>Connection</h3><span class="netst"><i data-cn></i><span data-cnm>Checking</span></span></div>' +
       '<div class="lr"><h3>Default browser engine</h3><select data-default-engine aria-label="Default browser engine"><option value="smart">Smart (recommended)</option><option value="reflux">Reflux</option><option value="scramjet">Scramjet</option></select></div>' +
       '<p class="native-tab-note">Smart chooses the engine per site, then learns from successful recovery for this session. Applies to new tabs.</p>' +
-       '<div class="lr"><h3>Scramjet V2 transport</h3><select data-scramjet-transport aria-label="Scramjet V2 transport"><option value="libcurl">libcurl (recommended)</option><option value="epoxy">Epoxy (lightweight)</option></select><span data-transport-status role="status"></span></div>' +
-       '<p class="native-tab-note">Choose the HTTP transport inside Scramjet. Reflux is independent. Switching affects future requests; reload a page to retry it using the new transport.</p>' +
       '<div class="lr"><h3>Scramjet diagnostics</h3><button class="btn s" type="button" data-scramjet-test>Test connection</button><button class="btn s" type="button" data-scramjet-copy>Copy report</button><button class="btn s" type="button" data-scramjet-clear>Clear</button></div>' +
       '<p class="native-tab-note">Local-only startup and navigation stages. No URLs, search terms, passwords or cookies are included.</p>' +
       '<pre data-scramjet-log aria-label="Scramjet diagnostics" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:210px;overflow:auto;font:11px/1.5 ui-monospace,monospace;padding:12px;border-radius:12px;background:#121923;color:#cbd5e1"></pre></section>' +
@@ -75,14 +73,48 @@ export const settings = {
        recordScramjet('health','start');
        try{
          const status=await api('/api/browser/status');
-         if(!status.authenticated||!status.scramjetV2)throw Error('Browser backend unavailable');
+         if(!status.authenticated||!status.proxy)throw Error('Browser backend unavailable');
          const controller=await getProxyController();
          if(typeof controller.createFrame!=='function')throw Error('Scramjet controller unavailable');
-         recordScramjet('health','ok',{durationMs:performance.now()-started});
-         testScramjet.textContent='Ready';
+         // Handshake success is not page success. Render an external static
+         // document before claiming the browser connection works.
+         const probe=document.createElement('iframe');
+         probe.title='Browser connection test';
+         probe.setAttribute('aria-hidden','true');
+         probe.style.cssText='position:absolute;width:8px;height:8px;left:-10000px;opacity:0;pointer-events:none';
+         root.appendChild(probe);
+         let frame=null;
+         try{
+           frame=controller.createFrame(probe);
+           const pageReady=new Promise((resolve,reject)=>{
+             let poll,deadline;
+             const cleanup=()=>{clearInterval(poll);clearTimeout(deadline)};
+             const check=()=>{
+               try{
+                 const doc=probe.contentDocument;
+                 if(doc&&doc.URL!=='about:blank'&&doc.title==='Example Domain'&&
+                   (doc.body?.textContent||'').trim().length>80){
+                   cleanup();resolve();
+                 }
+               }catch{/* Navigation is in progress. */}
+             };
+             poll=setInterval(check,200);
+             deadline=setTimeout(()=>{
+               cleanup();reject(new Error('Browser page test timed out'));
+             },20000);
+             check();
+           });
+           frame.go('https://example.com/');
+           await pageReady;
+           recordScramjet('health','ok',{durationMs:performance.now()-started});
+           testScramjet.textContent='Page loaded';
+         }finally{
+           disposeProxyFrame(frame);
+           probe.remove();
+         }
        }catch(error){
          recordScramjet('health','error',{error});
-         testScramjet.textContent='Failed';
+         testScramjet.textContent='Page test failed';
        }finally{
          testScramjet.disabled=false;
        }
@@ -121,20 +153,6 @@ export const settings = {
        localStorage.setItem('boba.native.browserEngine',JSON.stringify(defaultEngine.value));
        accountSave();
      };
-      const transportSelect=$('[data-scramjet-transport]',root);
-      const transportStatus=$('[data-transport-status]',root);
-      transportSelect.value=getScramjetTransport();
-      transportSelect.onchange=async()=>{
-        transportSelect.disabled=true;
-        transportStatus.textContent='Switching…';
-        try{
-          await setScramjetTransport(transportSelect.value);
-          transportStatus.textContent='Ready';
-        }catch{
-          transportStatus.textContent='Could not switch. Check diagnostics.';
-          transportSelect.value=getScramjetTransport();
-        }finally{transportSelect.disabled=false}
-      };
      const closeToggle=$('[data-prevent-close]',root);
     closeToggle.checked=localStorage.getItem('boba.preventClose')!=='false';
     closeToggle.onchange=()=>{localStorage.setItem('boba.preventClose',String(closeToggle.checked));accountSave()};

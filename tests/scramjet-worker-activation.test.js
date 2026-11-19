@@ -3,9 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
-// Replace the dynamic transport import with a local stub for the worker-only unit test.
-const bootstrap=readFileSync(new URL('../public/proxy-entry.js',import.meta.url),'utf8')
-  .replace('import(paths.transports[kind])','Promise.resolve({default: class MockTransport {}})');
+const bootstrap=readFileSync(new URL('../public/proxy-entry.js',import.meta.url),'utf8');
 
 async function start({controlled=null,registered=true}={}){
  const active={
@@ -25,11 +23,11 @@ async function start({controlled=null,registered=true}={}){
   createFrame(){return {}}
  }
  const scripts={
-  '/v2/scram/scramjet.js':()=>{},
-  '/v2/controller/controller.api.js':()=>{
+  '/scram/scramjet.js':()=>{},
+  '/controller/controller.api.js':()=>{
    window.$scramjetController={Controller,config:{}};
   },
-  '/v2/utils/scramjet-utils.js':()=>{
+  '/scram/scramjet-utils.js':()=>{
    window.$scramjetUtils={};
   },
   '/clients/libcurl-client.js':()=>{

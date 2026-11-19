@@ -1,80 +1,77 @@
 import {recordScramjet} from './scramjet-diagnostics.js';
 
-// Boba's Scramjet V2 adapter. Reflux/Ultraviolet keep their own transport.
-const KEY='boba.scramjet.transport';
-let bootstrapPromise=null;
+// Scramjet adapter. The page owns a same-origin loader because the upstream
+// proxy-bootstrap loader dynamically imports data: modules, blocked by our CSP.
+// Proxy assets and Wisp remain session-protected by the server.
+// The classic bootstrap cannot import this ES module directly. Its events
+// carry only a fixed stage/outcome pair, which the diagnostics collector vets.
+if(typeof window!=='undefined')window.addEventListener('celestial:scramjet-stage',event=>{
+ const detail=event.detail||{};
+ recordScramjet(detail.stage,detail.outcome);
+});
+let controllerPromise=null;
 let keepalive=null;
-const supported=new Set(['libcurl','epoxy']);
-
-export function getScramjetTransport(){
-  try{const value=localStorage.getItem(KEY);return supported.has(value)?value:'libcurl'}
-  catch{return 'libcurl'}
-}
-
-function withTimeout(promise,label,ms=40000){
-  let timer;
-  return Promise.race([promise,new Promise((_,reject)=>{
-    timer=setTimeout(()=>reject(new Error(label+' timed out')),ms);
-  })]).finally(()=>clearTimeout(timer));
-}
-
+const timed=async(promise,label,ms=28000)=>{
+ let timer;
+ try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label+' timed out')),ms)})])}
+ finally{clearTimeout(timer)}
+};
 async function loadBootstrap(){
-  if(typeof window.initBootstrap==='function')return;
-  if(!bootstrapPromise){
-    bootstrapPromise=new Promise((resolve,reject)=>{
-      const script=document.createElement('script');
-      script.src='/proxy-entry.js';
-      script.dataset.celestialProxy='v2';
-      script.onload=()=>typeof window.initBootstrap==='function'
-        ?resolve():reject(new Error('Scramjet V2 bootstrap unavailable'));
-      script.onerror=()=>{
-        script.remove();
-        reject(new Error('Scramjet V2 bootstrap could not load'));
-      };
-      document.head.append(script);
-    }).catch(error=>{
-      bootstrapPromise=null;
-      document.querySelector('script[data-celestial-proxy="v2"]')?.remove();
-      throw error;
-    });
-  }
-  await withTimeout(bootstrapPromise,'Scramjet bootstrap',16000);
+ if(typeof window.initBootstrap==='function')return;
+ const load=url=>new Promise((resolve,reject)=>{
+  const element=document.createElement('script');
+  element.dataset.celestialProxy='true';
+  element.src=url;
+  element.onload=()=>typeof window.initBootstrap==='function'?resolve():reject(Error('Bootstrap did not initialize: '+url));
+  element.onerror=()=>reject(Error('Could not load '+url));
+  document.head.append(element);
+ });
+ // Prefer the same-origin bootstrap; vendor uses CSP-blocked data: modules.
+ if(!window.__celestialProxyLoader){
+  window.__celestialProxyLoader=(async()=>{
+   const started=performance.now();
+   recordScramjet('bootstrap','start');
+   try{
+    await timed(load('/proxy-entry.js'),'Local Scramjet bootstrap',12000);
+    recordScramjet('bootstrap','ok',{durationMs:performance.now()-started});
+   }catch(error){
+    recordScramjet('bootstrap','error',{error});
+    if(typeof window.initBootstrap==='function')return;
+    await timed(load('/bootstrap-init.js'),'Fallback Scramjet bootstrap',12000);
+   }
+  })().catch(error=>{window.__celestialProxyLoader=null;throw error});
+ }
+ await timed(window.__celestialProxyLoader,'Loading Scramjet bootstrap',28000);
 }
-
-export async function getProxyController(transport=getScramjetTransport()){
-  if(!supported.has(transport))transport='libcurl';
-  recordScramjet('controller-init','start');
-  const began=performance.now();
-  try{
+export async function getProxyController(){
+  if(!controllerPromise)controllerPromise=(async()=>{
     await loadBootstrap();
-    if(!window.isSecureContext)throw new Error('Browser requires HTTPS.');
-    if(!('serviceWorker' in navigator))throw new Error('Service workers unsupported.');
-    const controller=await withTimeout(window.initBootstrap(transport),'Scramjet V2 handshake');
-    if(typeof controller?.createFrame!=='function'){
-      throw new Error('Scramjet V2 controller did not initialize.');
+    if(!window.isSecureContext)throw Error('Open Celestial over HTTPS to use the browser.');
+    if(!('serviceWorker' in navigator))throw Error('Service workers are unavailable in this browser.');
+    // The same-origin bootstrap creates its worker, loads the published
+    // runtime in order, then awaits the controller's Wisp/WASM handshake.
+    const started=performance.now();
+    recordScramjet('controller-init','start');
+    let controller;
+    try{
+      controller=await timed(Promise.resolve().then(()=>window.initBootstrap()),'Starting Scramjet',40000);
+      if(!controller?.createFrame)throw Error('The browser engine did not finish initializing.');
+      if(typeof controller.wait==='function')await timed(controller.wait(),'Waiting for Scramjet',26000);
+      recordScramjet('controller-ready','ok',{durationMs:performance.now()-started});
+    }catch(error){
+      recordScramjet('controller-init',/timed out/.test(error.message)?'timeout':'error',{error,durationMs:performance.now()-started});
+      throw error;
     }
-    if(!keepalive)keepalive=setInterval(()=>{
-      try{
-        (controller.serviceWorkerController||navigator.serviceWorker.controller)?.postMessage('keepalive');
-      }catch{}
+    if(!keepalive)keepalive=window.setInterval(()=>{
+      // When a new tab is framed in about:blank, the registered worker may be
+      // active but not control this document. Ping the worker Scramjet actually
+      // initialized against; otherwise its routing table can go idle.
+      try{(controller.serviceWorkerController||navigator.serviceWorker.controller)?.postMessage('keepalive')}catch{}
     },15000);
-    recordScramjet('controller-ready','ok',{durationMs:performance.now()-began});
     return controller;
-  }catch(error){
-    recordScramjet('controller-init',/timed out/i.test(error?.message)?'timeout':'error',{error});
-    throw error;
-  }
+  })().catch(error=>{controllerPromise=null;throw error;});
+  return controllerPromise;
 }
-
-export async function setScramjetTransport(next){
-  if(!supported.has(next))throw new Error('Unsupported Scramjet transport');
-  // Test the new transport before persisting the choice.
-  if(typeof window.initBootstrap==='function')await getProxyController(next);
-  localStorage.setItem(KEY,next);
-  window.dispatchEvent(new CustomEvent('celestial:scramjet-transport',{detail:{transport:next}}));
-  return next;
-}
-
 export function disposeProxyFrame(frame){
   if(!frame)return;
   try{
@@ -85,7 +82,6 @@ export function disposeProxyFrame(frame){
     }
   }catch{}
 }
-
 export async function createProxyFrame(element,onNavigate,openTab){
   const controller=await getProxyController();
   const utils=window.$scramjetUtils;
@@ -96,21 +92,21 @@ export async function createProxyFrame(element,onNavigate,openTab){
     const href=url?.href||String(url);
     try{
       const parsed=new URL(href);
-      if(parsed.protocol==='http:'||parsed.protocol==='https:')openTab?.(parsed.href);
+      if(['http:','https:'].includes(parsed.protocol))openTab?.(parsed.href);
     }catch{}
     return new URL('/',location.origin);
   }));
-
   const started=performance.now();
   recordScramjet('frame-create','start');
   let frame;
   try{
     frame=controller.createFrame(element,{plugins});
     recordScramjet('frame-create','ok',{durationMs:performance.now()-started});
-  }catch(error){
-    recordScramjet('frame-create','error',{error});
-    throw error;
-  }
+  }catch(error){recordScramjet('frame-create','error',{error});throw error}
+  // Use upstream Frame.go(), which sets the real iframe's src. The previous
+  // detached-frame/location.replace trick broke the official navigation
+  // lifecycle in some nested browsing contexts. Encoded URLs remain visible
+  // in DevTools either way, so correctness takes precedence.
   const upstreamGo=frame.go.bind(frame);
   frame.go=url=>{
     recordScramjet('navigate','start');

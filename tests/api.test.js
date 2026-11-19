@@ -73,8 +73,7 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.match(loaderCode,/window\.initBootstrap/);
     assert.match(loaderCode,/navigator\.serviceWorker\.register/);
     assert.match(loaderCode,/scramjet\.js/);
-    assert.match(loaderCode,/v2\/libcurl\/index\.mjs/);
-    assert.match(loaderCode,/v2\/epoxy\/index\.mjs/);
+    assert.match(loaderCode,/libcurl-client\.js/);
     assert.doesNotMatch(loaderCode,/import\(["']data:/);
     const policy=loader.headers.get('content-security-policy')||'';
     assert.match(policy,/script-src 'self' data: blob:/);

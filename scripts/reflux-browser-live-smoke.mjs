@@ -146,31 +146,15 @@ try{
  },null,{timeout:60000});
  assert.equal(await workspace.locator('.native-browser-error').count(),0,
    'Scramjet must browse through the about:blank workspace');
+ assert.equal(await workspace.locator('[data-bl]').evaluate(el=>el.classList.contains('off')),true,
+   'The loading overlay must disappear once Scramjet renders real content');
+ // The October-style loader must not block after Frame.go() returns,
+ // even when a third-party script never reaches full document readiness.
+ const overlayCleared=await workspace.locator('[data-bl]').evaluate(node=>node.classList.contains('off'));
+ assert.equal(overlayCleared,true,'The navigation overlay must be nonblocking after Frame.go()');
  const proxiedSrc=await workspace.locator('iframe[title="Page"]').getAttribute('src');
  assert.match(proxiedSrc,/\/\~\/sj\//,
    'Scramjet must navigate through its upstream iframe src protocol');
-
- // The live V2 controller should switch transports without recreating Boba.
- await workspace.locator('#dock [data-section="s5"]').click();
- await workspace.locator('[data-scramjet-transport]').selectOption('epoxy');
- await workspace.locator('[data-transport-status]').filter({hasText:'Ready'}).waitFor({timeout:30000});
- const epoxy=await popup.evaluate(()=>
-   document.querySelector('iframe[title="Website"]')?.contentWindow
-     ?.celestialBrowserDiagnostics?.()?.transport);
- assert.equal(epoxy,'epoxy','Scramjet V2 must support the Epoxy transport');
- await workspace.locator('[data-scramjet-transport]').selectOption('libcurl');
- await workspace.locator('[data-transport-status]').filter({hasText:'Ready'}).waitFor({timeout:30000});
- const curl=await popup.evaluate(()=>
-   document.querySelector('iframe[title="Website"]')?.contentWindow
-     ?.celestialBrowserDiagnostics?.()?.transport);
- assert.equal(curl,'libcurl','Scramjet V2 must restore the libcurl transport');
- await workspace.locator('#dock [data-section="s1"]').click();
- await workspace.locator('[data-wb="reload"]').click();
- await popup.waitForFunction(()=>{
-   const host=document.querySelector('iframe[title="Website"]')?.contentDocument;
-   const frame=host?.querySelector('[data-view="s1"] iframe');
-   try{return frame?.contentDocument?.title==='Example Domain'}catch{return false}
- },null,{timeout:60000});
 
  // The in-memory diagnostics must report Scramjet startup and navigation,
  // without ever exposing the visited website address.
@@ -181,7 +165,7 @@ try{
  assert.match(scramjetLog,/navigate/);
  assert.doesNotMatch(scramjetLog,/https?:\/\/|example\.com|cookie|password/);
  await workspace.locator('[data-scramjet-test]').click();
- await workspace.locator('[data-scramjet-test]').filter({hasText:'Ready'}).waitFor({timeout:30000});
+ await workspace.locator('[data-scramjet-test]').filter({hasText:'Page loaded'}).waitFor({timeout:40000});
  assert.match(await workspace.locator('[data-scramjet-log]').innerText(),/health\s+ok/);
  await workspace.locator('[data-scramjet-clear]').click();
  assert.match(await workspace.locator('[data-scramjet-log]').innerText(),
