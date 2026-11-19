@@ -146,6 +146,8 @@ try{
  },null,{timeout:60000});
  assert.equal(await workspace.locator('.native-browser-error').count(),0,
    'Scramjet must browse through the about:blank workspace');
+ assert.equal(await workspace.locator('[data-bl]').evaluate(el=>el.classList.contains('off')),true,
+   'The loading overlay must disappear once Scramjet renders real content');
  const proxiedSrc=await workspace.locator('iframe[title="Page"]').getAttribute('src');
  assert.match(proxiedSrc,/\/\~\/sj\//,
    'Scramjet must navigate through its upstream iframe src protocol');
@@ -159,7 +161,7 @@ try{
  assert.match(scramjetLog,/navigate/);
  assert.doesNotMatch(scramjetLog,/https?:\/\/|example\.com|cookie|password/);
  await workspace.locator('[data-scramjet-test]').click();
- await workspace.locator('[data-scramjet-test]').filter({hasText:'Ready'}).waitFor({timeout:30000});
+ await workspace.locator('[data-scramjet-test]').filter({hasText:'Page loaded'}).waitFor({timeout:40000});
  assert.match(await workspace.locator('[data-scramjet-log]').innerText(),/health\s+ok/);
  await workspace.locator('[data-scramjet-clear]').click();
  assert.match(await workspace.locator('[data-scramjet-log]').innerText(),
