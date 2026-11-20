@@ -3,7 +3,7 @@
   "version": "8.2.0",
   "private": true,
   "type": "module",
-  "description": "Celestial — Xylora-faithful browser shell, aurora theme and Bolt-powered chat/AI/browser",
+  "description": "Celestial native document gateway, Community, Boba UI, chat and AI",
   "scripts": {
     "start": "node server.js",
     "dev": "npm run build && node server.js",
@@ -13,7 +13,6 @@
     "check": "node --check server.js && node --test tests/*.test.js"
   },
   "dependencies": {
-    "@mercuryworkshop/proxy-bootstrap": "^0.0.5",
     "ws": "^8.18.3",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
@@ -26,10 +25,7 @@
     "@fluentui/react-icons": "^2.0.341",
     "javascript-obfuscator": "^5.8.0",
     "chess.js": "^1.4.0",
-    "@titaniumnetwork-dev/ultraviolet": "3.2.10",
-    "@mercuryworkshop/bare-mux": "2.1.9",
-    "@mercuryworkshop/epoxy-transport": "2.1.29",
-    "@nightnetwork/reflux": "2.2.0"
+    "parse5": "8.1.1"
   },
   "engines": {
     "node": ">=20.19.0"
