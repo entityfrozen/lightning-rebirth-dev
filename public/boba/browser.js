@@ -226,7 +226,7 @@ const home = {
         const key=await token();
         if(t.ticket!==ticket||!st.tabs.includes(t))return;
         if(!t.frame){
-          t.frame=el('<iframe title="Page" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" sandbox="allow-scripts allow-forms allow-popups allow-downloads"></iframe>');
+          t.frame=el('<iframe title="Page" credentialless allow="autoplay; fullscreen; picture-in-picture; clipboard-write" sandbox="allow-scripts allow-forms allow-popups allow-downloads"></iframe>');
           page.append(t.frame);
           // An iframe load alone does not mean the site rendered successfully.
           // The injected client reports readiness after the remote DOM loads.

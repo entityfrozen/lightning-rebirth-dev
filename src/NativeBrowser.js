@@ -12,6 +12,7 @@ export async function createProxyFrame(element,onNavigate,openTab){
   if(!response.ok)throw Error('Browser session unavailable');
   const {token}=await response.json();
   if(!token)throw Error('Browser session unavailable');
+  element.credentialless=true;
   element.setAttribute('sandbox','allow-scripts allow-forms allow-popups allow-downloads');
   let disposed=false;
   let current='';

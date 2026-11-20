@@ -204,6 +204,7 @@ export function openDistributorGame(stage,game){
    if(!response.ok)throw Error('Sign in to use the browser');
    const {token}=await response.json();
    if(disposed||run!==epoch)return;
+   frame.credentialless=true;
    frame.setAttribute('sandbox','allow-scripts allow-forms allow-popups allow-downloads');
    frame.src='/browse/u/'+encodeTarget(target)+'?key='+encodeURIComponent(token);
    notice.textContent='Loading the selected item…';

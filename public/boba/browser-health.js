@@ -21,6 +21,7 @@ export function installBrowserHealth(root,api){
       if(!grant.token)throw Error('Browser session unavailable');
       frame=document.createElement('iframe');
       frame.title='Connection test';
+      frame.credentialless=true;
       frame.setAttribute('sandbox','allow-scripts allow-forms');
       frame.setAttribute('aria-hidden','true');
       frame.style.cssText='position:absolute;left:-10000px;top:0;width:10px;height:10px;opacity:0';
