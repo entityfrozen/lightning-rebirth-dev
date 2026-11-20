@@ -93,7 +93,18 @@ try{
         error:node.querySelector('.native-browser-error')?.textContent,
         loader:node.querySelector('[data-bl]')?.className
       }));
-      throw Error('Remote HTML was not rendered: '+JSON.stringify(state)+'; '+error.message);
+      let innerState=null;
+      try{
+        const element=await frame.elementHandle();
+        const inner=await element.contentFrame();
+        innerState=await inner?.evaluate(()=>({
+          title:document.title,
+          state:document.readyState,
+          url:location.pathname,
+          body:document.body?.innerText?.slice(0,450)
+        }));
+      }catch(frameError){innerState={error:frameError.message}}
+      throw Error('Remote HTML was not rendered: '+JSON.stringify({...state,innerState})+'; '+error.message);
     });
   assert.match(heading||'',/Example Domain/);
   await page.waitForFunction(()=>{
