@@ -16,7 +16,7 @@ const shots=path.join(root,'artifacts','native-browser');
 const port=34500+Math.floor(Math.random()*10000);
 const origin='http://127.0.0.1:'+port;
 const password='isolated native browser admin password';
-let errors=[],log='',browser;
+let errors=[],requestFailures=[],log='',browser;
 const server=spawn(process.execPath,['server.js'],{
   cwd:root,env:{...process.env,PORT:String(port),BOLT_DATA_DIR:temp,
     RAILWAY_VOLUME_MOUNT_PATH:'',LIGHTNING_DATA_FILE:path.join(temp,'store.json'),
@@ -49,6 +49,9 @@ try{
       '--disable-features=LocalNetworkAccessChecks,LocalNetworkAccessPermissions']});
   const page=await browser.newPage({viewport:{width:1360,height:820}});
   page.on('pageerror',error=>errors.push(String(error.message)));
+  page.on('requestfailed',request=>requestFailures.push({
+    path:new URL(request.url()).pathname,error:request.failure()?.errorText
+  }));
   await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
   await page.locator('#academyLanding').waitFor({state:'detached',timeout:30000});
   await page.locator('input[name="username"]').fill('BrowserAdmin');
@@ -99,6 +102,7 @@ try{
 }catch(error){
   console.error('Native browser smoke failed:',error.stack||error);
   console.error('Chromium errors:',JSON.stringify(errors.slice(-15)));
+  console.error('Failed browser requests:',JSON.stringify(requestFailures.slice(-15)));
   console.error('Server output:',log);
   process.exitCode=1;
 }finally{
