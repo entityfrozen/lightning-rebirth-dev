@@ -52,6 +52,22 @@ try{
   page.on('requestfailed',request=>requestFailures.push({
     path:new URL(request.url()).pathname,error:request.failure()?.errorText
   }));
+  // Modern Chrome blocks loopback subresources originating from opaque
+  // sandbox origins, even with localhost IP-space overrides. Relay only
+  // the CI loopback gateway responses through Playwright's Node request
+  // client. These are the actual server-generated HTML and JS bytes.
+  // Production runs on public HTTPS and does not use this relay.
+  await page.route('**/browse/**',async route=>{
+    const request=route.request();
+    const url=new URL(request.url());
+    if(url.hostname!=='127.0.0.1'||url.port!==String(port)){
+      await route.continue();return;
+    }
+    try{
+      const response=await page.request.fetch(request);
+      await route.fulfill({response});
+    }catch(error){await route.abort('failed')}
+  });
   await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
   await page.locator('#academyLanding').waitFor({state:'detached',timeout:30000});
   await page.locator('input[name="username"]').fill('BrowserAdmin');
@@ -68,8 +84,8 @@ try{
   const frame=outer.locator('iframe[title="Page"]');
   await frame.waitFor({timeout:20000});
   const probeResponse=await page.request.get(new URL(await frame.getAttribute('src'),origin).href);
-  console.log('Gateway request:',probeResponse.status(),
-    (await probeResponse.text()).slice(0,220).replace(/\s+/g,' '));
+  assert.equal(probeResponse.status(),200,'The gateway must serve a rewritten document');
+  assert.match(await probeResponse.text(),/Example Domain/);
   const heading=await outer.frameLocator('iframe[title="Page"]').locator('h1')
     .first().textContent({timeout:35000}).catch(async error=>{
       const state=await outer.evaluate(node=>({
