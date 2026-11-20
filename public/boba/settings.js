@@ -1,6 +1,5 @@
 import {openAboutBlank} from './about-blank.js';
-import {getScramjetDiagnostics,clearScramjetDiagnostics,exportScramjetDiagnostics,recordScramjet} from './scramjet-diagnostics.js';
-import {getProxyController,disposeProxyFrame} from './proxy.js';
+import {installBrowserHealth} from './browser-health.js';
 import {$,$$,ico,lic,THEMES,ACCENTS,applyPrefs,segThumb,api} from './common.js';
 const identityPresets={
  celestial:['Celestial | Your space','/assets/celestial-star.svg'],
@@ -43,11 +42,11 @@ export const settings = {
       '<div class="lr"><span class="lic">'+ico("ask")+'</span><h3>AI dock icon</h3><label class="native-pref-switch"><input type="checkbox" data-show-ai> Show AI in the dock</label></div></section>' +
       '<div class="gt r" style="--d:.08s">Browsing</div><section class="grp gl g2 r" style="--d:.08s">' +
       '<div class="lr">' + lic("link", "#2be0e6", "#0b8f86") + '<h3>Connection</h3><span class="netst"><i data-cn></i><span data-cnm>Checking</span></span></div>' +
-      '<div class="lr"><h3>Default browser engine</h3><select data-default-engine aria-label="Default browser engine"><option value="smart">Smart (recommended)</option><option value="reflux">Reflux</option><option value="scramjet">Scramjet</option></select></div>' +
-      '<p class="native-tab-note">Smart chooses the engine per site, then learns from successful recovery for this session. Applies to new tabs.</p>' +
-      '<div class="lr"><h3>Scramjet diagnostics</h3><button class="btn s" type="button" data-scramjet-test>Test connection</button><button class="btn s" type="button" data-scramjet-copy>Copy report</button><button class="btn s" type="button" data-scramjet-clear>Clear</button></div>' +
-      '<p class="native-tab-note">Local-only startup and navigation stages. No URLs, search terms, passwords or cookies are included.</p>' +
-      '<pre data-scramjet-log aria-label="Scramjet diagnostics" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:210px;overflow:auto;font:11px/1.5 ui-monospace,monospace;padding:12px;border-radius:12px;background:#121923;color:#cbd5e1"></pre></section>' +
+      '<div class="lr"><h3>Browser engine</h3><span>Celestial Core</span></div>' +
+      '<p class="native-tab-note">A new, self-contained document gateway. Sites requiring unsupported browser features may need to be opened directly.</p>' +
+      '<div class="lr"><h3>Page health</h3><button class="btn s" type="button" data-browser-test>Test page</button><button class="btn s" type="button" data-browser-copy>Copy report</button><button class="btn s" type="button" data-browser-clear>Clear</button></div>' +
+      '<p class="native-tab-note">The connection test loads an external webpage before reporting success; no page addresses or credentials are logged.</p>' +
+      '<pre data-browser-log aria-label="Browser diagnostics" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:210px;overflow:auto;font:11px/1.5 ui-monospace,monospace;padding:12px;border-radius:12px;background:#121923;color:#cbd5e1"></pre></section>' +
       '<div class="gt r" style="--d:.12s">This tab</div><section class="grp gl g2 r" style="--d:.12s">' +
       '<div class="lr">' + lic("tv", "#7d8ba0", "#4a5566") + '<h3>Tab appearance</h3><select data-tab aria-label="Tab appearance"><option value="celestial">Celestial</option><option value="workspace">Workspace</option><option value="notes">My Notes</option><option value="dcss">DCSS Portal</option><option value="classroom">Google Classroom</option><option value="docs">Google Docs</option><option value="drive">Google Drive</option><option value="clever">Clever Portal</option><option value="canvas">Canvas</option><option value="wikipedia">Wikipedia</option><option value="custom">Custom title & icon</option></select></div>' +
       '<div class="lr" data-custom-tab hidden><h3>Custom title</h3><label class="fld"><input data-tab-title maxlength="70" aria-label="Tab title"></label></div>' +
@@ -56,7 +55,7 @@ export const settings = {
       '<p class="native-tab-note">Cloaking only changes how this tab looks. It does not change the address, browser history, network activity, or school monitoring.</p>' +
       '<div class="lr"><h3>Confirm before closing</h3><label class="native-pref-switch"><input type="checkbox" data-prevent-close> Ask before closing or leaving this tab</label></div>' +
       '<div class="lr"><h3>Open in about:blank</h3><button type="button" class="btn s" data-tab-blank>Open cloaked tab</button></div>' +
-      '<p class="native-tab-note">Smart chooses an engine per site. Some websites and browser security policies can still block framed tabs.</p>' +
+      '<p class="native-tab-note">Some websites cannot run inside a sandbox. Opening them directly may be necessary.</p>' +
       '<div class="lr"><h3>Account sync</h3><span class="netst" data-account-sync>Saving preferences across your devices</span></div>' +
       '<div class="lr">' + lic("trash", "#ff6b6b", "#d62e4a") + '<h3>Reset appearance preferences</h3><button class="btn s" data-reset>Reset</button></div></section></div>';
   },
@@ -64,95 +63,10 @@ export const settings = {
   mount(root){
     const paint=()=>{applyPrefs();const p=localStorage.getItem('celestial.boba.theme')||'boba';window.dispatchEvent(new Event('celestial:reimu-refresh'));for(const b of root.querySelectorAll('.thm'))b.classList.toggle('on',b.dataset.v===p);for(const b of root.querySelectorAll('.sw'))b.classList.toggle('on',Number(b.dataset.i)===Number(localStorage.getItem('boba.accent')||0));const seg=$('[data-fx]',root);for(const b of seg.querySelectorAll('button'))b.classList.toggle('on',b.dataset.v===document.documentElement.dataset.fx);segThumb(seg)};
     root.addEventListener('click',e=>{const t=e.target.closest('.thm'),a=e.target.closest('.sw'),f=e.target.closest('[data-fx] button');if(t){localStorage.setItem('celestial.boba.theme',t.dataset.v);if(t.dataset.v==='touhou')requestAnimationFrame(()=>window.dispatchEvent(new Event('celestial:reimu-activated')))}if(a)localStorage.setItem('boba.accent',a.dataset.i);if(f)localStorage.setItem('boba.fx',f.dataset.v);if(e.target.closest('[data-reset]')){for(const k of ['celestial.boba.theme','boba.accent','boba.fx'])localStorage.removeItem(k)}paint();accountSave()});
-    api('/api/browser/status').then(d=>{$('[data-cnm]',root).textContent=d.proxy?'Available':'Unavailable'}).catch(()=>{$('[data-cnm]',root).textContent='Offline'});
-    const testScramjet=$('[data-scramjet-test]',root);
-     testScramjet.onclick=async()=>{
-       testScramjet.disabled=true;
-       testScramjet.textContent='Testing…';
-       const started=performance.now();
-       recordScramjet('health','start');
-       try{
-         const status=await api('/api/browser/status');
-         if(!status.authenticated||!status.proxy)throw Error('Browser backend unavailable');
-         const controller=await getProxyController();
-         if(typeof controller.createFrame!=='function')throw Error('Scramjet controller unavailable');
-         // Handshake success is not page success. Render an external static
-         // document before claiming the browser connection works.
-         const probe=document.createElement('iframe');
-         probe.title='Browser connection test';
-         probe.setAttribute('aria-hidden','true');
-         probe.style.cssText='position:absolute;width:8px;height:8px;left:-10000px;opacity:0;pointer-events:none';
-         root.appendChild(probe);
-         let frame=null;
-         try{
-           frame=controller.createFrame(probe);
-           const pageReady=new Promise((resolve,reject)=>{
-             let poll,deadline;
-             const cleanup=()=>{clearInterval(poll);clearTimeout(deadline)};
-             const check=()=>{
-               try{
-                 const doc=probe.contentDocument;
-                 if(doc&&doc.URL!=='about:blank'&&doc.title==='Example Domain'&&
-                   (doc.body?.textContent||'').trim().length>80){
-                   cleanup();resolve();
-                 }
-               }catch{/* Navigation is in progress. */}
-             };
-             poll=setInterval(check,200);
-             deadline=setTimeout(()=>{
-               cleanup();reject(new Error('Browser page test timed out'));
-             },20000);
-             check();
-           });
-           frame.go('https://example.com/');
-           await pageReady;
-           recordScramjet('health','ok',{durationMs:performance.now()-started});
-           testScramjet.textContent='Page loaded';
-         }finally{
-           disposeProxyFrame(frame);
-           probe.remove();
-         }
-       }catch(error){
-         recordScramjet('health','error',{error});
-         testScramjet.textContent='Page test failed';
-       }finally{
-         testScramjet.disabled=false;
-       }
-     };
-     const scramjetOutput=$('[data-scramjet-log]',root);
-     const refreshScramjet=()=>{
-       const snapshot=getScramjetDiagnostics();
-       scramjetOutput.textContent=snapshot.events.length?
-         snapshot.events.slice(-35).map(event=>event.at.slice(11,19)+'  '+event.stage+
-           '  '+event.outcome+(event.reason?' ('+event.reason+')':'')+
-           (event.durationMs!==undefined?'  '+event.durationMs+'ms':'')).join('\n'):
-         'No Scramjet events recorded in this tab.';
-     };
-     window.addEventListener('celestial:scramjet-log',refreshScramjet);
-     $('[data-scramjet-copy]',root).onclick=async()=>{
-       const report=exportScramjetDiagnostics();
-       try{
-         await navigator.clipboard.writeText(report);
-         $('[data-scramjet-copy]',root).textContent='Copied';
-       }catch{
-         scramjetOutput.textContent=report;
-       }
-     };
-     $('[data-scramjet-clear]',root).onclick=()=>{
-       clearScramjetDiagnostics();
-       $('[data-scramjet-copy]',root).textContent='Copy report';
-       refreshScramjet();
-     };
-     refreshScramjet();
-     const defaultEngine=$('[data-default-engine]',root);
-     let savedEngine=null;
-     try{savedEngine=JSON.parse(localStorage.getItem('boba.native.browserEngine'))}catch{}
-     defaultEngine.value=savedEngine==='scramjet'?'scramjet':
-       savedEngine==='reflux'||savedEngine==='ultraviolet'?'reflux':'smart';
-     defaultEngine.onchange=()=>{
-       localStorage.setItem('boba.native.browserEngine',JSON.stringify(defaultEngine.value));
-       accountSave();
-     };
+    api('/api/browser/status').then(d=>{
+      $('[data-cnm]',root).textContent=d.available?'Available':'Unavailable';
+    }).catch(()=>{$('[data-cnm]',root).textContent='Offline'});
+    installBrowserHealth(root,api);
      const closeToggle=$('[data-prevent-close]',root);
     closeToggle.checked=localStorage.getItem('boba.preventClose')!=='false';
     closeToggle.onchange=()=>{localStorage.setItem('boba.preventClose',String(closeToggle.checked));accountSave()};
