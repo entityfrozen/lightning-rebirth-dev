@@ -64,7 +64,7 @@ try{
   const outer=page.locator('[data-view="s1"].on');
   const frame=outer.locator('iframe[title="Page"]');
   await frame.waitFor({timeout:20000});
-  const probeResponse=await page.request.get(await frame.getAttribute('src'));
+  const probeResponse=await page.request.get(new URL(await frame.getAttribute('src'),origin).href);
   console.log('Gateway request:',probeResponse.status(),
     (await probeResponse.text()).slice(0,220).replace(/\s+/g,' '));
   const heading=await outer.frameLocator('iframe[title="Page"]').locator('h1')
