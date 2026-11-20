@@ -44,7 +44,9 @@ try{
     // loopback port as public so Chrome's Local Network Access permission
     // does not block an intentionally opaque-origin test frame.
     args:['--disable-dev-shm-usage',
-      '--ip-address-space-overrides=127.0.0.1:'+port+'=public,[::1]:'+port+'=public']});
+      '--ip-address-space-overrides=127.0.0.1:'+port+'=public,[::1]:'+port+'=public',
+      // Test-only: localhost is intentionally loaded by a sandboxed frame.
+      '--disable-features=LocalNetworkAccessChecks,LocalNetworkAccessPermissions']});
   const page=await browser.newPage({viewport:{width:1360,height:820}});
   page.on('pageerror',error=>errors.push(String(error.message)));
   await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
@@ -62,6 +64,9 @@ try{
   const outer=page.locator('[data-view="s1"].on');
   const frame=outer.locator('iframe[title="Page"]');
   await frame.waitFor({timeout:20000});
+  const probeResponse=await page.request.get(await frame.getAttribute('src'));
+  console.log('Gateway request:',probeResponse.status(),
+    (await probeResponse.text()).slice(0,220).replace(/\s+/g,' '));
   const heading=await outer.frameLocator('iframe[title="Page"]').locator('h1')
     .first().textContent({timeout:35000}).catch(async error=>{
       const state=await outer.evaluate(node=>({
