@@ -162,7 +162,7 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     const privateBlocked=await fetch(url+'/browse/u/'+privateTarget+
       '?key='+encodeURIComponent(grant.data.token));
     assert.equal(privateBlocked.status,502,'Private destinations are not browsable');
-    assert.match(await privateBlocked.text(),/private destinations/i);
+    assert.match(await privateBlocked.text(),/public HTTP and HTTPS destinations|Private destinations/i);
     const missingGrant=await fetch(url+'/browse/u/'+privateTarget);
     assert.equal(missingGrant.status,401,'Gateway requires a scoped grant');
 

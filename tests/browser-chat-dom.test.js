@@ -21,7 +21,7 @@ test('Remote page frames cannot read the app origin or control the Boba shell',(
   const gateway=source('../browser-gateway.js');
   assert.match(ui,/sandbox="allow-scripts allow-forms allow-popups allow-downloads"/);
   assert.doesNotMatch(ui,/allow-same-origin/);
-  assert.match(ui,/event\.source!==event\.source|event\.source===/);
+  assert.match(ui,/contentWindow===event\.source/);
   assert.match(gateway,/handleBrowse/);
   assert.match(gateway,/guardedLookup/);
   assert.doesNotMatch(gateway,/proxy-bootstrap|ultraviolet|baremux|Scramjet/);

@@ -228,12 +228,8 @@ const home = {
         if(!t.frame){
           t.frame=el('<iframe title="Page" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" sandbox="allow-scripts allow-forms allow-popups allow-downloads"></iframe>');
           page.append(t.frame);
-          t.frame.addEventListener('load',()=>{
-            const current=t.ticket;
-            setTimeout(()=>{
-              if(t.frame&&t.ticket===current)finished(t);
-            },300);
-          });
+          // An iframe load alone does not mean the site rendered successfully.
+          // The injected client reports readiness after the remote DOM loads.
         }
         t.timer=setTimeout(()=>{if(t.ticket===ticket)failure(t,'The page did not respond within 30 seconds.')},30000);
         t.frame.src='/browse/u/'+encode(url)+'?key='+encodeURIComponent(key);

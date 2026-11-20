@@ -43,9 +43,9 @@ test('Settings restores appearance, browser, cloaking and account controls',()=>
   assert.match(read('src/Cloak.js'),/window\.open\('about:blank'/);
 });
 
-test('Browser uses a real proxy controller and handles failures visibly',()=>{
+test('Browser uses our native gateway and handles failures visibly',()=>{
   const browser=read('src/Browser.jsx');
-  const proxy=read('src/BoltProxy.js');
+  const proxy=read('src/NativeBrowser.js');
   assert.match(browser,/await createProxyFrame/);
   assert.match(browser,/connection\.go\(tab\.url\)/);
   assert.match(browser,/api\('\/api\/browser\/status'\)/);
@@ -53,7 +53,7 @@ test('Browser uses a real proxy controller and handles failures visibly',()=>{
   assert.match(browser,/Open directly/);
   assert.doesNotMatch(browser,/\.go\(tab\.url\)\.catch\(/);
   assert.doesNotMatch(browser,/el\.src=tab\.url/);
-  assert.match(proxy,/await controller\.wait\(\)/);
+  assert.match(proxy,/\/api\/browser\/token/);
 });
 
 test('Browser and community Chat stay mounted together',()=>{

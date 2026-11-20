@@ -81,5 +81,5 @@ test('sandboxed UI never provides app-origin permissions to remote pages',async(
   const src=await readFile(new URL('../public/boba/browser.js',import.meta.url),'utf8');
   assert.match(src,/sandbox="allow-scripts allow-forms allow-popups allow-downloads"/);
   assert.doesNotMatch(src,/allow-same-origin/);
-  assert.match(src,/event\.source!==/);
+  assert.match(src,/contentWindow===event\.source/);
 });
