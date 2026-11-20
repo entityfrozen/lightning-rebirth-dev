@@ -67,21 +67,13 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     assert.equal(cssAsset.headers.get('cross-origin-opener-policy'),'same-origin');
     assert.equal(cssAsset.headers.get('cross-origin-embedder-policy'),'credentialless');
     assert.equal(cssAsset.headers.get('cross-origin-resource-policy'),'same-origin');
-    const loader=await fetch(url+'/proxy-entry.js');
-    assert.equal(loader.status,200);
-    const loaderCode=await loader.text();
-    assert.match(loaderCode,/window\.initBootstrap/);
-    assert.match(loaderCode,/navigator\.serviceWorker\.register/);
-    assert.match(loaderCode,/scramjet\.js/);
-    assert.match(loaderCode,/libcurl-client\.js/);
-    assert.doesNotMatch(loaderCode,/import\(["']data:/);
-    const policy=loader.headers.get('content-security-policy')||'';
-    assert.match(policy,/script-src 'self' data: blob:/);
-    assert.match(policy,/script-src[^;]*data:/); // Lightning's official loader imports a data: module.
-    assert.match(policy,/connect-src 'self' data:/);
-    assert.match(policy,/script-src[^;]*'unsafe-eval'/);
-    assert.doesNotMatch(policy,/script-src[^;]*'unsafe-inline'/);
-
+    // The old third-party engines must no longer be served.
+    for(const retired of ['/proxy-entry.js','/uv/sw.js','/uv/uv.bundle.js',
+      '/reflux/index.mjs','/epoxy/index.mjs','/baremux/index.js']){
+      assert.equal((await fetch(url+retired)).status,404,retired+' retired');
+    }
+    const guestGrant=await fetch(url+'/api/browser/token');
+    assert.equal(guestGrant.status,401,'Only approved accounts may browse');
 
     assert.match(await cssAsset.text(),/browser-window/);
     const guestAiStatus=await call('/api/ai/status');
@@ -161,22 +153,18 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
     const browserStatus=await call('/api/browser/status');
     assert.equal(browserStatus.response.status,200);
     assert.equal(browserStatus.data.authenticated,true);
-    assert.equal(typeof browserStatus.data.proxy,'boolean');
-    assert.equal(browserStatus.data.ultraviolet,browserStatus.data.proxy);
-    assert.equal((await fetch(url+'/uv/uv.bundle.js')).status,401,'Proxy vendor scripts require login');
-    for(const asset of [
-      '/uv/sw.js','/uv/uv.config.js','/uv/uv.bundle.js','/uv/uv.sw.js',
-      '/baremux/index.js','/baremux/worker.js','/epoxy/index.mjs'
-    ]){
-      const response=await fetch(url+asset,{headers:{Cookie:cookie}});
-      assert.equal(response.status,200,asset+' should be served after sign-in');
-      assert.match(response.headers.get('content-type')||'',/javascript/,asset+' must have a JS MIME type');
-      if(asset==='/uv/sw.js'||asset==='/baremux/worker.js'){
-        assert.match(response.headers.get('content-security-policy')||'',/script-src[^;]*'unsafe-eval'/,
-          asset+' must allow the dynamic JS required by proxying');
-      }
-    }
-
+    assert.equal(browserStatus.data.available,true);
+    assert.equal(browserStatus.data.engine,'celestial-native');
+    const grant=await call('/api/browser/token');
+    assert.equal(grant.response.status,200);
+    assert.match(grant.data.token,/^[\w-]{24,}$/);
+    const privateTarget=Buffer.from('http://127.0.0.1:8080/').toString('base64url');
+    const privateBlocked=await fetch(url+'/browse/u/'+privateTarget+
+      '?key='+encodeURIComponent(grant.data.token));
+    assert.equal(privateBlocked.status,502,'Private destinations are not browsable');
+    assert.match(await privateBlocked.text(),/private destinations/i);
+    const missingGrant=await fetch(url+'/browse/u/'+privateTarget);
+    assert.equal(missingGrant.status,401,'Gateway requires a scoped grant');
 
     const live=new WebSocket(url.replace(/^http/,'ws')+'/live',{
       headers:{Cookie:cookie},handshakeTimeout:5500
