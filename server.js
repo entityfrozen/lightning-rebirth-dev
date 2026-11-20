@@ -1,10 +1,7 @@
 /** Celestial's small single-instance server. No npm dependencies needed. */
 import http from 'node:http';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { bootstrap } from '@mercuryworkshop/proxy-bootstrap';
-import { uvPath } from '@titaniumnetwork-dev/ultraviolet';
-import { baremuxPath } from '@mercuryworkshop/bare-mux/node';
-import { epoxyPath } from '@mercuryworkshop/epoxy-transport';
+import { createGrant, handleBrowse } from './browser-gateway.js';
 import { attachLightningLive } from './live.js';
 import {importBoltData,bootstrapAdministrator,backupBoltData} from './legacy-data.js';
 import { completeAi, TEXT_MODEL, usableModel } from './ai-provider.js';
@@ -20,9 +17,6 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
-const PROXY_VENDOR_ASSETS=[['/uv/',path.resolve(uvPath)],['/baremux/',path.resolve(baremuxPath)],['/epoxy/',path.resolve(epoxyPath)],
-  // Reflux is a BareMux middleware transport for Ultraviolet (not Scramjet 2).
-  ['/reflux/',path.dirname(fileURLToPath(import.meta.resolve('@nightnetwork/reflux/transport')))]];
 const DATA_DIR=path.resolve(ROOT,process.env.BOLT_DATA_DIR||
   process.env.RAILWAY_VOLUME_MOUNT_PATH||
   (process.env.LIGHTNING_DATA_FILE?path.dirname(process.env.LIGHTNING_DATA_FILE):path.join(ROOT,'data')));
@@ -39,13 +33,8 @@ if(process.env.RAILWAY_VOLUME_MOUNT_PATH){
 mkdirSync(DATA_DIR,{recursive:true});
 // Production uses the CELESTIAL_GAME_VAULT_KEY service secret; no key is sent to clients.
 const gameVault=await createGameVault({directory:path.join(DATA_DIR,'game-vault')});
-// The Bolt-era backend provides real browser proxying and multiplayer.
-// Missing proxy downloads must never block the rest of the platform.
-let proxyBackend=null;
+// Browser requests use our own document gateway.
 let liveCommunity=null;
-if(process.env.DISABLE_WEB_PROXY!=='1')try{
-  proxyBackend=await bootstrap();
-}catch(error){console.warn('Browser proxy unavailable:',error.message);}
 
 const channels = new Set(['general', 'help', 'showcase']);
 const listeners = new Set();
@@ -321,7 +310,13 @@ async function handleAPI(req,res,url) {
     return respond(res,200,{configured:Boolean(providers.nvidia)});
   }
 
-  if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{proxy:Boolean(proxyBackend),ultraviolet:Boolean(proxyBackend),authenticated:Boolean(user)});
+  if(req.method==='GET' && pathname==='/api/browser/status')return respond(res,200,{
+    available:process.env.DISABLE_WEB_PROXY!=='1',engine:'celestial-native',authenticated:Boolean(user)
+  });
+  if(req.method==='GET'&&pathname==='/api/browser/token'){
+    if(!user||process.env.DISABLE_WEB_PROXY==='1')return fail(res,401,'Sign in to browse');
+    return respond(res,200,{token:createGrant(user.id)});
+  }
   if(req.method==='GET' && pathname==='/api/community/members'){
     if(!user)return fail(res,401,'Sign in required');
     // The community directory includes approved accounts, even when offline.
@@ -681,11 +676,6 @@ async function staticFile(req,res,url) {
   if(filename==='/'&&url.searchParams.has('legacy'))filename='/legacy.html';
   else if(filename==='/')filename='/boba/index.html';
   else if(filename==='/login')filename='/boba/auth.html';
-  // A missed Scramjet service-worker interception must fail clearly rather
-  // than silently serving index.html inside the browser iframe.
-  if(filename.startsWith('/~/sj/'))return fail(res,502,'Browser engine could not open this navigation; reload and try again.');
-  if(filename.startsWith('/uv/service/'))return fail(res,502,'Ultraviolet worker did not intercept this navigation; reload the browser.');
-  if(PROXY_VENDOR_ASSETS.some(([prefix])=>filename.startsWith(prefix))&&!liveIdentity(req.headers))return fail(res,401,'Sign in to use the browser.');
   // Unknown asset/route requests are not Celestial homepage navigation.
   if(!path.extname(filename)&&!filename.startsWith('/assets/'))return fail(res,404,'Page not found');
   // Ship only the compiled UI assets. Authored modules, source maps and
@@ -700,12 +690,8 @@ async function staticFile(req,res,url) {
       return fail(res,404,'File not found');
     }
   }
-  const vendor=PROXY_VENDOR_ASSETS.find(([prefix])=>filename.startsWith(prefix));
-  // UV's custom worker/config take precedence over its vendor dist files.
-  const customUv=filename==='/uv/sw.js'||filename==='/uv/uv.config.js';
-  const base=vendor&&!customUv?vendor[1]:PUBLIC;
-  const relative=vendor&&!customUv?filename.slice(vendor[0].length):filename.replace(/^\//,'');
-  const filepath=path.resolve(base,relative);
+  const base=PUBLIC;
+  const filepath=path.resolve(base,filename.replace(/^\//,''));
   if(!(filepath===base||filepath.startsWith(base+path.sep)))return fail(res,403,'Invalid file path');
   const type=types[path.extname(filepath)];if(!type)return fail(res,404,'File not found');
   try {
@@ -719,24 +705,16 @@ export function createServer(){
   const server=http.createServer(async(req,res)=>{
     try {const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
       if(url.pathname.startsWith('/api/'))return await handleAPI(req,res,url);
-      // All Scramjet bootstrap, service worker and rewritten pages are
-      // session protected, just like the original Bolt implementation.
-      if(proxyBackend&&liveIdentity(req.headers)&&proxyBackend.routeRequest(req,res))return;
+      if(url.pathname.startsWith('/browse/')){
+        if(process.env.DISABLE_WEB_PROXY==='1')return fail(res,503,'Browser disabled');
+        return await handleBrowse(req,res,url.pathname,url.searchParams);
+      }
       return await staticFile(req,res,url);
     }catch(error){
       console.error('Request error:',error.message);
       if(!res.headersSent)fail(res,error.message==='Request is too large'?413:400,error.message||'Request failed');
       else res.end();
     }
-  });
-  if(proxyBackend)server.on('upgrade',(req,socket,head)=>{
-    if(req.url?.startsWith('/live'))return;
-    if(!liveIdentity(req.headers)){
-      socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
-      socket.destroy();return;
-    }
-    try{proxyBackend.routeUpgrade(req,socket,head);}
-    catch(error){console.warn('Browser transport failed:',error.message);socket.destroy();}
   });
   // Bridge Celestial's existing accounts to Bolt's proven multiplayer
   // server; old user IDs remain stable, preserving community identity.
