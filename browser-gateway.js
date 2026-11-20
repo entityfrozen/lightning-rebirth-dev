@@ -155,8 +155,11 @@ function guardedLookup(hostname,options,callback){
   dns.lookup(hostname,{all:true},(error,addresses)=>{
     if(error||!addresses?.length)return callback(Error('DNS lookup failed'));
     if(addresses.some(row=>!validPublicIp(row.address)))return callback(Error('Private DNS answer blocked'));
-    const choice=addresses[0];
-    callback(null,choice.address,choice.family);
+    // Node's connection auto-selection asks custom lookup functions for
+    // an array (options.all=true); returning a single string there causes
+    // "Invalid IP address: undefined" on Node 20+.
+    if(options?.all)callback(null,addresses);
+    else callback(null,addresses[0].address,addresses[0].family);
   });
 }
 async function readLimited(stream,limit){
