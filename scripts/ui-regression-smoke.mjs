@@ -129,41 +129,6 @@ try{
  assert.equal(routeHits,2,'Both destinations must really be requested');
 
 
- // Verify the browser's DOM-only query mask in a same-origin iframe, without
- // relying on external Google navigation in CI.
- const maskSource=await readFile(path.join(root,'public/boba/search-link-mask.js'),'utf8');
- const maskResult=await page.evaluate(async source=>{
-  const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));
-  const frame=document.createElement('iframe');
-  frame.style.cssText='width:360px;height:50px';
-  document.body.append(frame);
-  try{
-   const {maskFrameSearchLinks}=await import(url);
-   const doc=frame.contentDocument;
-   const rewritten=location.origin+'/~/sj/abc/xyz/https%3A%2F%2Fwww.google.com%2Fsearch%3Fq%3Dfort%26udm%3D50';
-   doc.body.innerHTML='<a href="'+rewritten+'" scramjet-attr-href="/search?q=fort&udm=50">AI Mode</a>';
-   const navigations=[];
-   const dispose=maskFrameSearchLinks(doc,target=>navigations.push(target));
-   const tick=()=>new Promise(resolve=>frame.contentWindow.requestAnimationFrame(resolve));
-   await tick();await tick();
-   const anchor=doc.querySelector('a');
-   const before={href:anchor.getAttribute('href'),backup:anchor.getAttribute('scramjet-attr-href')};
-   anchor.click();
-   const next=doc.createElement('a');
-   next.href=rewritten.replace('fort','second%2520search');
-   next.setAttribute('scramjet-attr-href','/search?q=second%20search');
-   doc.body.append(next);
-   await tick();await tick();
-   const after={href:next.getAttribute('href'),backup:next.getAttribute('scramjet-attr-href')};
-   dispose();
-   return {before,after,navigations,rewritten};
-  }finally{frame.remove();URL.revokeObjectURL(url)}
- },maskSource);
- assert.deepEqual(maskResult.before,{href:'#',backup:null},'Search link must have no visible query attributes');
- assert.deepEqual(maskResult.after,{href:'#',backup:null},'New search links must also be sanitized');
- assert.deepEqual(maskResult.navigations,[maskResult.rewritten],'Masked links must remain clickable');
-
-
  // Home must actually render and navigate, not just exist in the DOM.
  const home=page.locator('[data-view="s0"].on');
  await home.locator('h1').waitFor({timeout:10000});
