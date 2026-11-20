@@ -163,6 +163,9 @@ test('end-to-end account, chat, and community drop API', {timeout:90000}, async 
       '?key='+encodeURIComponent(grant.data.token));
     assert.equal(privateBlocked.status,502,'Private destinations are not browsable');
     assert.match(await privateBlocked.text(),/public HTTP and HTTPS destinations|Private destinations/i);
+    assert.match(privateBlocked.headers.get('content-security-policy')||'',/sandbox allow-scripts/);
+    assert.equal(privateBlocked.headers.get('cross-origin-embedder-policy'),'credentialless');
+    assert.equal(privateBlocked.headers.get('cross-origin-resource-policy'),'cross-origin');
     const missingGrant=await fetch(url+'/browse/u/'+privateTarget);
     assert.equal(missingGrant.status,401,'Gateway requires a scoped grant');
 
