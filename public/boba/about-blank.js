@@ -131,7 +131,7 @@ export function openAboutBlank(target,appearance={}){
    if(message.type==='celestial:browser-status'){
     if(message.status==='failed'){
      ready=false;
-     display('Browser navigation failed. Change engines in Browser, or restart the workspace.',true);
+     display('Browser navigation failed. Retry the page or restart the workspace.',true);
     }else if(message.status==='ready'){
      ready=true;popup.clearTimeout(watchdog);
      notice.style.display='none';
