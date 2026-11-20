@@ -90,9 +90,9 @@ try{
  await page.locator('#dock [data-section="s1"]').click();
  await page.locator('[data-view="s1"].on [data-omni]').waitFor({timeout:15000});
  assert.equal(await page.locator('[data-engine-mode]').count(),1);
- assert.equal(await page.locator('[data-engine-mode]').inputValue(),'smart','Smart should be the default browsing engine');
+ assert.equal(await page.locator('[data-engine-mode]').inputValue(),'native','Celestial Engine is the sole browser backend');
  assert.equal(await page.locator('[data-engine-mode]').getAttribute('aria-label'),'Browsing engine');
- assert.equal(await page.locator('[data-engine-mode] option:checked').textContent(),'Smart');
+ assert.equal(await page.locator('[data-engine-mode] option:checked').textContent(),'Celestial Engine');
  assert.equal(await page.locator('[data-view="s1"].on').getByText('Proxy',{exact:true}).count(),0);
  await page.screenshot({path:path.join(shots,'boba-browser.png')});
  await page.locator('#dock [data-section="s3"]').click();
