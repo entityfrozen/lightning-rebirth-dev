@@ -1,7 +1,5 @@
 import {esc} from './common.js';
 import {watchCanvasTitles} from './canvas-titles.js';
-import {createProxyFrame,disposeProxyFrame} from './proxy.js';
-import {createUltravioletFrame} from './uv-proxy.js';
 
 const DISTRIBUTORS=[
   ['All','All titles'],
@@ -128,11 +126,9 @@ export function openDistributorGame(stage,game){
  }
  const modeSelect=document.createElement('select');
  modeSelect.setAttribute('aria-label','Embedding mode');
- for(const [value,label] of [['proxy','Scramjet browser'],['ultraviolet','Reflux browser'],['direct','Direct embed']]){
+ for(const [value,label] of [['native','Celestial Engine'],['direct','Direct embed']]){
   const option=document.createElement('option');option.value=value;option.textContent=label;modeSelect.append(option);
  }
- // The about:blank wrapper can't guarantee Scramjet's isolation requirements.
- if(window.self!==window.top)modeSelect.value='ultraviolet';
  const sourceLink=document.createElement('a');sourceLink.className='btn s';sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';sourceLink.textContent='Open original';
  const fullscreen=document.createElement('button');fullscreen.className='btn s';fullscreen.textContent='Fullscreen';
  const notice=document.createElement('p');notice.className='arcade-help';notice.setAttribute('role','status');
@@ -145,7 +141,8 @@ export function openDistributorGame(stage,game){
  frame.allow='fullscreen; gamepad; autoplay; clipboard-write; encrypted-media';
  frame.setAttribute('allowfullscreen','');
  const attribution=document.createElement('p');attribution.className='cel-dist-attribution';
- let proxyFrame=null,uvFrame=null,epoch=0,disposed=false,vaultTimer=null;
+ let epoch=0,disposed=false,vaultTimer=null;
+ const encodeTarget=value=>{let text='';for(const byte of new TextEncoder().encode(value))text+=String.fromCharCode(byte);return btoa(text).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
  async function readVaultStatus(run,sourceIndex,attempt=0){
   if(!/^g_[a-zA-Z0-9_-]{24}$/.test(game.id||'')){
    vaultLabel.textContent='External source (not cached)';
@@ -176,8 +173,6 @@ export function openDistributorGame(stage,game){
   const run=++epoch;
   clearTimeout(vaultTimer);
   vaultLabel.textContent='Encrypted asset cache: checking…';
-  if(proxyFrame){disposeProxyFrame(proxyFrame);proxyFrame=null}
-  if(uvFrame){uvFrame.dispose();uvFrame=null}
   const replacement=document.createElement('iframe');
   replacement.className='cel-dist-frame';replacement.title='Library player';
   replacement.referrerPolicy='no-referrer';
@@ -199,47 +194,35 @@ export function openDistributorGame(stage,game){
   sourceLink.href=target;
   void readVaultStatus(run,Number(sourceSelect.value));
   if(modeSelect.value==='direct'){
-   notice.textContent='Direct embed enabled. Some websites block iframe embedding; use Scramjet or Open original if this stays blank.';
+   notice.textContent='Direct embed requested. Some sites block embedding; use Celestial Engine if it stays blank.';
    frame.src=target;
    return;
   }
-  if(modeSelect.value==='ultraviolet'){
-   notice.textContent='Starting Ultraviolet…';
-   try{
-    const connection=await createUltravioletFrame(frame,target);
-    if(disposed||run!==epoch){connection.dispose();return}
-    uvFrame=connection;
-    notice.textContent='Ultraviolet is loading. If this page stays blank, try Scramjet or Open original.';
-   }catch(error){
-    if(disposed||run!==epoch)return;
-    notice.textContent='Ultraviolet error: '+String(error.message||'Connection failed')+'. Try Scramjet or Open original.';
-   }
-   return;
-  }
-  notice.textContent='Connecting through Scramjet…';
+  notice.textContent='Connecting with Celestial Engine…';
   try{
-   const statusResponse=await fetch('/api/browser/status',{credentials:'same-origin'});
-   if(!statusResponse.ok)throw Error('Browser status unavailable (HTTP '+statusResponse.status+')');
-   const status=await statusResponse.json();
-   if(!status.authenticated)throw Error('Sign in to use Scramjet');
-   if(!status.proxy)throw Error('Scramjet backend is unavailable');
-   const controllerFrame=await createProxyFrame(frame);
-   if(disposed||run!==epoch){disposeProxyFrame(controllerFrame);return}
-   proxyFrame=controllerFrame;
-   controllerFrame.go(target);
-   notice.textContent='Scramjet is loading this page. If it stays blank, try Direct embed or Open original.';
+   const response=await fetch('/api/browser/token',{credentials:'same-origin'});
+   if(!response.ok)throw Error('Sign in to use the browser');
+   const {token}=await response.json();
+   if(disposed||run!==epoch)return;
+   frame.setAttribute('sandbox','allow-scripts allow-forms allow-popups allow-downloads');
+   frame.src='/browse/u/'+encodeTarget(target)+'?key='+encodeURIComponent(token);
+   notice.textContent='Loading the selected item…';
   }catch(error){
    if(disposed||run!==epoch)return;
-   notice.textContent='Scramjet failed: '+String(error.message||'Unavailable')+'. Switching to direct embed.';
-   modeSelect.value='direct';
-   frame.src=target;
+   notice.textContent='Unable to browse this item: '+String(error.message||'Unavailable');
   }
  }
+ const onBrowse=event=>{
+   if(disposed||event.source!==frame.contentWindow||event.data?.type!=='celestial:browse')return;
+   if(event.data.state==='ready')notice.textContent='Page loaded';
+   if(event.data.state==='error')notice.textContent='Unable to load the selected page; try another source or open the original.';
+ };
+ window.addEventListener('message',onBrowse);
  sourceSelect.onchange=switchSource;
  modeSelect.onchange=switchSource;
  fullscreen.onclick=()=>frame.requestFullscreen?.();
  bar.append(sourceSelect,modeSelect,sourceLink,fullscreen,vaultLabel);
  stage.append(bar,frame,notice,attribution);
  switchSource();
- return()=>{disposed=true;epoch++;clearTimeout(vaultTimer);disposeProxyFrame(proxyFrame);proxyFrame=null;uvFrame?.dispose();uvFrame=null;frame.removeAttribute('src')};
+ return()=>{disposed=true;epoch++;clearTimeout(vaultTimer);window.removeEventListener('message',onBrowse);frame.removeAttribute('src')};
 }
