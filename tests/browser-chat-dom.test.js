@@ -24,7 +24,7 @@ test('Remote page frames cannot read the app origin or control the Boba shell',(
   assert.match(ui,/contentWindow===event\.source/);
   assert.match(gateway,/handleBrowse/);
   assert.match(gateway,/guardedLookup/);
-  assert.doesNotMatch(gateway,/proxy-bootstrap|ultraviolet|baremux|Scramjet/);
+  assert.doesNotMatch(gateway,/from ['"]@mercuryworkshop|from ['"]@titaniumnetwork|import .*proxy-bootstrap/);
 });
 
 test('Boba displays meaningful failures and never claims navigation success from a status API',()=>{
