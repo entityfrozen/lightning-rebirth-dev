@@ -58,7 +58,6 @@ try{
   const outer=page.locator('[data-view="s1"].on');
   const frame=outer.locator('iframe[title="Page"]');
   await frame.waitFor({timeout:20000});
-  await frame.locator('html').waitFor({timeout:20000});
   const heading=await outer.frameLocator('iframe[title="Page"]').locator('h1')
     .first().textContent({timeout:35000}).catch(async error=>{
       const state=await outer.evaluate(node=>({
@@ -80,7 +79,7 @@ try{
   await page.locator('#dock [data-section="s5"]').click();
   const check=page.locator('[data-browser-test]');
   await check.click();
-  await check.getByText('Page loaded').waitFor({timeout:35000});
+  await page.getByRole('button',{name:'Page loaded'}).waitFor({timeout:35000});
   const report=await page.locator('[data-browser-log]').textContent();
   assert.match(report||'',/"result": "Passed"/);
 
