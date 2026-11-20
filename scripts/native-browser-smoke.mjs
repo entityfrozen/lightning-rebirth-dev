@@ -57,7 +57,7 @@ try{
   // the CI loopback gateway responses through Playwright's Node request
   // client. These are the actual server-generated HTML and JS bytes.
   // Production runs on public HTTPS and does not use this relay.
-  await page.route('**/browse/**',async route=>{
+  await page.context().route('**/browse/**',async route=>{
     const request=route.request();
     const url=new URL(request.url());
     if(url.hostname!=='127.0.0.1'||url.port!==String(port)){
@@ -115,6 +115,32 @@ try{
   await page.getByRole('button',{name:'Page loaded'}).waitFor({timeout:35000});
   const report=await page.locator('[data-browser-log]').textContent();
   assert.match(report||'',/"result": "Passed"/);
+
+  // Nested about:blank cloak must navigate using the same sandboxed engine.
+  const [popup]=await Promise.all([
+    page.waitForEvent('popup',{timeout:12000}),
+    page.locator('[data-tab-blank]').click()
+  ]);
+  await popup.waitForLoadState('domcontentloaded');
+  const workspace=popup.frameLocator('iframe[title="Website"]');
+  await workspace.locator('#dock [data-section="s1"]').waitFor({timeout:25000});
+  await workspace.locator('#dock [data-section="s1"]').click();
+  await workspace.locator('[data-omni]').fill('https://example.com/');
+  await workspace.locator('[data-omni]').press('Enter');
+  const nestedFrame=workspace.frameLocator('iframe[title="Page"]');
+  const nestedBody=nestedFrame.locator('body');
+  await nestedBody.waitFor({timeout:35000});
+  await popup.waitForFunction(()=>{
+    const workspace=document.querySelector('iframe[title="Website"]')?.contentDocument;
+    return workspace?.querySelector('[data-view="s1"] .gload.off')!=null;
+  },null,{timeout:35000});
+  const nestedContent=await nestedBody.innerText({timeout:20000});
+  assert.ok(nestedContent.trim().length>80,'Cloaked browser must render readable remote content');
+  assert.match(nestedContent,/documentation examples|documentation|permission/i);
+  assert.equal(await workspace.locator('.native-browser-error').count(),0,
+    'Cloaked browsing should not report a connection failure');
+  await popup.screenshot({path:path.join(shots,'native-browser-cloaked.png')});
+  await popup.close();
 
   await page.locator('#dock [data-section="s3"]').click();
   await page.locator('.native-messenger').waitFor({timeout:15000});
