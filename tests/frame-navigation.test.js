@@ -2,21 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const source=file=>readFileSync(new URL(file,import.meta.url),'utf8');
+const source=()=>readFileSync(new URL('../public/boba/browser.js',import.meta.url),'utf8');
 
-test('Scramjet uses the upstream Frame.go on the real iframe',()=>{
- const proxy=source('../public/boba/proxy.js');
- assert.match(proxy,/const upstreamGo=frame\.go\.bind\(frame\)/);
- assert.match(proxy,/return upstreamGo\(url\)/);
- assert.doesNotMatch(proxy,/navigateWithNeutralFrameSrc/);
- assert.doesNotMatch(proxy,/frame\.element=scratch/);
+test('native browser navigates in its own sandboxed iframe',()=>{
+  const code=source();
+  assert.match(code,/t\.frame\.src='\/browse\/u\/'/);
+  assert.match(code,/sandbox="allow-scripts allow-forms allow-popups allow-downloads"/);
+  assert.doesNotMatch(code,/createProxyFrame|createUltravioletFrame/);
 });
 
-test('Scramjet frames are created once and stale navigations cannot win',()=>{
- const browser=source('../public/boba/browser.js');
- assert.match(browser,/record\.pending=createProxyFrame/);
- assert.match(browser,/const sequence=\+\+record\.navSequence/);
- assert.match(browser,/sequence!==record\.navSequence/);
- assert.match(browser,/record\.disposed=true/);
- assert.match(browser,/frames\.get\(el\)!==record/);
+test('newer tab navigation wins and old asynchronous grants cannot override it',()=>{
+  const code=source();
+  assert.match(code,/const ticket=Symbol\('navigation'\)/);
+  assert.match(code,/if\(t\.ticket!==ticket/);
+  assert.match(code,/clearTimeout\(t\.timer\)/);
+  assert.match(code,/t\.frame\?\.remove\(\)/);
 });

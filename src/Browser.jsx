@@ -6,7 +6,7 @@ import {
 } from '@fluentui/react-icons';
 import {api,readLocal,saveLocal} from './constants.js';
 import {browserAddress,browserPreferences} from './Preferences.js';
-import {createProxyFrame,disposeProxyFrame} from './BoltProxy.js';
+import {createProxyFrame,disposeProxyFrame} from './NativeBrowser.js';
 
 const shortcuts=[
   {id:'browser',name:'browser',icon:Globe20Filled},
@@ -72,7 +72,7 @@ function BrowserFrame({tab,active,user,onNavigate,onPopup,onTitle,register,retry
         // page solely because crossOriginIsolated is false.
         const status=await api('/api/browser/status');
         if(!status.authenticated)throw Error('Sign in to browse in Celestial.');
-        if(!status.proxy)throw Error('The browser engine is unavailable on this server.');
+        if(!status.available)throw Error('The browser is unavailable on this server.');
         const connection=await createProxyFrame(el,
           url=>{
             if(cancelled)return;
