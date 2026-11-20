@@ -82,8 +82,16 @@ export function createGrant(owner){
   if(grants.size>500){
     for(const [key,value] of grants)if(value.expires<now)grants.delete(key);
   }
+  // Bound both grant lifetime and map growth; a signed-in client must not
+  // accumulate unbounded server-side sessions by requesting new tokens.
+  if(grants.size>=512){
+    for(const [id,grant] of grants){
+      if(grant.expires<now)grants.delete(id);
+    }
+    while(grants.size>=512)grants.delete(grants.keys().next().value);
+  }
   const key=randomBytes(24).toString('base64url');
-  grants.set(key,{owner,expires:now+60*60*1000,requests:0});
+  grants.set(key,{owner,expires:now+25*60*1000,requests:0});
   return key;
 }
 function useGrant(key){
@@ -91,7 +99,7 @@ function useGrant(key){
   if(!entry||entry.expires<Date.now()){
     grants.delete(key);return false;
   }
-  if(++entry.requests>6000)return false;
+  if(++entry.requests>1800)return false;
   return true;
 }
 function safeAsset(value,base,key){
@@ -226,7 +234,10 @@ function outputError(res,code,message){
     '<h2>Could not open this page</h2><p>'+safe+'</p><script>'+
     'parent.postMessage({type:"celestial:browse",state:"error",message:document.body.textContent},"*")'+
     '</script></body></html>';
-  res.writeHead(code,responseHeaders('text/html; charset=utf-8'));res.end(html);
+  res.writeHead(code,{
+    ...responseHeaders('text/html; charset=utf-8'),
+    'Content-Security-Policy':'sandbox allow-scripts allow-forms allow-popups allow-downloads'
+  });res.end(html);
 }
 export async function handleBrowse(req,res,pathname,search){
   if(pathname==='/browse/client.js'){
@@ -256,7 +267,13 @@ export async function handleBrowse(req,res,pathname,search){
     }else if(MIME_CSS.test(reply.type)){
       data=Buffer.from(rewriteCSS(data.toString('utf8'),reply.base,search.get('key')));
     }
-    res.writeHead(reply.code,responseHeaders(reply.type));
+    const headers=responseHeaders(reply.type);
+    if(MIME_HTML.test(reply.type)){
+      // Defense in depth: directly opening the URL in a top-level tab must
+      // NOT give third-party scripts the application's first-party origin.
+      headers['Content-Security-Policy']='sandbox allow-scripts allow-forms allow-popups allow-downloads';
+    }
+    res.writeHead(reply.code,headers);
     res.end(req.method==='HEAD'?undefined:data);
   }catch(error){
     outputError(res,502,error?.message||'Remote site unavailable');
