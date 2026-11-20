@@ -40,7 +40,11 @@ try{
   await waitForServer();
   browser=await chromium.launch({headless:true,
     channel:process.env.PLAYWRIGHT_CHROME_CHANNEL||undefined,
-    args:['--disable-dev-shm-usage']});
+    // The production host is a public HTTPS origin. Mark the ephemeral CI
+    // loopback port as public so Chrome's Local Network Access permission
+    // does not block an intentionally opaque-origin test frame.
+    args:['--disable-dev-shm-usage',
+      '--ip-address-space-overrides=127.0.0.1:'+port+'=public,[::1]:'+port+'=public']});
   const page=await browser.newPage({viewport:{width:1360,height:820}});
   page.on('pageerror',error=>errors.push(String(error.message)));
   await page.goto(origin+'/',{waitUntil:'domcontentloaded'});
