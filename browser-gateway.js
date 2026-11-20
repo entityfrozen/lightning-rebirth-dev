@@ -222,6 +222,10 @@ function responseHeaders(type){
     'Cache-Control':'private, no-store',
     'Referrer-Policy':'no-referrer',
     'X-Content-Type-Options':'nosniff',
+    // Boba uses COEP: credentialless. Sandbox documents must carry their own
+    // compatible embedder policy or Chrome blocks the entire iframe.
+    'Cross-Origin-Embedder-Policy':'credentialless',
+    'Cross-Origin-Resource-Policy':'cross-origin',
     'Access-Control-Allow-Origin':'*',
     'Access-Control-Allow-Headers':'content-type, accept',
     'Access-Control-Allow-Methods':'GET, HEAD, POST, OPTIONS'
